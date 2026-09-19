@@ -1,0 +1,34 @@
+{
+  "_why": {
+    "scenario": "SendDraftBlUnresolved",
+    "email_id": "email_003",
+    "why_chosen": "UNRESOLVED - this fixture exists to make the open question concrete. 91 emails say 'Please assist to send the draft BL for X for checking asap'. They are not comparisons (nothing attached), not invoice queries, not spam. Its subject is the same TO CONFIRM DOCS family as email_001, which IS a comparison - so the subject line cannot separate them.",
+    "covers": "the 17.5% of the inbox whose category the brief does not decide",
+    "assert_this": "NOTHING YET. Do not build a test on this until #faq answers.",
+    "caveat": "The category here is a PLACEHOLDER, set to SI_REQUEST so the file validates. It may well be GENERAL. Stage 1 is scored on macro-F1, so a wrong call damages two categories at once."
+  },
+  "EmailRecord": {
+    "email_id": "email_003",
+    "from": "exports@ifpla.com",
+    "sender_domain": "ifpla.com",
+    "subject": "RE_ TO CONFIRM DOCS _ 5AAT-03056 _ AQABA_JORDAN _ ROXCEL TRADING GMBH _ SIN525534192",
+    "body": "Dear Hari,\n\nPlease assist to send the draft BL for SIN832764835 for checking asap.\n\nThank you.\n\nBest Regards,\nSyed Faraz Ali\nShipping Documentation\nDID : +971 04 4938295\nAPRIL Fine Paper Trading (Middle East) Fze\n#813, 4 EA, Dubai Airport Free Zone\nP.O. Box : 293775, Dubai, United Arab Emirates\nWebsite : www.aprilasia.com | www.paperone.com",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_003",
+    "category": "SI_REQUEST",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Please assist to send the draft BL ... for checking'"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": null,
+  "SubmissionEntry": {
+    "category": "SI_REQUEST",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

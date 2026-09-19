@@ -1,0 +1,43 @@
+# --- NEVER COMMIT: organiser answer key ---------------------------------
+# The organiser Docker kit (sdoc-hackathon-docker) ships ground_truth.json.
+# It lives outside this repo on purpose. These rules are a second line of
+# defence in case anyone copies it in.
+ground_truth.json
+**/ground_truth.json
+sdoc-hackathon-docker/
+sdoc-hackathon-docker*.zip
+data_v2/
+secrets/
+
+# --- Provided dataset ----------------------------------------------------
+# Open question with organisers: may the dataset be committed to a public
+# repo? Until answered, keep it out. Reference it via DATA_DIR instead.
+inbox/
+attachments/
+sample_submission.json
+
+# --- Secrets -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# --- Node ----------------------------------------------------------------
+node_modules/
+dist/
+build/
+.next/
+
+# --- Local ---------------------------------------------------------------
+.DS_Store
+*.log
+submission.json

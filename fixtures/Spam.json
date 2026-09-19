@@ -1,0 +1,34 @@
+{
+  "_why": {
+    "scenario": "Spam",
+    "email_id": "email_015",
+    "why_chosen": "Spam is only 40 emails, but macro-F1 averages the five categories equally - so it carries the same weight as the 129 comparison emails. Cheapest points on the board.",
+    "covers": "the spam path, and domain-based classification",
+    "assert_this": "category == SPAM, no comparison performed",
+    "caveat": "Six sender domains separate spam perfectly here, with no overlap with legitimate senders. That rule is brittle if judges test with their own data - an open #faq question."
+  },
+  "EmailRecord": {
+    "email_id": "email_015",
+    "from": "info@crypto-invest.net",
+    "sender_domain": "crypto-invest.net",
+    "subject": "Increase your shipping revenue with this ONE weird trick",
+    "body": "Dear user, your mailbox has exceeded its storage limit. Verify your account within 24 hours to avoid deactivation: http://webmail-verify.co",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_015",
+    "category": "SPAM",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "sender domain crypto-invest.net is on the spam list"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": null,
+  "SubmissionEntry": {
+    "category": "SPAM",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

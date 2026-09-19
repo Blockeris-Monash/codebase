@@ -1,0 +1,34 @@
+{
+  "_why": {
+    "scenario": "SiRequest",
+    "email_id": "email_007",
+    "why_chosen": "The largest non-comparison category. The SI data sits inline in the email body with no attachment, which tempts an extractor into running on something that should have stopped at classification.",
+    "covers": "the stop path - classified, no comparison performed",
+    "assert_this": "ComparisonResult is null; SubmissionEntry status == OK with no defects",
+    "caveat": "Unambiguous. Not to be confused with the contested bucket below."
+  },
+  "EmailRecord": {
+    "email_id": "email_007",
+    "from": "hari_mardianto@aprilasia.com",
+    "sender_domain": "aprilasia.com",
+    "subject": "REQUEST SI _ 5RFR-37631 _ GDANSK_POLAND _ AL GURG STATIONERY LLC _ SIJ1051834",
+    "body": "Hi Willy\n\nPlease find Shipping instruction for 5RFR-37631.\n\nPOL: SINGAPORE\nPOD: GDANSK, POLAND\n\nShipper:\nAPRIL FINE PAPER TRADING\nON BEHALF OF VITAL SOLUTIONS PTE LTD\n77 ROBINSON ROAD, #21-01\nSINGAPORE 068896\n\nConsignee:\nAL GURG STATIONERY LLC\nP.O. BOX 5069\nDUBAI, UNITED ARAB EMIRATES\n\nNotify Party:\nPACIFIC OFFICE (M) SDN BHD\nLOT 6, JALAN P/7\nSECTION 13, 43650 BANDAR BARU BANGI\nSELANGOR, MALAYSIA\n\nDescription of Goods:\n15X20'GP\nPAPERBOARD\nH.S.CODE: 48109200\nGROSS WT: 354,765 KG\n\nShipping line: CFR TERM\nDocuments Required:\n1) 3 Original invoice\n2) 3 Packing list\n3) 3 Original BL + 3 N/N\nPlease revert with draft BL once available.\n\nBest Regards,\nOoi Sok Yong\nShipping Documentation\nDID : +971 04 4938224\nAPRIL Fine Paper Trading (Middle East) Fze\n#813, 4 EA, Dubai Airport Free Zone\nP.O. Box : 293775, Dubai, United Arab Emirates\nWebsite : www.aprilasia.com | www.paperone.com",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_007",
+    "category": "SI_REQUEST",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Please find Shipping instruction for'"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": null,
+  "SubmissionEntry": {
+    "category": "SI_REQUEST",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

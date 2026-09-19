@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "EmailRecord",
+  "title": "EmailRecord",
+  "description": "Contract 1. Loader output, one per email. Produced by R1, consumed by R2. declared_role is what the FILENAME claims and is wrong on emails 501-505; never trust it without DocumentExtract.detected_doc_type.",
+  "type": "object",
+  "required": ["email_id", "from", "sender_domain", "subject", "body", "attachments"],
+  "additionalProperties": false,
+  "properties": {
+    "email_id":      { "type": "string", "pattern": "^email_[0-9]{3}$" },
+    "from":          { "type": "string" },
+    "sender_domain": { "type": "string", "description": "Split from `from`. Strongest spam signal: 6 domains, 40 emails, no overlap with legitimate senders." },
+    "subject":       { "type": "string" },
+    "body":          { "type": "string" },
+    "attachments": {
+      "type": "array",
+      "description": "May be empty. Never more than 2 in this dataset.",
+      "items": {
+        "type": "object",
+        "required": ["path", "declared_role", "format"],
+        "additionalProperties": false,
+        "properties": {
+          "path":          { "type": "string" },
+          "declared_role": { "enum": ["SI", "BL"] },
+          "format":        { "enum": ["txt", "pdf", "docx", "xlsx"] }
+        }
+      }
+    }
+  }
+}

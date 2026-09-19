@@ -1,0 +1,41 @@
+{
+  "_why": {
+    "scenario": "ReviewMissingAtt",
+    "email_id": "email_506",
+    "why_chosen": "Zero attachments, but the body says 'Please compare the SI and draft BL ... (attachments appear to have been dropped)'. It breaks the 'has attachments therefore comparison' heuristic in the direction that loses you an email entirely.",
+    "covers": "classification cannot gate on attachment presence",
+    "assert_this": "category is still BL_COMPARISON despite no attachments; review_reason == missing_attachment",
+    "caveat": "Emails 507 and 509 are the other shape of this - SI present, BL absent. Same reason, different code path."
+  },
+  "EmailRecord": {
+    "email_id": "email_506",
+    "from": "arlene_yamomo@aprilasia.com",
+    "sender_domain": "aprilasia.com",
+    "subject": "RE_ AFRT - LONG BEACH_US - EVER(EGLV433335384951) - 5RSG-19787 - 5250071809 - EAST BRIGHT FZ-LLC - OA_CFR",
+    "body": "Dear Team,\n\nPlease compare the SI and draft BL for 070500263211 and confirm (attachments appear to have been dropped). Thank you.",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_506",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Please compare the SI and draft BL'"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": {
+    "email_id": "email_506",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "missing_attachment",
+    "rows": [],
+    "defect_fields": [],
+    "evidence": "expected SI and BL, found []"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "missing_attachment",
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

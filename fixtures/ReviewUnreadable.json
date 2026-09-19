@@ -1,0 +1,143 @@
+{
+  "_why": {
+    "scenario": "ReviewUnreadable",
+    "email_id": "email_511",
+    "why_chosen": "email_511_BL.pdf is 775 bytes: a %PDF-1.5 header followed by random bytes, with no objects at all. A parser must escalate rather than crash the run or quietly pass.",
+    "covers": "parse failure escalates with a reason",
+    "assert_this": "review_reason == unreadable, rows == []",
+    "caveat": "KNOWN BUG in this generator: parse_status 'not_attempted' is treated as unreadable, so the 13 readable text PDFs would be mislabelled too. This fixture is correct, but for a reason that will not generalise. Fix before the PDF parser lands."
+  },
+  "EmailRecord": {
+    "email_id": "email_511",
+    "from": "willy_ss@aprilasia.com",
+    "sender_domain": "aprilasia.com",
+    "subject": "RE_ TO CONFIRM DOCS _ 5SUS-40134 _ KOPER_SLOVENIA _ AL GURG STATIONERY LLC _ MCLSIN6917768",
+    "body": "Dear Team,\n\nAttached SI and draft BL for MCLSINJEA2529384 for checking (the BL file will not open). Please advise.",
+    "attachments": [
+      {
+        "path": "attachments/email_511_SI.txt",
+        "declared_role": "SI",
+        "format": "txt"
+      },
+      {
+        "path": "attachments/email_511_BL.pdf",
+        "declared_role": "BL",
+        "format": "pdf"
+      }
+    ]
+  },
+  "ClassificationResult": {
+    "email_id": "email_511",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Attached are the SI and draft BL'"
+  },
+  "DocumentExtract": [
+    {
+      "email_id": "email_511",
+      "declared_role": "SI",
+      "source_path": "attachments/email_511_SI.txt",
+      "format": "txt",
+      "detected_doc_type": "SI",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper",
+          "raw": "APRIL FINE PAPER TRADING"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "To the Order of",
+          "raw": "AL GURG STATIONERY LLC"
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify",
+          "raw": "AL GURG STATIONERY LLC"
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "POL",
+          "raw": "NHAVA SHEVA, INDIA (INNSA)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "Port of Discharge (POD)",
+          "raw": "KOPER, SLOVENIA (SIKOP)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "Total Containers",
+          "raw": "6 x 40'HC"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight\u6bdb\u91cd(KGS)",
+          "raw": "134,904 KG"
+        }
+      }
+    },
+    {
+      "email_id": "email_511",
+      "declared_role": "BL",
+      "source_path": "attachments/email_511_BL.pdf",
+      "format": "pdf",
+      "detected_doc_type": null,
+      "parse_status": "not_attempted",
+      "fields": {
+        "shipper": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "consignee": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "notify_party": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "port_of_loading": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "port_of_discharge": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "container_count": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "gross_weight_kg": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        }
+      }
+    }
+  ],
+  "ComparisonResult": {
+    "email_id": "email_511",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "unreadable",
+    "rows": [],
+    "defect_fields": [],
+    "evidence": "attachment could not be parsed"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "unreadable",
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

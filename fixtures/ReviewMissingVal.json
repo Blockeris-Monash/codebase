@@ -1,0 +1,200 @@
+{
+  "_why": {
+    "scenario": "ReviewMissingVal",
+    "email_id": "email_516",
+    "why_chosen": "The ordering trap, and the most valuable fixture here. The SI gross weight is 'N/A'. Compare before checking for absent values and you emit a false weight mismatch AND a false port mismatch on the same email, because the SI port also lacks the locode the BL carries.",
+    "covers": "sentinel detection must run BEFORE comparison",
+    "assert_this": "review_reason == missing_value on gross_weight_kg, and port_of_loading is NOT reported as a defect even though the raw strings differ",
+    "caveat": "Whether a partial comparison should still report the defects it did find is a team ruling, not a fact. We chose escalate-whole."
+  },
+  "EmailRecord": {
+    "email_id": "email_516",
+    "from": "elisa_tukiman@april.com.my",
+    "sender_domain": "april.com.my",
+    "subject": "RE_ AFEMY - CONAKRY_GUINEA - MONTER(MCLSIN6123859) - 5RCY-68239 - 5250074840 - KPP-ANTALIS (SINGAPORE) PTE. LTD. - OA_CFR",
+    "body": "Dear Team,\n\nPlease compare the SI and draft BL for MCLSINJEA2551434. Some SI fields were left blank by the customer; kindly confirm what we have.",
+    "attachments": [
+      {
+        "path": "attachments/email_516_SI.txt",
+        "declared_role": "SI",
+        "format": "txt"
+      },
+      {
+        "path": "attachments/email_516_BL.txt",
+        "declared_role": "BL",
+        "format": "txt"
+      }
+    ]
+  },
+  "ClassificationResult": {
+    "email_id": "email_516",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Attached are the SI and draft BL'"
+  },
+  "DocumentExtract": [
+    {
+      "email_id": "email_516",
+      "declared_role": "SI",
+      "source_path": "attachments/email_516_SI.txt",
+      "format": "txt",
+      "detected_doc_type": "SI",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper (Principal or Seller)",
+          "raw": "APRIL FINE PAPER TRADING"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "Consignee",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "PORT OF LOADING",
+          "raw": "NHAVA SHEVA, INDIA"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "POD",
+          "raw": "CONAKRY, GUINEA"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "No. of Containers or Packages",
+          "raw": "10 x 20'FCL"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight\u6bdb\u91cd(KGS)",
+          "raw": "N/A"
+        }
+      }
+    },
+    {
+      "email_id": "email_516",
+      "declared_role": "BL",
+      "source_path": "attachments/email_516_BL.txt",
+      "format": "txt",
+      "detected_doc_type": "BL",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper",
+          "raw": "APRIL FINE PAPER TRADING"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "Consignee",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify Party/Intermediate Consignee",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Load Port",
+          "raw": "NHAVA SHEVA, INDIA (INNSA)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "POD",
+          "raw": "CONAKRY, GUINEA (GNCKY)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "Container Count",
+          "raw": "10 x 20'FCL"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight (KG)",
+          "raw": "235,550 KG"
+        }
+      }
+    }
+  ],
+  "ComparisonResult": {
+    "email_id": "email_516",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "missing_value",
+    "rows": [
+      {
+        "field": "shipper",
+        "si_raw": "APRIL FINE PAPER TRADING",
+        "bl_raw": "APRIL FINE PAPER TRADING",
+        "si_norm": "APRIL FINE PAPER TRADING",
+        "bl_norm": "APRIL FINE PAPER TRADING",
+        "verdict": "match"
+      },
+      {
+        "field": "consignee",
+        "si_raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "bl_raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "si_norm": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "bl_norm": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "verdict": "match"
+      },
+      {
+        "field": "notify_party",
+        "si_raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "bl_raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "si_norm": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "bl_norm": "KPP-ANTALIS (SINGAPORE) PTE. LTD.",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_loading",
+        "si_raw": "NHAVA SHEVA, INDIA",
+        "bl_raw": "NHAVA SHEVA, INDIA (INNSA)",
+        "si_norm": "NHAVA SHEVA, INDIA",
+        "bl_norm": "NHAVA SHEVA, INDIA",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_discharge",
+        "si_raw": "CONAKRY, GUINEA",
+        "bl_raw": "CONAKRY, GUINEA (GNCKY)",
+        "si_norm": "CONAKRY, GUINEA",
+        "bl_norm": "CONAKRY, GUINEA",
+        "verdict": "match"
+      },
+      {
+        "field": "container_count",
+        "si_raw": "10 x 20'FCL",
+        "bl_raw": "10 x 20'FCL",
+        "si_norm": "10",
+        "bl_norm": "10",
+        "verdict": "match"
+      },
+      {
+        "field": "gross_weight_kg",
+        "si_raw": "N/A",
+        "bl_raw": "235,550 KG",
+        "si_norm": null,
+        "bl_norm": "235550.0",
+        "verdict": "missing"
+      }
+    ],
+    "defect_fields": [],
+    "evidence": "no comparable value on one side for: gross_weight_kg"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "missing_value",
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

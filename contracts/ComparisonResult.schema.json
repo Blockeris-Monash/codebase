@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ComparisonResult",
+  "title": "ComparisonResult",
+  "description": "Contract 4. The seven-row table. Produced by R3, consumed by R5 (report UI) and R1 (submission). A mismatch is a verdict about a PAIR, not a property of one document - hence one table with an SI column and a BL column, not two panels.",
+  "type": "object",
+  "required": ["email_id", "status", "review_reason", "rows", "defect_fields", "evidence"],
+  "additionalProperties": false,
+  "properties": {
+    "email_id": { "type": "string", "pattern": "^email_[0-9]{3}$" },
+    "status":   { "enum": ["OK", "MISMATCH", "NEEDS_REVIEW"] },
+    "review_reason": {
+      "enum": [null, "wrong_doc_type", "missing_attachment", "unreadable", "missing_value"],
+      "description": "Non-null if and only if status == NEEDS_REVIEW."
+    },
+    "rows": {
+      "type": "array",
+      "description": "Seven rows when the documents were comparable; empty when nothing could be compared at all (missing attachment, unreadable, wrong doc type).",
+      "items": {
+        "type": "object",
+        "required": ["field", "si_raw", "bl_raw", "si_norm", "bl_norm", "verdict"],
+        "additionalProperties": false,
+        "properties": {
+          "field":   { "enum": ["shipper", "consignee", "notify_party", "port_of_loading",
+                                "port_of_discharge", "container_count", "gross_weight_kg"] },
+          "si_raw":  { "type": ["string", "null"], "description": "As written in the SI. This is what the UI shows the human - the source evidence." },
+          "bl_raw":  { "type": ["string", "null"] },
+          "si_norm": { "type": ["string", "null"], "description": "After normalisation. This is what decided the verdict. null means no comparable value." },
+          "bl_norm": { "type": ["string", "null"] },
+          "verdict": { "enum": ["match", "mismatch", "missing"] }
+        }
+      }
+    },
+    "defect_fields": {
+      "type": "array",
+      "description": "Every row whose verdict is 'mismatch'. Empty unless status == MISMATCH.",
+      "items": { "enum": ["shipper", "consignee", "notify_party", "port_of_loading",
+                          "port_of_discharge", "container_count", "gross_weight_kg"] }
+    },
+    "evidence": { "type": "string", "description": "One line naming what happened. Goes on screen next to the confirm/correct action." }
+  }
+}

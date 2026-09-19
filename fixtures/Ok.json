@@ -1,0 +1,200 @@
+{
+  "_why": {
+    "scenario": "Ok",
+    "email_id": "email_001",
+    "why_chosen": "A clean baseline. Without one, nothing proves the pipeline can say 'nothing wrong here' - and a system that flags everything scores badly on defect precision.",
+    "covers": "the OK path: all seven fields match, nothing escalates",
+    "assert_this": "status == OK, defect_fields == [], seven rows all 'match'",
+    "caveat": "We verified the seven fields match. The organisers' own label for this email is unknown to us."
+  },
+  "EmailRecord": {
+    "email_id": "email_001",
+    "from": "aziztz@safqa.co.ke",
+    "sender_domain": "safqa.co.ke",
+    "subject": "TO CONFIRM DOCS _ 5RSG-00133 _ CALLAO_PERU _ MOORIM SP CO., LTD _ MEDUUD104332",
+    "body": "Hi Najiha,\n\nAttached are the SI and draft BL for OC 5RSG-00133 (PAPERONE DIGITAL COPIER PAPER). Please check the details and confirm.\n\nBest Regards,\nWilly Situmorang\nShipping Documentation\nDID : +971 04 4938289\nAPRIL Fine Paper Trading (Middle East) Fze\n#813, 4 EA, Dubai Airport Free Zone\nP.O. Box : 293775, Dubai, United Arab Emirates\nWebsite : www.aprilasia.com | www.paperone.com",
+    "attachments": [
+      {
+        "path": "attachments/email_001_SI.txt",
+        "declared_role": "SI",
+        "format": "txt"
+      },
+      {
+        "path": "attachments/email_001_BL.txt",
+        "declared_role": "BL",
+        "format": "txt"
+      }
+    ]
+  },
+  "ClassificationResult": {
+    "email_id": "email_001",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Attached are the SI and draft BL'"
+  },
+  "DocumentExtract": [
+    {
+      "email_id": "email_001",
+      "declared_role": "SI",
+      "source_path": "attachments/email_001_SI.txt",
+      "format": "txt",
+      "detected_doc_type": "SI",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper/Exporter",
+          "raw": "APRIL FAR EAST (M) SDN BHD"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "CONSIGNEE",
+          "raw": "MOORIM SP CO., LTD"
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "NOTIFY PARTY",
+          "raw": "UAB NOVAKOPA"
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Port of Loading",
+          "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "Discharge Port",
+          "raw": "CALLAO, PERU (PECLL)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "No. of Containers or Packages",
+          "raw": "1 x 40'HC"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight (KG)",
+          "raw": "21,577 KG"
+        }
+      }
+    },
+    {
+      "email_id": "email_001",
+      "declared_role": "BL",
+      "source_path": "attachments/email_001_BL.txt",
+      "format": "txt",
+      "detected_doc_type": "BL",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "SHIPPER",
+          "raw": "APRIL FAR EAST (M) SDN BHD"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "CONSIGNEE",
+          "raw": "MOORIM SP CO., LTD"
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify",
+          "raw": "UAB NOVAKOPA"
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Port of Loading (POL)",
+          "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "POD",
+          "raw": "CALLAO, PERU (PECLL)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "Container Count",
+          "raw": "1 x 40'HC"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Wt (kgs)",
+          "raw": "21,577 KG"
+        }
+      }
+    }
+  ],
+  "ComparisonResult": {
+    "email_id": "email_001",
+    "status": "OK",
+    "review_reason": null,
+    "rows": [
+      {
+        "field": "shipper",
+        "si_raw": "APRIL FAR EAST (M) SDN BHD",
+        "bl_raw": "APRIL FAR EAST (M) SDN BHD",
+        "si_norm": "APRIL FAR EAST (M) SDN BHD",
+        "bl_norm": "APRIL FAR EAST (M) SDN BHD",
+        "verdict": "match"
+      },
+      {
+        "field": "consignee",
+        "si_raw": "MOORIM SP CO., LTD",
+        "bl_raw": "MOORIM SP CO., LTD",
+        "si_norm": "MOORIM SP CO., LTD",
+        "bl_norm": "MOORIM SP CO., LTD",
+        "verdict": "match"
+      },
+      {
+        "field": "notify_party",
+        "si_raw": "UAB NOVAKOPA",
+        "bl_raw": "UAB NOVAKOPA",
+        "si_norm": "UAB NOVAKOPA",
+        "bl_norm": "UAB NOVAKOPA",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_loading",
+        "si_raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)",
+        "bl_raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)",
+        "si_norm": "PORT KLANG (WESTPORT), MALAYSIA",
+        "bl_norm": "PORT KLANG (WESTPORT), MALAYSIA",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_discharge",
+        "si_raw": "CALLAO, PERU (PECLL)",
+        "bl_raw": "CALLAO, PERU (PECLL)",
+        "si_norm": "CALLAO, PERU",
+        "bl_norm": "CALLAO, PERU",
+        "verdict": "match"
+      },
+      {
+        "field": "container_count",
+        "si_raw": "1 x 40'HC",
+        "bl_raw": "1 x 40'HC",
+        "si_norm": "1",
+        "bl_norm": "1",
+        "verdict": "match"
+      },
+      {
+        "field": "gross_weight_kg",
+        "si_raw": "21,577 KG",
+        "bl_raw": "21,577 KG",
+        "si_norm": "21577.0",
+        "bl_norm": "21577.0",
+        "verdict": "match"
+      }
+    ],
+    "defect_fields": [],
+    "evidence": "all 7 fields match after normalisation"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

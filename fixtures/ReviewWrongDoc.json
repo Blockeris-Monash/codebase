@@ -1,0 +1,143 @@
+{
+  "_why": {
+    "scenario": "ReviewWrongDoc",
+    "email_id": "email_501",
+    "why_chosen": "The file named email_501_BL.txt opens with COMMERCIAL INVOICE. This is the only trap where trusting the filename produces a confident wrong answer instead of an obvious failure - the extractor finds no BL fields and would report a false mismatch on all seven.",
+    "covers": "document type must be verified from the header before extraction",
+    "assert_this": "review_reason == wrong_doc_type, rows == []",
+    "caveat": "Emails 501-505 all do this, with invoices, packing lists and certificates of origin."
+  },
+  "EmailRecord": {
+    "email_id": "email_501",
+    "from": "exports@ifpla.com",
+    "sender_domain": "ifpla.com",
+    "subject": "RE_ TO CONFIRM DOCS _ 5RSG-51584 _ HOUSTON_US _ KPP-ANTALIS (SINGAPORE) PTE. LTD. _ YMJAI905670867",
+    "body": "Dear Team,\n\nPlease find attached the SI and the Commercial Invoice for I009004365. Kindly confirm the BL is in order.\n\n(Note: the second attachment is a Commercial Invoice, not the draft BL.)",
+    "attachments": [
+      {
+        "path": "attachments/email_501_SI.txt",
+        "declared_role": "SI",
+        "format": "txt"
+      },
+      {
+        "path": "attachments/email_501_BL.txt",
+        "declared_role": "BL",
+        "format": "txt"
+      }
+    ]
+  },
+  "ClassificationResult": {
+    "email_id": "email_501",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body: 'Attached are the SI and draft BL'"
+  },
+  "DocumentExtract": [
+    {
+      "email_id": "email_501",
+      "declared_role": "SI",
+      "source_path": "attachments/email_501_SI.txt",
+      "format": "txt",
+      "detected_doc_type": "SI",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper",
+          "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "CONSIGNEE",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify Party",
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Load Port",
+          "raw": "RUGAO/NANTONG/SHANGHAI, CHINA (CNSHA)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "Port of Discharge (POD)",
+          "raw": "HOUSTON, US (USHOU)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "No. of Containers or Packages",
+          "raw": "5 x 40'HC"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Wt (kgs)",
+          "raw": "100,225 KG"
+        }
+      }
+    },
+    {
+      "email_id": "email_501",
+      "declared_role": "BL",
+      "source_path": "attachments/email_501_BL.txt",
+      "format": "txt",
+      "detected_doc_type": "COMMERCIAL INVOICE",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "consignee": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "notify_party": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "port_of_loading": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "port_of_discharge": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "container_count": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        },
+        "gross_weight_kg": {
+          "present": false,
+          "label_seen": null,
+          "raw": null
+        }
+      }
+    }
+  ],
+  "ComparisonResult": {
+    "email_id": "email_501",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "wrong_doc_type",
+    "rows": [],
+    "defect_fields": [],
+    "evidence": "filename says SI/BL, document header says SI/COMMERCIAL INVOICE"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "NEEDS_REVIEW",
+    "review_reason": "wrong_doc_type",
+    "has_defect": false,
+    "defect_fields": []
+  }
+}
