@@ -203,6 +203,44 @@ def submission_entry(comparison, category):
     }
 
 
+# Phrases that actually decide a category, matched against the real body.
+# Order matters: the comparison phrases must be tested before the weaker
+# "draft BL" ones, because both mention a draft BL.
+SPAM_DOMAINS = {"webmail-verify.co", "secure-mailbox.org", "parcel-track.co",
+                "logistics-deals.biz", "prize-claims.info", "crypto-invest.net"}
+BODY_RULES = [
+    ("Attached are the SI and draft BL", BL_COMPARISON),
+    ("attached the shipping instruction and the draft bill of lading", BL_COMPARISON),
+    ("check the draft BL against the SI", BL_COMPARISON),
+    ("Please compare the SI and draft BL", BL_COMPARISON),
+    ("Attached SI and draft BL", BL_COMPARISON),
+    ("attached the SI and the Commercial Invoice", BL_COMPARISON),
+    ("Please find Shipping instruction", "SI_REQUEST"),
+    ("D&D / detention charges", "INVOICE_QUERY"),
+    ("GR is still missing for invoice", "INVOICE_QUERY"),
+    ("Query on invoice", "INVOICE_QUERY"),
+    ("Requesting to cancel invoice", "INVOICE_QUERY"),
+    ("daily berthing report", "GENERAL"),
+    ("send the draft BL", "SI_REQUEST"),
+]
+
+
+def classify_from_body(email):
+    """Return (category, evidence) using the email's own text.
+
+    Evidence quotes the phrase that actually matched, because that string is
+    shown to a human reviewer and must therefore be true of this email.
+    """
+    domain = email["from"].split("@")[-1]
+    if domain in SPAM_DOMAINS:
+        return "SPAM", f"sender domain {domain} is on the spam list"
+    body = email["body"]
+    for phrase, category in BODY_RULES:
+        if phrase.lower() in body.lower():
+            return category, f"body contains: {phrase!r}"
+    return None, "no rule matched"
+
+
 def classification(email_id, category, decided_by, evidence, confidence):
     """Contract 2 — one per email. `decided_by` is read by the official
     scorer, which reports the share of decisions made by rule."""
@@ -331,6 +369,35 @@ SCENARIOS = [
                   "macro-F1, so a wrong call damages two categories at once.",
     },
     {
+        "name": "InvoiceQuery", "email_id": "email_017", "category": "INVOICE_QUERY",
+        "decided_by": "rule",
+        "classification_evidence": "body: 'Please find the D&D / detention charges'",
+        "why_chosen": "Completes the outcome space - without it, nothing exercises "
+                      "the INVOICE_QUERY branch. Four templates share this category: "
+                      "missing GR, THC/local charges, D&D/detention, and cancel "
+                      "invoice + reverse PGI.",
+        "covers": "the stop path for an invoice query - classified, no comparison",
+        "assert_this": "category == INVOICE_QUERY, status == OK, no escalation. "
+                       "status OK here means 'nothing to escalate', NOT 'documents "
+                       "match' - there are no documents.",
+        "caveat": "Tempting to escalate these because a human clearly has to answer "
+                  "the query in real life. Do not. Escalation is scored on precision "
+                  "too, and the brief says other categories only need classifying.",
+    },
+    {
+        "name": "General", "email_id": "email_012", "category": "GENERAL",
+        "decided_by": "rule",
+        "classification_evidence": "body: 'Kindly find the daily berthing report'",
+        "why_chosen": "Completes the outcome space. GENERAL is the catch-all: "
+                      "berthing reports, loading summaries, RPA bot output, "
+                      "outstanding-BL lists, holiday notices. Roughly 60 emails.",
+        "covers": "the stop path for operational updates",
+        "assert_this": "category == GENERAL, status == OK, no comparison performed",
+        "caveat": "Its body mentions an attached report, but the email record has no "
+                  "attachments - so an attachment-based rule must not be fooled by "
+                  "the word 'attached' in the text.",
+    },
+    {
         "name": "Spam", "email_id": "email_015", "category": "SPAM",
         "decided_by": "rule",
         "classification_evidence": "sender domain crypto-invest.net is on the spam list",
@@ -386,6 +453,9 @@ def reasoning_block(scenario, email_id):
 def build_bundle(data_dir, scenario):
     email_id, category = scenario["email_id"], scenario["category"]
     email = json.loads((Path(data_dir) / "inbox" / f"{email_id}.json").read_text())
+    matched, evidence = classify_from_body(email)
+    if matched != category:
+        evidence = f"{evidence}; FIXTURE OVERRIDE: rule said {matched}, fixture asserts {category}"
     record, extracts, comparison = build(data_dir, email)
     is_comparison = category == BL_COMPARISON
     entry = (submission_entry(comparison, category) if is_comparison
@@ -394,13 +464,17 @@ def build_bundle(data_dir, scenario):
         "_why": reasoning_block(scenario, email_id),
         "EmailRecord": record,
         "ClassificationResult": classification(
-            email_id, category, scenario["decided_by"],
-            scenario["classification_evidence"], 1.0),
+            email_id, category, scenario["decided_by"], evidence, 1.0),
         "DocumentExtract": extracts,
         "ComparisonResult": comparison if is_comparison else None,
         "SubmissionEntry": entry,
     }
     return bundle, entry
+
+
+def numbered(index, name):
+    """Two-digit prefix so `ls` shows the fixtures in reading order."""
+    return f"{index:02d}-{name}.json"
 
 
 def main():
@@ -412,12 +486,15 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     submission = {}
-    for scenario in SCENARIOS:
+    ordered = sorted(SCENARIOS, key=lambda s: s["email_id"])
+    for index, scenario in enumerate(ordered, start=1):
         bundle, entry = build_bundle(args.data, scenario)
         submission[scenario["email_id"]] = entry
-        (out / f"{scenario['name']}.json").write_text(json.dumps(bundle, indent=2) + "\n")
-        print(f"{scenario['name']:24} {scenario['email_id']}  "
+        filename = numbered(index, scenario["name"])
+        (out / filename).write_text(json.dumps(bundle, indent=2) + "\n")
+        print(f"{filename:34} {scenario['email_id']}  "
               f"{entry['status']:12} {entry['defect_fields']}")
+    submission = dict(sorted(submission.items()))
     (out / "SubmissionSample.json").write_text(json.dumps(submission, indent=2) + "\n")
     print(f"\n{len(SCENARIOS)} fixtures + SubmissionSample.json -> {out}/")
 

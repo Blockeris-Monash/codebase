@@ -1,0 +1,34 @@
+{
+  "_why": {
+    "scenario": "InvoiceQuery",
+    "email_id": "email_017",
+    "why_chosen": "Completes the outcome space - without it, nothing exercises the INVOICE_QUERY branch. Four templates share this category: missing GR, THC/local charges, D&D/detention, and cancel invoice + reverse PGI.",
+    "covers": "the stop path for an invoice query - classified, no comparison",
+    "assert_this": "category == INVOICE_QUERY, status == OK, no escalation. status OK here means 'nothing to escalate', NOT 'documents match' - there are no documents.",
+    "caveat": "Tempting to escalate these because a human clearly has to answer the query in real life. Do not. Escalation is scored on precision too, and the brief says other categories only need classifying."
+  },
+  "EmailRecord": {
+    "email_id": "email_017",
+    "from": "chella.perumal@psabdp.com",
+    "sender_domain": "psabdp.com",
+    "subject": "Mill D & D charges - 6437419879",
+    "body": "Dear All,\n\nPlease find the D&D / detention charges for MSDUL0942527743. Kindly confirm the amount before we release payment.\n\nBest Regards,\nDeswita Elvyani\nShipping Documentation\nDID : +971 04 4938288\nAPRIL Fine Paper Trading (Middle East) Fze\n#813, 4 EA, Dubai Airport Free Zone\nP.O. Box : 293775, Dubai, United Arab Emirates\nWebsite : www.aprilasia.com | www.paperone.com",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_017",
+    "category": "INVOICE_QUERY",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body contains: 'D&D / detention charges'"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": null,
+  "SubmissionEntry": {
+    "category": "INVOICE_QUERY",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}

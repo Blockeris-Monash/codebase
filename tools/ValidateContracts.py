@@ -109,7 +109,22 @@ def validate(value, schema, path, errors):
 
 
 def load_contract(name):
-    return json.loads((CONTRACTS_DIR / f"{name}.schema.json").read_text())
+    """Find a contract by name, ignoring its numeric ordering prefix.
+
+    Files are numbered (01-EmailRecord.schema.json) so they list in pipeline
+    order, but callers name them plainly: load_contract("EmailRecord").
+    """
+    matches = sorted(CONTRACTS_DIR.glob(f"*{name}.schema.json"))
+    if not matches:
+        available = ", ".join(sorted(contract_names()))
+        raise SystemExit(f"no contract named {name!r}. Available: {available}")
+    return json.loads(matches[0].read_text())
+
+
+def contract_names():
+    """Every contract's plain name, prefix stripped."""
+    return [p.name.split("-", 1)[-1].replace(".schema.json", "")
+            for p in sorted(CONTRACTS_DIR.glob("*.schema.json"))]
 
 
 # Which contract each key of a fixture bundle must satisfy. DocumentExtract

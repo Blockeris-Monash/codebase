@@ -20,7 +20,7 @@
     "category": "SI_REQUEST",
     "decided_by": "rule",
     "confidence": 1.0,
-    "evidence": "body: 'Please find Shipping instruction for'"
+    "evidence": "body contains: 'Please find Shipping instruction'"
   },
   "DocumentExtract": [],
   "ComparisonResult": null,

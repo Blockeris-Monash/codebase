@@ -20,7 +20,7 @@
     "category": "SI_REQUEST",
     "decided_by": "rule",
     "confidence": 1.0,
-    "evidence": "body: 'Please assist to send the draft BL ... for checking'"
+    "evidence": "body contains: 'send the draft BL'"
   },
   "DocumentExtract": [],
   "ComparisonResult": null,

@@ -31,7 +31,7 @@
     "category": "BL_COMPARISON",
     "decided_by": "rule",
     "confidence": 1.0,
-    "evidence": "body: 'Attached are the SI and draft BL'"
+    "evidence": "body contains: 'Attached SI and draft BL'"
   },
   "DocumentExtract": [
     {

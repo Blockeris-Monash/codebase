@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "DocumentExtract",
+  "title": "DocumentExtract",
+  "description": "STAGE 3 of 5  |  produced by: extract (R2)  |  consumed by: compare (R3)\n\nOne per ATTACHMENT, so a normal comparison email yields two. detected_doc_type comes from the document's own header, not the filename - that is what makes wrong_doc_type detectable.",
+  "type": "object",
+  "required": [
+    "email_id",
+    "declared_role",
+    "source_path",
+    "format",
+    "detected_doc_type",
+    "parse_status",
+    "fields"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "email_id": {
+      "type": "string",
+      "pattern": "^email_[0-9]{3}$"
+    },
+    "declared_role": {
+      "enum": [
+        "SI",
+        "BL"
+      ],
+      "description": "From the filename. Lies on emails 501-505."
+    },
+    "source_path": {
+      "type": "string"
+    },
+    "format": {
+      "enum": [
+        "txt",
+        "pdf",
+        "docx",
+        "xlsx"
+      ]
+    },
+    "detected_doc_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "From the document header. 'SI' or 'BL' when recognised; the raw header text when it is something else (e.g. 'COMMERCIAL INVOICE'); null when unreadable."
+    },
+    "parse_status": {
+      "enum": [
+        "ok",
+        "unreadable",
+        "missing",
+        "not_attempted"
+      ],
+      "description": "not_attempted means this format has no parser yet - it is NOT the same as unreadable."
+    },
+    "fields": {
+      "type": "object",
+      "description": "All seven keys are always present. present:false means not found in the document.",
+      "required": [
+        "shipper",
+        "consignee",
+        "notify_party",
+        "port_of_loading",
+        "port_of_discharge",
+        "container_count",
+        "gross_weight_kg"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(shipper|consignee|notify_party|port_of_loading|port_of_discharge|container_count|gross_weight_kg)$": {
+          "type": "object",
+          "required": [
+            "present",
+            "label_seen",
+            "raw"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "present": {
+              "type": "boolean"
+            },
+            "label_seen": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The label text as it appeared, e.g. 'Load Port'. Kept for debugging the synonym table."
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Value exactly as written. Never normalised here - that is R3's step."
+            }
+          }
+        }
+      }
+    }
+  }
+}

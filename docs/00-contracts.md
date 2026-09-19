@@ -9,11 +9,19 @@ them. A worked example of each lives in `fixtures/`, generated from real
 emails by `tools/MakeFixtures.py`.
 
 ```
-contracts/EmailRecord.schema.json
-contracts/ClassificationResult.schema.json
-contracts/DocumentExtract.schema.json
-contracts/ComparisonResult.schema.json
-contracts/SubmissionEntry.schema.json
+contracts/01-EmailRecord.schema.json
+contracts/02-ClassificationResult.schema.json
+contracts/03-DocumentExtract.schema.json
+contracts/04-ComparisonResult.schema.json
+contracts/05-SubmissionEntry.schema.json
+```
+
+Numbered in pipeline order, and each file opens with a line saying which
+stage it is and who hands it to whom. Refer to them by plain name — the
+tooling ignores the prefix:
+
+```bash
+python3 tools/ValidateContracts.py out.json DocumentExtract
 ```
 
 Check anything against them before you hand it downstream:
@@ -165,17 +173,20 @@ Non-comparison categories carry `status: "OK"`, no defects.
 ## Fixtures
 
 ```
-fixtures/Ok.json                     email_001  all seven match
-fixtures/Mismatch.json               email_004  consignee + notify_party
-fixtures/ReviewWrongDoc.json         email_501  BL is a commercial invoice
-fixtures/ReviewMissingAtt.json       email_506  body says compare, nothing attached
-fixtures/ReviewUnreadable.json       email_511  corrupt PDF
-fixtures/ReviewMissingVal.json       email_516  SI gross weight is "N/A"
-fixtures/SiRequest.json              email_007  classified, stops
-fixtures/SendDraftBlUnresolved.json  email_003  CATEGORY UNDECIDED - see below
-fixtures/Spam.json                   email_015  classified, stops
-fixtures/SubmissionSample.json       all nine, in contract-5 shape
+fixtures/01-Ok.json                     email_001  all seven match
+fixtures/02-SendDraftBlUnresolved.json  email_003  CATEGORY UNDECIDED - see below
+fixtures/03-Mismatch.json               email_004  consignee + notify_party
+fixtures/04-SiRequest.json              email_007  classified, stops
+fixtures/05-Spam.json                   email_015  classified, stops
+fixtures/06-ReviewWrongDoc.json         email_501  BL is a commercial invoice
+fixtures/07-ReviewMissingAtt.json       email_506  body says compare, nothing attached
+fixtures/08-ReviewUnreadable.json       email_511  corrupt PDF
+fixtures/09-ReviewMissingVal.json       email_516  SI gross weight is "N/A"
+fixtures/SubmissionSample.json          all nine, in contract-5 shape
 ```
+
+Numbered by email id, so the five ordinary emails come first and the 5xx
+edge cases last.
 
 Every fixture opens with a `_why` block explaining itself:
 
@@ -189,7 +200,7 @@ Every fixture opens with a `_why` block explaining itself:
 Read `_why` before building against a fixture. `caveat` is the important one
 — it marks where we guessed.
 
-`SendDraftBlUnresolved` is deliberately not buildable. 91 emails (17.5% of the
+`02-SendDraftBlUnresolved` is deliberately not buildable. 91 emails (17.5% of the
 inbox) say *"Please assist to send the draft BL for X for checking asap"*, and
 nothing in the brief says whether they are `SI_REQUEST` or `GENERAL`. Its
 category is a placeholder so the file validates. Do not write a test against

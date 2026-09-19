@@ -70,6 +70,8 @@ Write one record to a JSON file and name the contract it should satisfy:
 python3 tools/ValidateContracts.py out.json ComparisonResult
 ```
 
+Fixtures are numbered by email id — `01-Ok.json` through `09-ReviewMissingVal.json`.
+
 Per stage:
 
 ```bash
@@ -112,7 +114,8 @@ print(errors or "all 520 entries valid")
 
 ## Documents
 
-- `contracts/*.schema.json` — the five contracts, machine-checkable
+- `contracts/0N-*.schema.json` — the five contracts, numbered in pipeline
+  order and machine-checkable
 - [`docs/00-contracts.md`](docs/00-contracts.md) — what each one means and why
 
 ## The seven compared fields

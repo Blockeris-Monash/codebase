@@ -1,0 +1,34 @@
+{
+  "_why": {
+    "scenario": "General",
+    "email_id": "email_012",
+    "why_chosen": "Completes the outcome space. GENERAL is the catch-all: berthing reports, loading summaries, RPA bot output, outstanding-BL lists, holiday notices. Roughly 60 emails.",
+    "covers": "the stop path for operational updates",
+    "assert_this": "category == GENERAL, status == OK, no comparison performed",
+    "caveat": "Its body mentions an attached report, but the email record has no attachments - so an attachment-based rule must not be fooled by the word 'attached' in the text."
+  },
+  "EmailRecord": {
+    "email_id": "email_012",
+    "from": "hr@aprilasia.com",
+    "sender_domain": "aprilasia.com",
+    "subject": "_Reminder_Paper - Submit SI & AED_26-01-2026",
+    "body": "Dear Team,\n\nKindly find the daily berthing report attached. Vessel MMSS 2507 V.257087E berthed on schedule.\n\nBest,\nOperations",
+    "attachments": []
+  },
+  "ClassificationResult": {
+    "email_id": "email_012",
+    "category": "GENERAL",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body contains: 'daily berthing report'"
+  },
+  "DocumentExtract": [],
+  "ComparisonResult": null,
+  "SubmissionEntry": {
+    "category": "GENERAL",
+    "status": "OK",
+    "review_reason": null,
+    "has_defect": false,
+    "defect_fields": []
+  }
+}
