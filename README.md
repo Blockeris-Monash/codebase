@@ -29,14 +29,14 @@ DATA_DIR=http://localhost:8081      # local server
 
 ```bash
 # 1. dataset reachable, both ways
-python3 tools/SmokeTest.py ../
-python3 tools/SmokeTest.py http://localhost:8081
+python3 tools/smoke_test.py ../
+python3 tools/smoke_test.py http://localhost:8081
 
 # 2. regenerate stage fixtures from real emails
-python3 tools/MakeFixtures.py --data ../ --out fixtures
+python3 tools/make_fixtures.py --data ../ --out fixtures
 
 # 3. check everything still satisfies the contracts
-python3 tools/ValidateContracts.py
+python3 tools/validate_contracts.py
 ```
 
 The scoring server runs on **8081**, not 8080 — 8080 is commonly taken. Start
@@ -67,7 +67,7 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 Write one record to a JSON file and name the contract it should satisfy:
 
 ```bash
-python3 tools/ValidateContracts.py out.json ComparisonResult
+python3 tools/validate_contracts.py out.json ComparisonResult
 ```
 
 Fixtures are numbered by email id — `01-Ok.json` through `09-ReviewMissingVal.json`.
@@ -75,17 +75,17 @@ Fixtures are numbered by email id — `01-Ok.json` through `09-ReviewMissingVal.
 Per stage:
 
 ```bash
-python3 tools/ValidateContracts.py record.json     EmailRecord
-python3 tools/ValidateContracts.py classified.json ClassificationResult
-python3 tools/ValidateContracts.py extracted.json  DocumentExtract
-python3 tools/ValidateContracts.py compared.json   ComparisonResult
-python3 tools/ValidateContracts.py entry.json      SubmissionEntry
+python3 tools/validate_contracts.py record.json     EmailRecord
+python3 tools/validate_contracts.py classified.json ClassificationResult
+python3 tools/validate_contracts.py extracted.json  DocumentExtract
+python3 tools/validate_contracts.py compared.json   ComparisonResult
+python3 tools/validate_contracts.py entry.json      SubmissionEntry
 ```
 
 With no arguments it checks every fixture instead:
 
 ```bash
-python3 tools/ValidateContracts.py
+python3 tools/validate_contracts.py
 ```
 
 A failure names the field and what was wrong:
@@ -104,7 +104,7 @@ Validating a whole submission before you POST it:
 
 ```python
 import json
-from tools.ValidateContracts import load_contract, validate
+from tools.validate_contracts import load_contract, validate
 
 schema, errors = load_contract("SubmissionEntry"), []
 for email_id, entry in json.load(open("submission.json")).items():

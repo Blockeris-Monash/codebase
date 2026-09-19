@@ -6,7 +6,7 @@ against each other's code.
 Each contract is a **JSON Schema file** in `contracts/` — that is the
 authoritative definition. This document explains them; the schema enforces
 them. A worked example of each lives in `fixtures/`, generated from real
-emails by `tools/MakeFixtures.py`.
+emails by `tools/make_fixtures.py`.
 
 ```
 contracts/01-EmailRecord.schema.json
@@ -21,14 +21,14 @@ stage it is and who hands it to whom. Refer to them by plain name — the
 tooling ignores the prefix:
 
 ```bash
-python3 tools/ValidateContracts.py out.json DocumentExtract
+python3 tools/validate_contracts.py out.json DocumentExtract
 ```
 
 Check anything against them before you hand it downstream:
 
 ```bash
-python3 tools/ValidateContracts.py                      # every fixture
-python3 tools/ValidateContracts.py out.json ComparisonResult   # your output
+python3 tools/validate_contracts.py                      # every fixture
+python3 tools/validate_contracts.py out.json ComparisonResult   # your output
 ```
 
 Exits non-zero on a violation, so it drops into CI or a pre-commit hook. No
@@ -62,14 +62,14 @@ it is wrong on emails 501–505, so never trust it without checking contract 3's
 
 ```json
 {
-  "email_id": "email_004",
-  "from": "docs@vitalsolutions.sg",
-  "sender_domain": "vitalsolutions.sg",
-  "subject": "REQUEST BL DRAFT _ PO 26067_ COATED IVORY BOARD__138MT",
-  "body": "Hi Mitchelle,\n\nAttached are the SI and draft BL ...",
+  "email_id": "email_025",
+  "from": "exports@ifpla.com",
+  "sender_domain": "ifpla.com",
+  "subject": "RE_ TO CONFIRM DOCS _ 5AAT-72216 _ FREMANTLE_AUSTRALIA _ CERIEX",
+  "body": "Pls assist to check the draft BL against the SI ...",
   "attachments": [
-    { "path": "attachments/email_004_SI.txt", "declared_role": "SI", "format": "txt" },
-    { "path": "attachments/email_004_BL.txt", "declared_role": "BL", "format": "txt" }
+    { "path": "attachments/email_025_SI.txt", "declared_role": "SI", "format": "txt" },
+    { "path": "attachments/email_025_BL.txt", "declared_role": "BL", "format": "txt" }
   ]
 }
 ```
@@ -84,11 +84,11 @@ in honestly. `evidence` is what the review UI shows a human.
 
 ```json
 {
-  "email_id": "email_004",
+  "email_id": "email_025",
   "category": "BL_COMPARISON",
   "decided_by": "rule",
   "confidence": 1.0,
-  "evidence": "body: 'Attached are the SI and draft BL'"
+  "evidence": "body contains: 'check the draft BL against the SI'"
 }
 ```
 
@@ -103,17 +103,17 @@ debug a bad parse without reopening the file.
 
 ```json
 {
-  "email_id": "email_004",
+  "email_id": "email_025",
   "declared_role": "SI",
-  "source_path": "attachments/email_004_SI.txt",
+  "source_path": "attachments/email_025_SI.txt",
   "format": "txt",
   "detected_doc_type": "SI",
   "parse_status": "ok",
   "fields": {
-    "consignee": {
+    "port_of_discharge": {
       "present": true,
-      "label_seen": "Consignee (Non-Negotiable)",
-      "raw": "EAST BRIGHT FZ-LLC"
+      "label_seen": "Port of Discharge",
+      "raw": "FREMANTLE, AUSTRALIA (AUFRE)"
     }
   }
 }
@@ -130,17 +130,17 @@ contract 5. `rows` is empty only when nothing was comparable at all.
 
 ```json
 {
-  "email_id": "email_004",
+  "email_id": "email_025",
   "status": "MISMATCH",
   "review_reason": null,
   "rows": [
-    { "field": "consignee",
-      "si_raw": "EAST BRIGHT FZ-LLC", "bl_raw": "UAB NOVAKOPA",
-      "si_norm": "EAST BRIGHT FZ-LLC", "bl_norm": "UAB NOVAKOPA",
+    { "field": "port_of_discharge",
+      "si_raw": "FREMANTLE, AUSTRALIA (AUFRE)", "bl_raw": "BUSAN, SOUTH KOREA (AUFRE)",
+      "si_norm": "FREMANTLE, AUSTRALIA",        "bl_norm": "BUSAN, SOUTH KOREA",
       "verdict": "mismatch" }
   ],
-  "defect_fields": ["consignee", "notify_party"],
-  "evidence": "differs after normalisation: consignee, notify_party"
+  "defect_fields": ["port_of_discharge", "container_count"],
+  "evidence": "differs after normalisation: port_of_discharge, container_count"
 }
 ```
 
@@ -161,7 +161,7 @@ Exactly the `sample_submission.json` shape. All 520 ids must be present.
   "status": "MISMATCH",
   "review_reason": null,
   "has_defect": true,
-  "defect_fields": ["consignee", "notify_party"]
+  "defect_fields": ["port_of_discharge", "container_count"]
 }
 ```
 
@@ -173,16 +173,18 @@ Non-comparison categories carry `status: "OK"`, no defects.
 ## Fixtures
 
 ```
-fixtures/01-Ok.json                     email_001  all seven match
-fixtures/02-SendDraftBlUnresolved.json  email_003  CATEGORY UNDECIDED - see below
-fixtures/03-Mismatch.json               email_004  consignee + notify_party
-fixtures/04-SiRequest.json              email_007  classified, stops
-fixtures/05-Spam.json                   email_015  classified, stops
-fixtures/06-ReviewWrongDoc.json         email_501  BL is a commercial invoice
-fixtures/07-ReviewMissingAtt.json       email_506  body says compare, nothing attached
-fixtures/08-ReviewUnreadable.json       email_511  corrupt PDF
-fixtures/09-ReviewMissingVal.json       email_516  SI gross weight is "N/A"
-fixtures/SubmissionSample.json          all nine, in contract-5 shape
+fixtures/01-Ok.json                         email_064  all seven match, and all seven labels differ
+fixtures/02-Mismatch.json                   email_025  port_of_discharge + container_count
+fixtures/03-ReviewWrongDoc.json             email_501  BL is a commercial invoice
+fixtures/04-ReviewMissingAtt.json           email_506  body says compare, nothing attached
+fixtures/05-ReviewUnreadable.json           email_511  corrupt PDF
+fixtures/06-ReviewMissingVal.json           email_516  SI gross weight is "N/A"
+fixtures/07-SiRequest.json                  email_007  classified, stops
+fixtures/08-InvoiceQuery.json               email_017  classified, stops
+fixtures/09-General.json                    email_012  classified, stops
+fixtures/10-Spam.json                       email_015  classified, stops
+fixtures/11-SendDraftBlUnresolved.json      email_003  CATEGORY UNDECIDED - see below
+fixtures/SubmissionSample.json              all eleven, in contract-5 shape
 ```
 
 Numbered by email id, so the five ordinary emails come first and the 5xx
@@ -200,7 +202,7 @@ Every fixture opens with a `_why` block explaining itself:
 Read `_why` before building against a fixture. `caveat` is the important one
 — it marks where we guessed.
 
-`02-SendDraftBlUnresolved` is deliberately not buildable. 91 emails (17.5% of the
+`11-SendDraftBlUnresolved` is deliberately not buildable. 91 emails (17.5% of the
 inbox) say *"Please assist to send the draft BL for X for checking asap"*, and
 nothing in the brief says whether they are `SI_REQUEST` or `GENERAL`. Its
 category is a placeholder so the file validates. Do not write a test against
@@ -210,8 +212,8 @@ Each file carries every stage artefact for that email, so any stage can be
 built and tested in isolation. Regenerate and re-check with:
 
 ```bash
-python3 tools/MakeFixtures.py --data ../ --out fixtures
-python3 tools/ValidateContracts.py
+python3 tools/make_fixtures.py --data ../ --out fixtures
+python3 tools/validate_contracts.py
 ```
 
 The fixtures are validated against the schemas, so the two cannot drift

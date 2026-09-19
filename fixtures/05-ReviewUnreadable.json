@@ -128,15 +128,15 @@
   "ComparisonResult": {
     "email_id": "email_511",
     "status": "NEEDS_REVIEW",
-    "review_reason": "unreadable",
+    "review_reason": "wrong_doc_type",
     "rows": [],
     "defect_fields": [],
-    "evidence": "attachment could not be parsed"
+    "evidence": "filename says SI/BL, document header says SI/None"
   },
   "SubmissionEntry": {
     "category": "BL_COMPARISON",
     "status": "NEEDS_REVIEW",
-    "review_reason": "unreadable",
+    "review_reason": "wrong_doc_type",
     "has_defect": false,
     "defect_fields": []
   }

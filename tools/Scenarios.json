@@ -1,0 +1,123 @@
+[
+  {
+    "name": "Ok",
+    "email_id": "email_064",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'attached the shipping instruction and the draft bill of lading'",
+    "why_chosen": "A clean baseline, and the best label-alignment case in the corpus: all SEVEN fields carry a different label in the SI than in the BL (SHIPPER/Shipper/Exporter, CONSIGNEE/Consignee, Notify Party/Intermediate Consignee/Notify, Port of Loading/POL, Port of Discharge/POD, No. of Containers/Container Count, Gross Weight毛重(KGS)/Gross Weight (KG)) - and it still matches. Also carries the 'WARNING: This email originated outside our organisation' banner, so it exercises banner stripping.",
+    "covers": "the OK path, plus align-by-meaning across all seven labels",
+    "assert_this": "status == OK, defect_fields == [], seven rows all 'match'. If any row is a mismatch the synonym table has a gap.",
+    "caveat": "We verified the seven values are identical. The organisers' own label for this email is unknown to us."
+  },
+  {
+    "name": "Mismatch",
+    "email_id": "email_025",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'check the draft BL against the SI'",
+    "why_chosen": "Two defects in DIFFERENT field types - a port and a number - so it exercises both normalisation paths in one email, where a two-name defect would only exercise one. It also carries the locode decoy: the port of discharge changes from FREMANTLE, AUSTRALIA to BUSAN, SOUTH KOREA while the code (AUFRE) stays identical on both sides. A rule that compares the code finds nothing here.",
+    "covers": "MISMATCH across two field types, and the UN/LOCODE decoy on ports",
+    "assert_this": "defect_fields is exactly {port_of_discharge, container_count}. The port must be flagged even though the locode matches, and the container count must compare 6 against 5, not the full \"6 x 20'GP\" string. End-to-end credit needs the exact set, so a superset scores zero.",
+    "caveat": "Our reading of the documents, not an organiser label."
+  },
+  {
+    "name": "ReviewWrongDoc",
+    "email_id": "email_501",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Attached are the SI and draft BL'",
+    "why_chosen": "The file named email_501_BL.txt opens with COMMERCIAL INVOICE. This is the only trap where trusting the filename produces a confident wrong answer instead of an obvious failure - the extractor finds no BL fields and would report a false mismatch on all seven.",
+    "covers": "document type must be verified from the header before extraction",
+    "assert_this": "review_reason == wrong_doc_type, rows == []",
+    "caveat": "Emails 501-505 all do this, with invoices, packing lists and certificates of origin."
+  },
+  {
+    "name": "ReviewMissingAtt",
+    "email_id": "email_506",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Please compare the SI and draft BL'",
+    "why_chosen": "Zero attachments, but the body says 'Please compare the SI and draft BL ... (attachments appear to have been dropped)'. It breaks the 'has attachments therefore comparison' heuristic in the direction that loses you an email entirely.",
+    "covers": "classification cannot gate on attachment presence",
+    "assert_this": "category is still BL_COMPARISON despite no attachments; review_reason == missing_attachment",
+    "caveat": "Emails 507 and 509 are the other shape of this - SI present, BL absent. Same reason, different code path."
+  },
+  {
+    "name": "ReviewUnreadable",
+    "email_id": "email_511",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Attached are the SI and draft BL'",
+    "why_chosen": "email_511_BL.pdf is 775 bytes: a %PDF-1.5 header followed by random bytes, with no objects at all. A parser must escalate rather than crash the run or quietly pass.",
+    "covers": "parse failure escalates with a reason",
+    "assert_this": "review_reason == unreadable, rows == []",
+    "caveat": "KNOWN BUG in this generator: parse_status 'not_attempted' is treated as unreadable, so the 13 readable text PDFs would be mislabelled too. This fixture is correct, but for a reason that will not generalise. Fix before the PDF parser lands."
+  },
+  {
+    "name": "ReviewMissingVal",
+    "email_id": "email_516",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Attached are the SI and draft BL'",
+    "why_chosen": "The ordering trap, and the most valuable fixture here. The SI gross weight is 'N/A'. Compare before checking for absent values and you emit a false weight mismatch AND a false port mismatch on the same email, because the SI port also lacks the locode the BL carries.",
+    "covers": "sentinel detection must run BEFORE comparison",
+    "assert_this": "review_reason == missing_value on gross_weight_kg, and port_of_loading is NOT reported as a defect even though the raw strings differ",
+    "caveat": "Whether a partial comparison should still report the defects it did find is a team ruling, not a fact. We chose escalate-whole."
+  },
+  {
+    "name": "SiRequest",
+    "email_id": "email_007",
+    "category": "SI_REQUEST",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Please find Shipping instruction for'",
+    "why_chosen": "The largest non-comparison category. The SI data sits inline in the email body with no attachment, which tempts an extractor into running on something that should have stopped at classification.",
+    "covers": "the stop path - classified, no comparison performed",
+    "assert_this": "ComparisonResult is null; SubmissionEntry status == OK with no defects",
+    "caveat": "Unambiguous. Not to be confused with the contested bucket below."
+  },
+  {
+    "name": "InvoiceQuery",
+    "email_id": "email_017",
+    "category": "INVOICE_QUERY",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Please find the D&D / detention charges'",
+    "why_chosen": "Completes the outcome space - without it, nothing exercises the INVOICE_QUERY branch. Four templates share this category: missing GR, THC/local charges, D&D/detention, and cancel invoice + reverse PGI.",
+    "covers": "the stop path for an invoice query - classified, no comparison",
+    "assert_this": "category == INVOICE_QUERY, status == OK, no escalation. status OK here means 'nothing to escalate', NOT 'documents match' - there are no documents.",
+    "caveat": "Tempting to escalate these because a human clearly has to answer the query in real life. Do not. Escalation is scored on precision too, and the brief says other categories only need classifying."
+  },
+  {
+    "name": "General",
+    "email_id": "email_012",
+    "category": "GENERAL",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Kindly find the daily berthing report'",
+    "why_chosen": "Completes the outcome space. GENERAL is the catch-all: berthing reports, loading summaries, RPA bot output, outstanding-BL lists, holiday notices. Roughly 60 emails.",
+    "covers": "the stop path for operational updates",
+    "assert_this": "category == GENERAL, status == OK, no comparison performed",
+    "caveat": "Its body mentions an attached report, but the email record has no attachments - so an attachment-based rule must not be fooled by the word 'attached' in the text."
+  },
+  {
+    "name": "Spam",
+    "email_id": "email_015",
+    "category": "SPAM",
+    "decided_by": "rule",
+    "classification_evidence": "sender domain crypto-invest.net is on the spam list",
+    "why_chosen": "Spam is only 40 emails, but macro-F1 averages the five categories equally - so it carries the same weight as the 129 comparison emails. Cheapest points on the board.",
+    "covers": "the spam path, and domain-based classification",
+    "assert_this": "category == SPAM, no comparison performed",
+    "caveat": "Six sender domains separate spam perfectly here, with no overlap with legitimate senders. That rule is brittle if judges test with their own data - an open #faq question."
+  },
+  {
+    "name": "SendDraftBlUnresolved",
+    "email_id": "email_003",
+    "category": "SI_REQUEST",
+    "decided_by": "rule",
+    "classification_evidence": "body: 'Please assist to send the draft BL ... for checking'",
+    "why_chosen": "UNRESOLVED - this fixture exists to make the open question concrete. 91 emails say 'Please assist to send the draft BL for X for checking asap'. They are not comparisons (nothing attached), not invoice queries, not spam. Its subject is the same TO CONFIRM DOCS family as email_001, which IS a comparison - so the subject line cannot separate them.",
+    "covers": "the 17.5% of the inbox whose category the brief does not decide",
+    "assert_this": "NOTHING YET. Do not build a test on this until #faq answers.",
+    "caveat": "The category here is a PLACEHOLDER, set to SI_REQUEST so the file validates. It may well be GENERAL. Stage 1 is scored on macro-F1, so a wrong call damages two categories at once."
+  }
+]

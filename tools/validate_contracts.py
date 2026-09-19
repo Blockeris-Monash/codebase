@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
 """Check data against the contracts in contracts/.
 
-    python3 tools/ValidateContracts.py                 # check every fixture
-    python3 tools/ValidateContracts.py mine.json ComparisonResult
+    python3 tools/validate_contracts.py                 # check every fixture
+    python3 tools/validate_contracts.py mine.json ComparisonResult
 
 Exits non-zero on the first contract violation, so it drops straight into CI
 or a pre-commit hook. Supports the subset of JSON Schema the contracts use;
 no third-party dependency, because every stage must be able to run this.
 """
+from __future__ import annotations
+
 import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
+
+# A JSON document of arbitrary shape: this module's whole job is validating
+# untrusted, unvalidated input, so `Any` is correct at this boundary.
+JsonValue = Any
+Schema = dict[str, JsonValue]
+Errors = list[str]
 
 CONTRACTS_DIR = Path(__file__).resolve().parents[1] / "contracts"
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
@@ -21,7 +30,7 @@ JSON_TYPES = {
 }
 
 
-def type_matches(value, name):
+def is_type_match(value: JsonValue, name: str) -> bool:
     """A JSON 'number' must not silently accept a bool, which is an int."""
     if name == "boolean":
         return isinstance(value, bool)
@@ -30,31 +39,31 @@ def type_matches(value, name):
     return isinstance(value, JSON_TYPES[name])
 
 
-def check_type(value, schema, path, errors):
+def check_type(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     expected = schema.get("type")
     if expected is None:
         return
     allowed = expected if isinstance(expected, list) else [expected]
-    if any(type_matches(value, name) for name in allowed):
+    if any(is_type_match(value, name) for name in allowed):
         return
     errors.append(f"{path}: expected {'|'.join(allowed)}, got {type(value).__name__}")
 
 
-def check_enum(value, schema, path, errors):
+def check_enum(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     allowed = schema.get("enum")
     if allowed is None or value in allowed:
         return
     errors.append(f"{path}: {value!r} not one of {allowed}")
 
 
-def check_string(value, schema, path, errors):
+def check_string(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     pattern = schema.get("pattern")
     if pattern is None or not isinstance(value, str) or re.match(pattern, value):
         return
     errors.append(f"{path}: {value!r} does not match /{pattern}/")
 
 
-def check_bounds(value, schema, path, errors):
+def check_bounds(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         return
     low, high = schema.get("minimum"), schema.get("maximum")
@@ -64,7 +73,7 @@ def check_bounds(value, schema, path, errors):
         errors.append(f"{path}: {value} above maximum {high}")
 
 
-def property_schema(key, schema):
+def property_schema(key: str, schema: Schema) -> Schema | None:
     """Resolve a key against `properties` then `patternProperties`."""
     direct = schema.get("properties", {}).get(key)
     if direct is not None:
@@ -75,7 +84,7 @@ def property_schema(key, schema):
     return None
 
 
-def check_object(value, schema, path, errors):
+def check_object(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     if not isinstance(value, dict):
         return
     for key in schema.get("required", []):
@@ -90,7 +99,7 @@ def check_object(value, schema, path, errors):
             validate(item, sub, f"{path}.{key}", errors)
 
 
-def check_array(value, schema, path, errors):
+def check_array(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     item_schema = schema.get("items")
     if not isinstance(value, list) or item_schema is None:
         return
@@ -98,7 +107,7 @@ def check_array(value, schema, path, errors):
         validate(item, item_schema, f"{path}[{index}]", errors)
 
 
-def validate(value, schema, path, errors):
+def validate(value: JsonValue, schema: Schema, path: str, errors: Errors) -> Errors:
     check_type(value, schema, path, errors)
     check_enum(value, schema, path, errors)
     check_string(value, schema, path, errors)
@@ -108,7 +117,7 @@ def validate(value, schema, path, errors):
     return errors
 
 
-def load_contract(name):
+def load_contract(name: str) -> Schema:
     """Find a contract by name, ignoring its numeric ordering prefix.
 
     Files are numbered (01-EmailRecord.schema.json) so they list in pipeline
@@ -121,7 +130,7 @@ def load_contract(name):
     return json.loads(matches[0].read_text())
 
 
-def contract_names():
+def contract_names() -> list[str]:
     """Every contract's plain name, prefix stripped."""
     return [p.name.split("-", 1)[-1].replace(".schema.json", "")
             for p in sorted(CONTRACTS_DIR.glob("*.schema.json"))]
@@ -140,7 +149,7 @@ LIST_VALUED = {"DocumentExtract"}
 SUBMISSION_SAMPLE = "SubmissionSample.json"
 
 
-def check_bundle(path):
+def check_bundle(path: Path) -> Errors:
     """Validate every stage artefact inside one fixture file."""
     bundle = json.loads(path.read_text())
     errors = []
@@ -155,7 +164,7 @@ def check_bundle(path):
     return errors
 
 
-def check_submission(path):
+def check_submission(path: Path) -> Errors:
     schema = load_contract("SubmissionEntry")
     errors = []
     for email_id, entry in json.loads(path.read_text()).items():
@@ -163,7 +172,7 @@ def check_submission(path):
     return errors
 
 
-def check_all_fixtures():
+def check_all_fixtures() -> Errors:
     errors, checked = [], 0
     for path in sorted(FIXTURES_DIR.glob("*.json")):
         found = (check_submission(path) if path.name == SUBMISSION_SAMPLE
@@ -176,12 +185,12 @@ def check_all_fixtures():
     return errors
 
 
-def check_one(target, contract):
+def check_one(target: str, contract: str) -> Errors:
     schema = load_contract(contract)
     return validate(json.loads(Path(target).read_text()), schema, contract, [])
 
 
-def main():
+def main() -> int:
     if len(sys.argv) == 3:
         errors = check_one(sys.argv[1], sys.argv[2])
     elif len(sys.argv) == 1:

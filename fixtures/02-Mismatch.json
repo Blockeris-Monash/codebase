@@ -1,0 +1,206 @@
+{
+  "_why": {
+    "scenario": "Mismatch",
+    "email_id": "email_025",
+    "why_chosen": "Two defects in DIFFERENT field types - a port and a number - so it exercises both normalisation paths in one email, where a two-name defect would only exercise one. It also carries the locode decoy: the port of discharge changes from FREMANTLE, AUSTRALIA to BUSAN, SOUTH KOREA while the code (AUFRE) stays identical on both sides. A rule that compares the code finds nothing here.",
+    "covers": "MISMATCH across two field types, and the UN/LOCODE decoy on ports",
+    "assert_this": "defect_fields is exactly {port_of_discharge, container_count}. The port must be flagged even though the locode matches, and the container count must compare 6 against 5, not the full \"6 x 20'GP\" string. End-to-end credit needs the exact set, so a superset scores zero.",
+    "caveat": "Our reading of the documents, not an organiser label."
+  },
+  "EmailRecord": {
+    "email_id": "email_025",
+    "from": "sales@roxcel.at",
+    "sender_domain": "roxcel.at",
+    "subject": "RE_ TO CONFIRM DOCS _ 5SUS-86999 _ FREMANTLE_AUSTRALIA _ CERIEX _ SIN204711671",
+    "body": "Dear Arlene,\n\nPls assist to check the draft BL against the SI for PO and revert with any discrepancy asap. Draft BL No. SIN204711671.\n\nBest Regards,\nTeo Ei Leen\nShipping Documentation\nDID : +971 04 4938294\nAPRIL Fine Paper Trading (Middle East) Fze\n#813, 4 EA, Dubai Airport Free Zone\nP.O. Box : 293775, Dubai, United Arab Emirates\nWebsite : www.aprilasia.com | www.paperone.com\n\n______________________________\nFrom: Chella Perumal <chella.perumal@psabdp.com>\nSent: Friday, January 1, 2026 3:26 AM\nSubject: RE: 5SUS-86999\n\nPlease follow the previous instruction. Thank you.\nFrom: Mitchelle Ting <mitchelle_ting@aprilasia.com>\nSent: Friday, December 24, 2026 2:40 PM\nSubject: RE: 5SUS-86999\n\nPlease follow the previous instruction. Thank you.",
+    "attachments": [
+      {
+        "path": "attachments/email_025_SI.txt",
+        "declared_role": "SI",
+        "format": "txt"
+      },
+      {
+        "path": "attachments/email_025_BL.txt",
+        "declared_role": "BL",
+        "format": "txt"
+      }
+    ]
+  },
+  "ClassificationResult": {
+    "email_id": "email_025",
+    "category": "BL_COMPARISON",
+    "decided_by": "rule",
+    "confidence": 1.0,
+    "evidence": "body contains: 'check the draft BL against the SI'"
+  },
+  "DocumentExtract": [
+    {
+      "email_id": "email_025",
+      "declared_role": "SI",
+      "source_path": "attachments/email_025_SI.txt",
+      "format": "txt",
+      "detected_doc_type": "SI",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper/Exporter",
+          "raw": "APRIL FAR EAST (M) SDN BHD"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "Consignee",
+          "raw": "CERIEX"
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "NOTIFY PARTY",
+          "raw": "ROXCEL TRADING GMBH"
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Port of Loading",
+          "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "Port of Discharge (POD)",
+          "raw": "FREMANTLE, AUSTRALIA (AUFRE)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "No. of Containers",
+          "raw": "6 x 20'GP"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight (KG)",
+          "raw": "135,126 KG"
+        }
+      }
+    },
+    {
+      "email_id": "email_025",
+      "declared_role": "BL",
+      "source_path": "attachments/email_025_BL.txt",
+      "format": "txt",
+      "detected_doc_type": "BL",
+      "parse_status": "ok",
+      "fields": {
+        "shipper": {
+          "present": true,
+          "label_seen": "Shipper",
+          "raw": "APRIL FAR EAST (M) SDN BHD"
+        },
+        "consignee": {
+          "present": true,
+          "label_seen": "Consignee (Non-Negotiable)",
+          "raw": "CERIEX"
+        },
+        "notify_party": {
+          "present": true,
+          "label_seen": "Notify",
+          "raw": "ROXCEL TRADING GMBH"
+        },
+        "port_of_loading": {
+          "present": true,
+          "label_seen": "Port of Loading (POL)",
+          "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+        },
+        "port_of_discharge": {
+          "present": true,
+          "label_seen": "Discharge Port",
+          "raw": "BUSAN, SOUTH KOREA (AUFRE)"
+        },
+        "container_count": {
+          "present": true,
+          "label_seen": "Total Containers",
+          "raw": "5 x 20'GP"
+        },
+        "gross_weight_kg": {
+          "present": true,
+          "label_seen": "Gross Weight (KG)",
+          "raw": "135,126 KG"
+        }
+      }
+    }
+  ],
+  "ComparisonResult": {
+    "email_id": "email_025",
+    "status": "MISMATCH",
+    "review_reason": null,
+    "rows": [
+      {
+        "field": "shipper",
+        "si_raw": "APRIL FAR EAST (M) SDN BHD",
+        "bl_raw": "APRIL FAR EAST (M) SDN BHD",
+        "si_norm": "APRIL FAR EAST (M) SDN BHD",
+        "bl_norm": "APRIL FAR EAST (M) SDN BHD",
+        "verdict": "match"
+      },
+      {
+        "field": "consignee",
+        "si_raw": "CERIEX",
+        "bl_raw": "CERIEX",
+        "si_norm": "CERIEX",
+        "bl_norm": "CERIEX",
+        "verdict": "match"
+      },
+      {
+        "field": "notify_party",
+        "si_raw": "ROXCEL TRADING GMBH",
+        "bl_raw": "ROXCEL TRADING GMBH",
+        "si_norm": "ROXCEL TRADING GMBH",
+        "bl_norm": "ROXCEL TRADING GMBH",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_loading",
+        "si_raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)",
+        "bl_raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)",
+        "si_norm": "PORT KLANG (WESTPORT), MALAYSIA",
+        "bl_norm": "PORT KLANG (WESTPORT), MALAYSIA",
+        "verdict": "match"
+      },
+      {
+        "field": "port_of_discharge",
+        "si_raw": "FREMANTLE, AUSTRALIA (AUFRE)",
+        "bl_raw": "BUSAN, SOUTH KOREA (AUFRE)",
+        "si_norm": "FREMANTLE, AUSTRALIA",
+        "bl_norm": "BUSAN, SOUTH KOREA",
+        "verdict": "mismatch"
+      },
+      {
+        "field": "container_count",
+        "si_raw": "6 x 20'GP",
+        "bl_raw": "5 x 20'GP",
+        "si_norm": "6",
+        "bl_norm": "5",
+        "verdict": "mismatch"
+      },
+      {
+        "field": "gross_weight_kg",
+        "si_raw": "135,126 KG",
+        "bl_raw": "135,126 KG",
+        "si_norm": "135126.0",
+        "bl_norm": "135126.0",
+        "verdict": "match"
+      }
+    ],
+    "defect_fields": [
+      "port_of_discharge",
+      "container_count"
+    ],
+    "evidence": "differs after normalisation: port_of_discharge, container_count"
+  },
+  "SubmissionEntry": {
+    "category": "BL_COMPARISON",
+    "status": "MISMATCH",
+    "review_reason": null,
+    "has_defect": true,
+    "defect_fields": [
+      "port_of_discharge",
+      "container_count"
+    ]
+  }
+}
