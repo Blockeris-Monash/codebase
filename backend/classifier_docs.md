@@ -46,3 +46,27 @@ cd backend
 uvicorn classifier:app --reload
 
 ```
+
+
+# Output Shape
+The /classify endpoint returns a single JSON object conforming to  ClassificationResult contract.
+
+JSON
+{
+  "email_id": "email_001",
+  "category": "BL_COMPARISON",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The sender explicitly requests to check the attached SI and draft BL for OC 5RSG-00133."
+}
+Field Breakdown:
+
+email_id: The exact identifier passed in the request.
+
+category: Must be one of BL_COMPARISON, SI_REQUEST, INVOICE_QUERY, GENERAL, or SPAM.
+
+decided_by: Hardcoded to "llm" indicating the AI made the routing decision.
+
+confidence: A parsed float matching the system's strict confidence tiers (1.0, 0.85, 0.65, or 0.50).
+
+evidence: A verbatim excerpt or concise phrase from the email context justifying the categorization.
