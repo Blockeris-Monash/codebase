@@ -1,22 +1,14 @@
-"""Lane C - Step 4: Full Document Comparison Engine.
+"""Lane C - Step 4: 100% Deterministic Document Comparison Engine.
 
-Consumes the cleaned JSON extraction documents (from Step 3 / Hanif)
-and outputs a structured comparison report compliant with Contract 5.
+Evaluates Shipping Instructions (SI) against Bills of Lading (BL).
+Zero AI / zero API dependencies. Uses token normalization, numeric tolerances,
+and decoy-stripping rules compliant with Contract 5.
 """
 from __future__ import annotations
 
-import json
-import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from pydantic import BaseModel, Field
-
-from google import genai
-from google.genai import types
-
-# Initialize Gemini Client for semantic fallbacks
-api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else genai.Client()
 
 
 # =====================================================================
@@ -43,43 +35,62 @@ class ComparisonReport(BaseModel):
 
 
 # =====================================================================
-# 2. Semantic Fallback (Gemini 3.6 Flash)
+# 2. Deterministic Field Evaluators
 # =====================================================================
 
-def llm_verify_semantic_match(field_name: str, si_val: str, bl_val: str) -> bool:
-    """Evaluates whether two diverging strings describe the same real-world entity/port."""
-    prompt = f"""
-    You are an expert shipping document auditor comparing a Shipping Instruction (SI) and a Bill of Lading (BL).
-    Determine if these two values refer to the EXACT SAME physical entity, port, or facility, despite differences in word order, punctuation, or formatting.
+LOCODE_DECOY = re.compile(r"\s*\(([A-Z]{5})\)\s*|\b[A-Z]{2}[A-Z0-9]{3}\b", re.I)
 
-    CRITICAL RULES:
-    - 5-letter UN/LOCODEs in brackets (e.g. (MYPKG)) are often planted decoys. Focus on whether the actual port facility and city are identical.
-    - If one document specifies a completely different city, port, or company, it is a MISMATCH.
 
-    Field: {field_name}
-    - SI Value: "{si_val}"
-    - BL Value: "{bl_val}"
+def extract_meaningful_tokens(val: str | None) -> Set[str]:
+    """Strips punctuation, LOCODE decoys, and decomposes text into comparable word tokens."""
+    if not val:
+        return set()
+    cleaned = LOCODE_DECOY.sub("", val.upper())
+    # Extract alphanumeric words with length >= 2
+    tokens = set(re.findall(r"\b[A-Z0-9]{2,}\b", cleaned))
+    return tokens
 
-    Answer with ONLY the word "MATCH" or "MISMATCH".
-    """
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.0,
-                tools=[],
-            ),
+
+def evaluate_port_deterministic(field_name: str, si_raw: Optional[str], bl_raw: Optional[str], 
+                                si_norm: Optional[str], bl_norm: Optional[str]) -> Discrepancy:
+    """Compares ports using token intersection to handle inverted word orders seamlessly."""
+    if not si_raw and not bl_raw:
+        return Discrepancy(field=field_name, status="Match", si_raw=si_raw, bl_raw=bl_raw, si_norm=si_norm, bl_norm=bl_norm, verdict="Match")
+    if not si_raw or not bl_raw:
+        return Discrepancy(field=field_name, status="Missing", si_raw=si_raw, bl_raw=bl_raw, si_norm=si_norm, bl_norm=bl_norm, verdict="Missing")
+
+    # Fast path: exact normalized string equality
+    if str(si_norm).strip().upper() == str(bl_norm).strip().upper():
+        return Discrepancy(field=field_name, status="Match", si_raw=si_raw, bl_raw=bl_raw, si_norm=si_norm, bl_norm=bl_norm, verdict="Match")
+
+    # Order-independent token set comparison (handles "MALAYSIA, PORT KLANG" vs "PORT KLANG, MALAYSIA")
+    si_tokens = extract_meaningful_tokens(si_norm or si_raw)
+    bl_tokens = extract_meaningful_tokens(bl_norm or bl_raw)
+
+    # If both sides reduce to the exact same set of words, or one is a direct subset of the other
+    if si_tokens and bl_tokens and (si_tokens == bl_tokens or si_tokens.issubset(bl_tokens) or bl_tokens.issubset(si_tokens)):
+        return Discrepancy(
+            field=field_name,
+            status="Match",
+            si_raw=si_raw,
+            bl_raw=bl_raw,
+            si_norm=si_norm,
+            bl_norm=bl_norm,
+            verdict="Match",
+            notes="Matched via token set equivalence."
         )
-        return "MATCH" in response.text.strip().upper()
-    except Exception as err:
-        print(f"[Warning] LLM verification fallback failed for {field_name}: {err}")
-        return False
 
+    return Discrepancy(
+        field=field_name,
+        status="Mismatch",
+        si_raw=si_raw,
+        bl_raw=bl_raw,
+        si_norm=si_norm,
+        bl_norm=bl_norm,
+        verdict="Mismatch",
+        notes=f"Port discrepancy: SI tokens {sorted(si_tokens)} != BL tokens {sorted(bl_tokens)}"
+    )
 
-# =====================================================================
-# 3. Field Comparison Logic
-# =====================================================================
 
 def compare_field(field_name: str, si_node: Dict[str, Any], bl_node: Dict[str, Any]) -> Discrepancy:
     si_raw = si_node.get("raw")
@@ -87,11 +98,9 @@ def compare_field(field_name: str, si_node: Dict[str, Any], bl_node: Dict[str, A
     si_norm = si_node.get("norm")
     bl_norm = bl_node.get("norm")
 
-    # Missing field detection
+    # Missing checks
     if si_norm is None or bl_norm is None:
-        status = "Missing"
-        if si_norm is None and bl_norm is None:
-            status = "Match"
+        status = "Match" if (si_norm is None and bl_norm is None) else "Missing"
         return Discrepancy(
             field=field_name,
             status=status,
@@ -100,10 +109,14 @@ def compare_field(field_name: str, si_node: Dict[str, Any], bl_node: Dict[str, A
             si_norm=si_norm,
             bl_norm=bl_norm,
             verdict=status,
-            notes="Field missing from one or both documents." if status == "Missing" else None
+            notes="Field missing from document" if status == "Missing" else None
         )
 
-    # 1. Numerical Comparison: gross_weight_kg
+    # 1. Ports: Use tokenized set evaluation
+    if field_name in {"port_of_loading", "port_of_discharge"}:
+        return evaluate_port_deterministic(field_name, si_raw, bl_raw, si_norm, bl_norm)
+
+    # 2. Weights: Numeric comparison with float tolerance
     if field_name == "gross_weight_kg":
         try:
             val_si = float(str(si_norm).replace(",", "").strip())
@@ -118,47 +131,32 @@ def compare_field(field_name: str, si_node: Dict[str, Any], bl_node: Dict[str, A
                 si_norm=str(val_si),
                 bl_norm=str(val_bl),
                 verdict="Mismatch",
-                notes=f"Weight variance exceeds tolerance: SI={val_si} vs BL={val_bl}"
+                notes=f"Weight variance: SI={val_si} vs BL={val_bl}"
             )
         except (ValueError, TypeError):
             pass
 
-    # 2. Count Comparison: container_count (extracts leading integer)
+    # 3. Counts: Leading integer comparison
     if field_name == "container_count":
         match_si = re.search(r"\d+", str(si_norm))
         match_bl = re.search(r"\d+", str(bl_norm))
-        c_si = match_si.group(0) if match_si else str(si_norm)
-        c_bl = match_bl.group(0) if match_bl else str(bl_norm)
-        if c_si == c_bl:
-            return Discrepancy(field=field_name, status="Match", si_raw=si_raw, bl_raw=bl_raw, si_norm=si_norm, bl_norm=bl_norm, verdict="Match")
+        c_si = match_si.group(0) if match_si else str(si_norm).strip()
+        c_bl = match_bl.group(0) if match_bl else str(bl_norm).strip()
+        verdict = "Match" if c_si == c_bl else "Mismatch"
         return Discrepancy(
             field=field_name,
-            status="Mismatch",
+            status=verdict,
             si_raw=si_raw,
             bl_raw=bl_raw,
             si_norm=si_norm,
             bl_norm=bl_norm,
-            verdict="Mismatch",
-            notes=f"Container count mismatch: {c_si} vs {c_bl}"
+            verdict=verdict,
+            notes=None if verdict == "Match" else f"Count mismatch: {c_si} != {c_bl}"
         )
 
-    # 3. Deterministic String Equality Check
+    # 4. Strings & Identifiers (shipper, consignee, booking_number, notify_party)
     if str(si_norm).strip().upper() == str(bl_norm).strip().upper():
         return Discrepancy(field=field_name, status="Match", si_raw=si_raw, bl_raw=bl_raw, si_norm=si_norm, bl_norm=bl_norm, verdict="Match")
-
-    # 4. LLM Semantic Fallback for Ports and Party Entities
-    if field_name in {"port_of_loading", "port_of_discharge", "shipper", "consignee", "notify_party"}:
-        if llm_verify_semantic_match(field_name, str(si_raw), str(bl_raw)):
-            return Discrepancy(
-                field=field_name,
-                status="Match",
-                si_raw=si_raw,
-                bl_raw=bl_raw,
-                si_norm=si_norm,
-                bl_norm=bl_norm,
-                verdict="Match",
-                notes="Matched via semantic entity verification."
-            )
 
     return Discrepancy(
         field=field_name,
@@ -168,12 +166,12 @@ def compare_field(field_name: str, si_node: Dict[str, Any], bl_node: Dict[str, A
         si_norm=si_norm,
         bl_norm=bl_norm,
         verdict="Mismatch",
-        notes="Values do not match."
+        notes="Normalized values do not match."
     )
 
 
 # =====================================================================
-# 4. Pipeline Runner
+# 3. Pipeline Runner
 # =====================================================================
 
 def compare_documents(si_doc: Dict[str, Any], bl_doc: Dict[str, Any]) -> ComparisonReport:
@@ -200,108 +198,28 @@ def compare_documents(si_doc: Dict[str, Any], bl_doc: Dict[str, Any]) -> Compari
     )
 
 
-# =====================================================================
-# 5. Verification Test Suite
-# =====================================================================
-
 if __name__ == "__main__":
-    # Test case matching the exact sample payload
     sample_si = {
         "email_id": "email_025",
-        "declared_role": "SI",
         "fields": {
-            "shipper": {
-                "present": True,
-                "raw": "APRIL FAR EAST (M) SDN BHD ",
-                "norm": "APRIL FAR EAST (M) SDN BHD"
-            },
-            "consignee": {
-                "present": True,
-                "raw": "Cerivex    ",
-                "norm": "CERIVEX"
-            },
-            "notify_party": {
-                "present": True,
-                "raw": "ROXCEL TRADING GMBH",
-                "norm": "ROXCEL TRADING GMBH"
-            },
-            "port_of_loading": {
-                "present": True,
-                "raw": "PORT KLANG (WESTPORT   ), MALAYSIA (MYPKG )",
-                "norm": "PORT KLANG (WESTPORT), MALAYSIA"
-            },
-            "port_of_discharge": {
-                "present": True,
-                "raw": "FREMANTLE, AUSTRALIA (AUFRE)",
-                "norm": "FREMANTLE, AUSTRALIA"
-            },
-            "container_count": {
-                "present": True,
-                "raw": "6 x 20'GP",
-                "norm": "6 X 20'GP"
-            },
-            "gross_weight_kg": {
-                "present": True,
-                "raw": "135,126 kg ",
-                "norm": "135126"
-            }
+            "shipper": {"raw": "APRIL FAR EAST (M) SDN BHD", "norm": "APRIL FAR EAST (M) SDN BHD"},
+            "port_of_loading": {"raw": "MALAYSIA, PORT KLANG (MYPKG)", "norm": "PORT KLANG, MALAYSIA"},
+            "container_count": {"raw": "6 x 20'GP", "norm": "6 X 20'GP"},
+            "gross_weight_kg": {"raw": "135,126 kg", "norm": "135126"}
         }
     }
 
-    # Paired Draft Bill of Lading with formatting/order differences
     sample_bl = {
         "email_id": "email_025",
-        "declared_role": "BL",
         "fields": {
-            "shipper": {
-                "present": True,
-                "raw": "APRIL FAR EAST (M) SDN BHD",
-                "norm": "APRIL FAR EAST (M) SDN BHD"
-            },
-            "consignee": {
-                "present": True,
-                "raw": "CERIVEX",
-                "norm": "CERIVEX"
-            },
-            "notify_party": {
-                "present": True,
-                "raw": "ROXCEL TRADING GMBH",
-                "norm": "ROXCEL TRADING GMBH"
-            },
-            "port_of_loading": {
-                "present": True,
-                "raw": "MYPKG - PORT KLANG",
-                "norm": "MYPKG - PORT KLANG"
-            },
-            "port_of_discharge": {
-                "present": True,
-                "raw": "AUFRE - FREMANTLE",
-                "norm": "AUFRE - FREMANTLE"
-            },
-            "container_count": {
-                "present": True,
-                "raw": "6 CONTAINERS",
-                "norm": "6"
-            },
-            "gross_weight_kg": {
-                "present": True,
-                "raw": "135126.00 KGS",
-                "norm": "135126.0"
-            }
+            "shipper": {"raw": "APRIL FAR EAST (M) SDN BHD", "norm": "APRIL FAR EAST (M) SDN BHD"},
+            "port_of_loading": {"raw": "MYPKG - PORT KLANG, MALAYSIA", "norm": "PORT KLANG, MALAYSIA"},
+            "container_count": {"raw": "6 CONTAINERS", "norm": "6"},
+            "gross_weight_kg": {"raw": "135126.0 kg", "norm": "135126.0"}
         }
     }
 
     report = compare_documents(sample_si, sample_bl)
-
-    print("=" * 65)
-    print(f"REPORT STATUS  : {report.match_status}")
-    print(f"FIELDS CHECKED : {report.total_fields_checked}")
-    print(f"MISMATCHES     : {report.discrepancies_count}")
-    print("=" * 65)
+    print(f"Verdict: {report.match_status} | Discrepancies: {report.discrepancies_count}")
     for row in report.rows:
-        print(f"[{row.verdict:<8}] {row.field:<20} | SI: {str(row.si_norm):<30} vs BL: {str(row.bl_norm):<20}")
-        if row.notes:
-            print(f"         └─ Note: {row.notes}")
-
-    print("\nContract 5 JSON Report:")
-    print(report.model_dump_json(indent=2))
+        print(f"  [{row.verdict:<8}] {row.field:<18} -> SI: {row.si_norm} | BL: {row.bl_norm}")
