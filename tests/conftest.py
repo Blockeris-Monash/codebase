@@ -82,6 +82,8 @@ REPORT_AREAS: list[tuple[str, str, str]] = [
     ("escalation_carries_evidence", "End to end", "a human gets the reason"),
     ("classified_from_its_body", "Classification", "body decides, all 5 categories"),
     ("evidence_quotes_text", "Classification", "evidence is true of the email"),
+    ("wrong_document_is_still", "Classification", "wrong doc type is still a comparison"),
+    ("every_email_with_attachments", "Classification", "nothing with docs is miscategorised"),
     ("subject_line_alone", "Classification", "subject cannot separate intents"),
     ("fixture_satisfies_every_contract", "Contracts", "fixtures match the schemas"),
     ("fixture_still_matches", "Contracts", "regression guard on every fixture"),

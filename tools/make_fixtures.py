@@ -157,7 +157,10 @@ BODY_RULES: list[tuple[str, str]] = [
     ("check the draft BL against the SI", CategoryType.BlComparison),
     ("Please compare the SI and draft BL", CategoryType.BlComparison),
     ("Attached SI and draft BL", CategoryType.BlComparison),
-    ("attached the SI and the Commercial Invoice", CategoryType.BlComparison),
+    # Emails 501-505 attach an invoice, packing list or certificate of origin
+    # in the BL slot. The sender still believes they are sending a BL, so this
+    # is a comparison request - it just escalates as wrong_doc_type.
+    ("attached the SI and the", CategoryType.BlComparison),
     ("Please find Shipping instruction", CategoryType.SiRequest),
     ("send the draft BL", CategoryType.SiRequest),
     ("D&D / detention charges", CategoryType.InvoiceQuery),

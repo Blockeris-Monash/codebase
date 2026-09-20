@@ -161,6 +161,28 @@ def test_evidence_quotes_text_that_really_appears(data_dir: Path) -> None:
     assert quoted.lower() in str(email["body"]).lower()
 
 
+@pytest.mark.parametrize("email_id", ["email_501", "email_502", "email_503",
+                                      "email_504", "email_505"])
+def test_a_wrong_document_is_still_a_comparison_request(data_dir: Path,
+                                                        email_id: str) -> None:
+    """These attach an invoice, packing list or certificate in the BL slot.
+    The sender believes they are sending a BL, so it is a comparison request
+    that escalates - not a different category."""
+    matched, _ = classify_from_body(load_email(data_dir, email_id))
+
+    assert matched == "BL_COMPARISON"
+
+
+def test_every_email_with_attachments_is_a_comparison(data_dir: Path) -> None:
+    """Attachments are not the gate - 3 comparisons have none - but nothing
+    that carries documents belongs to another category."""
+    wrong = [p.stem for p in sorted((data_dir / "inbox").glob("email_*.json"))
+             if json.loads(p.read_text())["attachments"]
+             and classify_from_body(json.loads(p.read_text()))[0] != "BL_COMPARISON"]
+
+    assert wrong == []
+
+
 def test_the_subject_line_alone_cannot_separate_the_categories(data_dir: Path) -> None:
     """email_001 has documents attached; email_003 asks someone else to send
     the draft BL. Same subject family, opposite intent."""
