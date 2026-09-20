@@ -1,0 +1,77 @@
+# EDI 304 Shipping Instructions - real sample
+#
+# Source: C.H. Robinson published carrier specification, 4010 X12 304.
+# https://www.chrobinson.com/en-us/-/media/chrobinson/documents/carrier-specs-docs/carrier-specs-july2022/4010_x12_304_tmc.pdf
+#
+# Not from the hackathon dataset - there is no EDI in it. This is real
+# published industry data, used so the reader is tested against something
+# we did not invent.
+#
+# Segment terminator is ~ and the element separator is *. Lines below are
+# one segment each for readability; a real interchange is often one line.
+ISA*00*          *00*          *ZZ*RBTWTMCTEST    *ZZ*FRTFORWARDER~
+GS*SO*RBTWTMCTEST*FRTFORWARDER*20200410*1328*4013*X*004010~
+ST*304*0001~
+B2*DD*HLCU**1002ODDD**PP**1***DAP~
+B2A*00~
+N9*PE*8001~
+N9*IL*6851346~
+N9*6A*O~
+N9*19*3035~
+N9*2P*50~
+N9*SO*0002199491~
+N9*A6*customercontact@customer.com~
+N9*CO*4500214963~
+N9*CR*C8386362~
+N9*RU*7273614-CNSZX-BEANR-W62023663-~
+V1*TBD*TBD*******VE~
+N1*ST*AW FABER CASTELL COSMETICS GMBH*93*0000038014~
+N3*Nrnberger Strae 2~
+N4*Stein*DE*90547*DE~
+N1*UC*ULTCONName*93*9001~
+N3*123 Ultimate Consignee Street~
+N4*Denver*CO*80123*US~
+N1*N1*NOTIFY1Name*93*1007~
+N3*123 Notify1 Street~
+N4*CHICAGO*IL*60603*US~
+N1*N2*NOTIFY2Name*93*1002~
+N3*123 Notify2 Street~
+N4*MIAMI*FL*33125*US~
+N1*SD*SOLDToName*93*1003~
+N3*123 Sold To Street~
+N4*MADISON*WI*53711*US~
+N1*EX*EXPORTName*93*1004~
+N3*123 Export Street~
+N4*Seattle*WA*98106*US~
+N1*SU*SUPPName*93*1009~
+N3*123 Supplier Street~
+N4*Whitefish*MT*59937*US~
+N1*16*PLANTLocName*93*8001~
+N3*123 Zachary Ln N*PLANT STREET~
+N4*Minneapolis*MN*55441*US~
+N1*SF*Wah Lee Flocking & PVC Packing*93*0007273614~
+N3*182 Gui Hua Village, Guanlan Town~
+N4*Shenzhen*44*518110*CN~
+R4*R*UN*CNSNZ*Wah Lee Flocking  PVC Pa*CN~
+R4*L*UN*CNSZX~
+R4*D*UN*BEANR~
+R4*E*UN*DESFU*AW FABER CASTELL COSMETI*DE~
+LX*1~
+N7**TBD*********CN*HLCU***4000*******CN40~
+L0*1***8384*G*96000*X*8000*PCS**K**5**W~
+L5*1*****000000000010210949**B*SCHB~
+N9*CO*4500214963~
+N9*SO*0002199491~
+N9*LI*0002199491000010~
+N9*RF*EAR99~
+PER*EM**TE*8004299999~
+L0*2***8384*G*96000*X*8000*PCS**K**5**W~
+L5*2*****000000000010210949**B*SCHB~
+N9*CO*4500214963~
+N9*SO*0002199491~
+N9*LI*0002199491000010~
+N9*RF*EAR99~
+PER*EM**TE*8004299999~
+SE*84*0001~
+GE*1*4013~
+IEA*1*000003055~

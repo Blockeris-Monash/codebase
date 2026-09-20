@@ -3,37 +3,34 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
-## The dataset lives outside this repo
+## The dataset is in the repo
 
-520 emails and 250 attachments are **not committed** — whether the provided
-dataset may go in a public repo is an open question with the organisers. The
-organiser Docker kit is also kept out, because it contains the answer key.
-
-Expected layout:
+`data/` holds the 520 emails and 250 attachments. The organisers confirmed
+on 19 Sep that the provided dataset may be committed to a public repo and
+that judging uses that dataset only, so a judge can clone this and run it
+without downloading anything.
 
 ```
-hackathon/
-├── inbox/  attachments/  sample_submission.json   <- dataset, not committed
-├── sdoc-hackathon-docker/                         <- answer key, never commit
-└── codebase/                                      <- this repo
+codebase/
+├── data/inbox/          520 email records
+├── data/attachments/    250 SI and BL documents
+└── data/sample_submission.json
 ```
 
-Point the code at the data with `DATA_DIR` (see `.env.example`):
+The organiser Docker kit stays out, and `.gitignore` blocks it by both path
+and filename: it contains the answer key.
 
-```bash
-DATA_DIR=../                        # extracted bundle
-DATA_DIR=http://localhost:8081      # local server
-```
+Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
 
 ## Quick start
 
 ```bash
 # 1. dataset reachable, both ways
-python3 tools/smoke_test.py ../
+python3 tools/smoke_test.py
 python3 tools/smoke_test.py http://localhost:8081
 
 # 2. regenerate stage fixtures from real emails
-python3 tools/make_fixtures.py --data ../ --out fixtures
+python3 tools/make_fixtures.py --out fixtures
 
 # 3. check everything still satisfies the contracts
 python3 tools/validate_contracts.py

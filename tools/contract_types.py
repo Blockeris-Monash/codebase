@@ -49,6 +49,8 @@ class FormatType(StrEnum):
     Pdf = "pdf"
     Docx = "docx"
     Xlsx = "xlsx"
+    Edi = "edi"     # X12 304; not in the dataset, supported to show the
+                    # extract stage is format-independent
 
 
 class DocumentRoleType(StrEnum):

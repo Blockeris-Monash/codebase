@@ -5,7 +5,7 @@ Every fixture is built from an actual email, so downstream stages are tested
 against the data's real shape rather than an invented one. Which emails, and
 why each was chosen, lives in `tools/Scenarios.json`.
 
-    python3 tools/make_fixtures.py --data ../ --out fixtures
+    python3 tools/make_fixtures.py --data data --out fixtures
 """
 from __future__ import annotations
 
@@ -18,64 +18,17 @@ from pathlib import Path
 from contract_types import (
     Attachment, CategoryType, ClassificationResult, ComparisonResult,
     DocumentExtract, DocumentRoleType, EmailRecord, ExtractedField,
-    FIELD_NAMES, FormatType, ParseStatusType, ReviewReasonType, Scenario,
+    FIELD_NAMES, ParseStatusType, ReviewReasonType, Scenario,
     StatusType, SubmissionEntry, VerdictType,
 )
+from labels import canonical_field, detect_doc_type
 from normalise import compare_row
+from read_documents import document_title, read_document
+
+DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data")
 
 SCENARIOS_PATH = Path(__file__).resolve().parent / "Scenarios.json"
 FULL_CONFIDENCE = 1.0
-
-# Label variants observed across the corpus, aligned by meaning not by text.
-LABEL_PATTERNS: dict[str, list[str]] = {
-    "shipper": [r"^shipper(/exporter)?( \(principal or seller\))?$"],
-    "consignee": [r"^consignee( \(non-negotiable\))?$", r"^to the order of$"],
-    "notify_party": [r"^notify( party)?$", r"^notify party/intermediate consignee$"],
-    "port_of_loading": [r"^port of loading( \(pol\))?$", r"^load port$", r"^pol$"],
-    "port_of_discharge": [r"^port of discharge( \(pod\))?$", r"^discharge port$", r"^pod$"],
-    "container_count": [r"^(total )?containers?( count)?$",
-                        r"^no\. of containers( or packages)?$"],
-    "gross_weight_kg": [r"^gross wt \(kgs\)$", r"^gross weight ?\(?kgs?\)?$",
-                        r"^gross weight$"],
-}
-DOC_HEADERS: dict[str, str] = {
-    "SHIPPING INSTRUCTION": DocumentRoleType.Si,
-    "BILL OF LADING (DRAFT)": DocumentRoleType.Bl,
-}
-CJK_PATTERN = r"[一-鿿]"
-EMPTY_BRACKETS = r"\(\s*\)"
-
-
-def is_label_match(plain: str, field: str) -> bool:
-    return any(re.match(p, plain) for p in LABEL_PATTERNS[field])
-
-
-def canonical_field(label: str) -> str | None:
-    """Map a document's own label text onto one of the seven field names."""
-    plain = re.sub(r"\s+", " ", re.sub(CJK_PATTERN, "", label)).strip().lower()
-    plain = re.sub(EMPTY_BRACKETS, "", plain).strip()
-
-    return next((f for f in LABEL_PATTERNS if is_label_match(plain, f)), None)
-
-
-def read_fields(text: str) -> dict[str, tuple[str, str]]:
-    """Pull the seven fields out of a plain-text SI or BL."""
-    found: dict[str, tuple[str, str]] = {}
-    for line in text.split("\n"):
-        label, _, value = line.partition(":")
-        field = canonical_field(label) if _ else None
-        if field is not None and field not in found:
-            found[field] = (label.strip(), value.strip())
-
-    return found
-
-
-def detect_doc_type(text: str) -> str | None:
-    """Read the declared document title. Filenames lie on emails 501-505."""
-    header = text.split("\n", 1)[0].strip().upper()
-
-    return DOC_HEADERS.get(header, header or None)
-
 
 def attachment_meta(path: str) -> Attachment:
     name = os.path.basename(path)
@@ -104,8 +57,13 @@ def absent_fields() -> dict[str, ExtractedField]:
             for f in FIELD_NAMES}
 
 
-def parsed_fields(text: str) -> dict[str, ExtractedField]:
-    found = read_fields(text)
+def fields_from_pairs(pairs: list[tuple[str, str]]) -> dict[str, ExtractedField]:
+    """Align whatever the reader produced onto the seven field names."""
+    found: dict[str, tuple[str, str]] = {}
+    for label, value in pairs:
+        field = canonical_field(label)
+        if field is not None and field not in found:
+            found[field] = (label.strip(), value.strip())
 
     return {
         f: {"present": f in found,
@@ -116,8 +74,7 @@ def parsed_fields(text: str) -> dict[str, ExtractedField]:
 
 
 def document_extract(data_dir: str, email_id: str, meta: Attachment) -> DocumentExtract:
-    """Contract 3 — one per attachment. Non-text formats have no parser yet,
-    which is NotAttempted, deliberately distinct from Unreadable."""
+    """Contract 3 — one per attachment, whatever format it arrived in."""
     base: DocumentExtract = {
         "email_id": email_id,
         "declared_role": meta["declared_role"],
@@ -127,13 +84,13 @@ def document_extract(data_dir: str, email_id: str, meta: Attachment) -> Document
         "parse_status": ParseStatusType.NotAttempted,
         "fields": absent_fields(),
     }
-    if meta["format"] != FormatType.Txt:
-        return base
+    path = Path(data_dir) / meta["path"]
+    status, pairs = read_document(path)
+    if status != ParseStatusType.Ok:
+        return {**base, "parse_status": status}
 
-    text = (Path(data_dir) / meta["path"]).read_text(errors="replace")
-
-    return {**base, "detected_doc_type": detect_doc_type(text),
-            "parse_status": ParseStatusType.Ok, "fields": parsed_fields(text)}
+    return {**base, "detected_doc_type": detect_doc_type(document_title(path) or ""),
+            "parse_status": ParseStatusType.Ok, "fields": fields_from_pairs(pairs)}
 
 
 def review_result(email_id: str, reason: str, evidence: str) -> ComparisonResult:
@@ -240,8 +197,10 @@ def escalation_for(si: DocumentExtract | None,
     if si is None or bl is None:
         present = sorted(d["declared_role"] for d in (si, bl) if d is not None)
         return ReviewReasonType.MissingAttachment, f"expected SI and BL, found {present}"
-    if ParseStatusType.Ok not in (si["parse_status"], bl["parse_status"]):
-        return ReviewReasonType.Unreadable, "attachment could not be parsed"
+    unread = [d for d in (si, bl) if d["parse_status"] != ParseStatusType.Ok]
+    if unread:
+        detail = ", ".join(f"{d['declared_role']} ({d['parse_status']})" for d in unread)
+        return ReviewReasonType.Unreadable, f"could not read: {detail}"
     if (si["detected_doc_type"], bl["detected_doc_type"]) != (DocumentRoleType.Si, DocumentRoleType.Bl):
         return (ReviewReasonType.WrongDocType,
                 f"filename says SI/BL, document header says "
@@ -346,7 +305,8 @@ def write_fixtures(data_dir: str, out: Path) -> dict[str, SubmissionEntry]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="../", help="folder holding inbox/ and attachments/")
+    parser.add_argument("--data", default=DEFAULT_DATA_DIR,
+                        help="folder holding inbox/ and attachments/")
     parser.add_argument("--out", default="fixtures")
     args = parser.parse_args()
 

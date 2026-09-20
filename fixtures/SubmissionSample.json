@@ -68,7 +68,7 @@
   "email_511": {
     "category": "BL_COMPARISON",
     "status": "NEEDS_REVIEW",
-    "review_reason": "wrong_doc_type",
+    "review_reason": "unreadable",
     "has_defect": false,
     "defect_fields": []
   },

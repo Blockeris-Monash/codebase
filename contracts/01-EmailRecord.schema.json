@@ -57,7 +57,8 @@
               "txt",
               "pdf",
               "docx",
-              "xlsx"
+              "xlsx",
+              "edi"
             ]
           }
         }

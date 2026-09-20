@@ -85,7 +85,7 @@
       "source_path": "attachments/email_511_BL.pdf",
       "format": "pdf",
       "detected_doc_type": null,
-      "parse_status": "not_attempted",
+      "parse_status": "unreadable",
       "fields": {
         "shipper": {
           "present": false,
@@ -128,15 +128,15 @@
   "ComparisonResult": {
     "email_id": "email_511",
     "status": "NEEDS_REVIEW",
-    "review_reason": "wrong_doc_type",
+    "review_reason": "unreadable",
     "rows": [],
     "defect_fields": [],
-    "evidence": "filename says SI/BL, document header says SI/None"
+    "evidence": "could not read: BL (unreadable)"
   },
   "SubmissionEntry": {
     "category": "BL_COMPARISON",
     "status": "NEEDS_REVIEW",
-    "review_reason": "wrong_doc_type",
+    "review_reason": "unreadable",
     "has_defect": false,
     "defect_fields": []
   }
