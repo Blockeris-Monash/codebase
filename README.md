@@ -3,11 +3,12 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
-## The dataset lives outside this repo
+## Where the dataset lives
 
-520 emails and 250 attachments are **not committed** — whether the provided
-dataset may go in a public repo is an open question with the organisers. The
-organiser Docker kit is also kept out, because it contains the answer key.
+The organisers confirmed on 19 Sep that the provided dataset may be committed
+to a public repo, and that judges evaluate against that dataset only — not
+their own files. The organiser Docker kit stays out regardless: it contains
+the answer key.
 
 Expected layout:
 

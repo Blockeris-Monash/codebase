@@ -9,12 +9,9 @@ sdoc-hackathon-docker*.zip
 data_v2/
 secrets/
 
-# --- Provided dataset ----------------------------------------------------
-# Open question with organisers: may the dataset be committed to a public
-# repo? Until answered, keep it out. Reference it via DATA_DIR instead.
-inbox/
-attachments/
-sample_submission.json
+# The provided dataset IS committed - organisers confirmed 19 Sep that it
+# may go in a public repo, so judges can clone and run without a download.
+# The answer key above is a separate thing and stays out.
 
 # --- Secrets -------------------------------------------------------------
 .env
@@ -41,3 +38,5 @@ build/
 .DS_Store
 *.log
 submission.json
+
+.venv/

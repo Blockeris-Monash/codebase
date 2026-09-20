@@ -26,8 +26,14 @@ def normalise_name(value: str) -> str:
 
 def normalise_port(value: str) -> str:
     """Strip the UN/LOCODE. It is identical on both sides of every planted
-    port defect, so it is a decoy, never the discriminator."""
-    return LOCODE.sub("", value).upper().rstrip(",").strip()
+    port defect, so it is a decoy, never the discriminator.
+
+    The first segment only: a port read from a PDF form can pick up the line
+    beneath it, which is the vessel.
+    """
+    first = re.split(NAME_SPLIT, value)[0]
+
+    return LOCODE.sub("", first).upper().rstrip(",").strip()
 
 
 def normalise_count(value: str) -> str | None:

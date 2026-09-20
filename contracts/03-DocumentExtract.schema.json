@@ -34,7 +34,8 @@
         "txt",
         "pdf",
         "docx",
-        "xlsx"
+        "xlsx",
+        "edi"
       ]
     },
     "detected_doc_type": {
