@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 sys.path.insert(0, str(REPO_ROOT))
 
-DEFAULT_DATA_DIR = REPO_ROOT.parent
+DEFAULT_DATA_DIR = REPO_ROOT / "data"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

@@ -5,7 +5,7 @@ Every fixture is built from an actual email, so downstream stages are tested
 against the data's real shape rather than an invented one. Which emails, and
 why each was chosen, lives in `tools/Scenarios.json`.
 
-    python3 tools/make_fixtures.py --data ../ --out fixtures
+    python3 tools/make_fixtures.py --data data --out fixtures
 """
 from __future__ import annotations
 
@@ -24,6 +24,8 @@ from contract_types import (
 from labels import canonical_field, detect_doc_type
 from normalise import compare_row
 from read_documents import document_title, read_document
+
+DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data")
 
 SCENARIOS_PATH = Path(__file__).resolve().parent / "Scenarios.json"
 FULL_CONFIDENCE = 1.0
@@ -303,7 +305,8 @@ def write_fixtures(data_dir: str, out: Path) -> dict[str, SubmissionEntry]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", default="../", help="folder holding inbox/ and attachments/")
+    parser.add_argument("--data", default=DEFAULT_DATA_DIR,
+                        help="folder holding inbox/ and attachments/")
     parser.add_argument("--out", default="fixtures")
     args = parser.parse_args()
 

@@ -19,7 +19,7 @@ from contract_types import FIELD_NAMES, ParseStatusType
 from labels import canonical_field
 from read_documents import READERS, document_title, read_document
 
-ATTACHMENTS = Path("../attachments")
+ATTACHMENTS = Path(__file__).resolve().parents[1] / "data" / "attachments"
 SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "samples"
 WIDE_CHARS = "WF"
 ELLIPSIS = "…"

@@ -4,7 +4,7 @@
     python3 tools/demo_pipeline.py email_025          a defect
     python3 tools/demo_pipeline.py email_055          Excel SI against a Word BL
     python3 tools/demo_pipeline.py email_501          the BL is a commercial invoice
-    python3 tools/demo_pipeline.py --data ../ email_064
+    python3 tools/demo_pipeline.py --data data email_064
 
 Built for the demo and for debugging: when a verdict looks wrong, this
 shows which stage made it wrong.
@@ -20,6 +20,8 @@ from contract_types import FIELD_NAMES, ParseStatusType, StatusType
 from labels import canonical_field
 from make_fixtures import build, classify_from_body
 from read_documents import document_title, read_document
+
+DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data")
 
 WIDTH = 96
 FORMAT_NAMES = {"txt": "plain text", "docx": "Word", "xlsx": "Excel",
@@ -177,7 +179,7 @@ def run(data_dir: str, email_id: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("email_id")
-    parser.add_argument("--data", default="../")
+    parser.add_argument("--data", default=DEFAULT_DATA_DIR)
     args = parser.parse_args()
 
     return run(args.data, args.email_id)

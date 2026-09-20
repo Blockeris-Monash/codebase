@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prove the loader reaches the data, both from disk and over HTTP.
 
-    python3 tools/smoke_test.py ../
+    python3 tools/smoke_test.py
     python3 tools/smoke_test.py http://localhost:8081
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ from loader import Inbox  # noqa: E402
 EXPECTED_EMAILS = 520
 EXPECTED_WITH_ATTACHMENTS = 126
 SAMPLE_EMAIL_ID = "email_004"
-DEFAULT_SOURCE = "../"
+DEFAULT_SOURCE = str(Path(__file__).resolve().parents[1] / "data")
 
 
 def count_problems(emails: int, with_attachments: int) -> list[str]:
