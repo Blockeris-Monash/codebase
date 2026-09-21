@@ -301,7 +301,7 @@ function setVariant(d){
 document.addEventListener("click", ev=>{
   const t = ev.target.closest("[data-a]"); if(!t) return;
   const a=t.dataset.a, k=t.dataset.k, id=t.dataset.id;
-  if(a==="stay") return;
+  if(a==="stay"||a==="catsel") return;
   if(a==="help"){ S.help=true; return render(); }
   if(a==="helpclose"){ S.help=false; return render(); }
   if(a==="var") return setVariant(+k);
