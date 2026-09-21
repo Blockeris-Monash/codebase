@@ -261,8 +261,13 @@ async def run_pipeline(
     )
 
     # 2. Clean & normalize, keeping the metadata the comparator prechecks on
-    si_doc = {**si_extract, "fields": apply_cleaner(si_extract["fields"])}
-    bl_doc = {**bl_extract, "fields": apply_cleaner(bl_extract["fields"])}
+    # A document that was never found is None, not one that failed to parse.
+    # The comparator's first precheck is what turns that into
+    # missing_attachment rather than the misleading unreadable.
+    si_doc = None if payload.si_parse_status == ParseStatusType.Missing else {
+        **si_extract, "fields": apply_cleaner(si_extract["fields"])}
+    bl_doc = None if payload.bl_parse_status == ParseStatusType.Missing else {
+        **bl_extract, "fields": apply_cleaner(bl_extract["fields"])}
 
     # 3. Deterministic comparison (JJ's Engine)
     report = compare(payload.email_id, si_doc, bl_doc)
