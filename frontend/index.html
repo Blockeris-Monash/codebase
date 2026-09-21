@@ -103,12 +103,18 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
   .split{flex:1;min-height:0;grid-template-rows:minmax(0,1fr);padding-bottom:14px}
   .list,.pane{overflow-y:auto;min-height:0}
   .pane{position:static;align-self:stretch}
+  .split{grid-template-columns:var(--listw,380px) 14px minmax(0,1fr);gap:0}
+  .resizer{cursor:col-resize;touch-action:none;position:relative;user-select:none}
+  .resizer::after{content:"";position:absolute;top:0;bottom:0;left:6px;width:2px;border-radius:2px;background:var(--line);transition:background .12s}
+  .resizer:hover::after,.resizer.drag::after{background:var(--accent)}
+  body.resizing{cursor:col-resize;user-select:none}
 }
 @media (max-width:820px){
   .kpis{grid-template-columns:repeat(3,1fr)}
   .kpi{padding:8px 10px}
   .kpi b{font-size:22px}
   .split{grid-template-columns:1fr}
+  .resizer{display:none}
   .pane{position:static}
   .split.hasSel .list{display:none}
   .split:not(.hasSel) .pane{display:none}
@@ -284,10 +290,32 @@ function render(){
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
      <div class="bar"><label class="mute small" for="foldersel">Show</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>Other folders</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${folder(k).n} (${count(k)})</option>`).join("")}</select><span class="grow"></span>
        <div class="pager small num">${from}–${to} of ${total}<button data-a="newer" ${S.page===0?"disabled":""}>Newer</button><button data-a="older" ${to>=total?"disabled":""}>Older</button></div></div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows}</div><div class="pane">${pane}</div></div>${help}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="Drag to resize"></div><div class="pane">${pane}</div></div>${help}`;
   if(keep){ const pane=q(".pane"), list=q(".list"); if(pane&&keep.pane) pane.scrollTop=keep.pane; if(list&&keep.list) list.scrollTop=keep.list; if(keep.y) window.scrollTo(0,keep.y); }
   if(S.scrollTo){ const el=q(S.scrollTo); if(el) el.scrollIntoView({block:"start"}); S.scrollTo=null; }
 }
+
+/* drag the divider between list and detail (desktop only; the handle is hidden on mobile) */
+try{ const w=localStorage.getItem("listw"); if(w) document.documentElement.style.setProperty("--listw", w+"px"); }catch(e){}
+document.addEventListener("pointerdown", ev=>{
+  const h = ev.target.closest && ev.target.closest(".resizer");
+  if(!h || ev.button) return;
+  ev.preventDefault();
+  const split = h.parentElement, left = split.getBoundingClientRect().left;
+  let w = 0;
+  h.classList.add("drag"); document.body.classList.add("resizing");
+  const move = e=>{
+    const max = split.clientWidth - 14 - 360;
+    w = Math.max(240, Math.min(max, e.clientX - left));
+    document.documentElement.style.setProperty("--listw", w+"px");
+  };
+  const up = ()=>{
+    document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up);
+    h.classList.remove("drag"); document.body.classList.remove("resizing");
+    try{ if(w) localStorage.setItem("listw", Math.round(w)); }catch(e){}
+  };
+  document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
+});
 
 document.addEventListener("click", ev=>{
   const t = ev.target.closest("[data-a]"); if(!t) return;
