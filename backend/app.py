@@ -24,6 +24,7 @@ from backend.extract.qwen import qwen_model
 from backend.compare.comparator import ComparisonResult, compare
 from backend.contracts import DocumentRoleType, ParseStatusType
 from backend.read.labels import detect_doc_type
+from backend.translate import TooMuchText, TranslationFailed, translate_texts
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -239,4 +240,26 @@ async def classify(email: EmailInput) -> ClassificationResult:
     try:
         return await classify_email(email)
     except ClassificationFailed as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+# --- translation for the UI's Translate button --------------------------
+
+class TranslateRequest(BaseModel):
+    target: str
+    texts: Dict[str, str]
+
+
+class TranslateResponse(BaseModel):
+    texts: Dict[str, str]
+
+
+@app.post("/translate", response_model=TranslateResponse)
+async def translate(request: TranslateRequest) -> TranslateResponse:
+    """The email and its documents translated into one language."""
+    try:
+        return TranslateResponse(texts=await asyncio.to_thread(translate_texts, request.texts, request.target))
+    except TooMuchText as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except (TranslationFailed, RuntimeError) as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
