@@ -32,6 +32,23 @@ log = logging.getLogger(__name__)
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Enable CORS so Han's Vercel frontend can talk to Render
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (or you can specify Han's Vercel domain later)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+def health_check():
+    """Lightweight endpoint for UptimeRobot and cloud health checkers."""
+    return {"status": "ok"}
+
+
 # Directory where Milk's pre-extracted results are stored
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT_DIR / "data"
