@@ -142,6 +142,25 @@ async def extract_live(
     }
 
 
+def is_cache_current(cached: Dict[str, Any], title: Optional[str],
+                     parse_status: str) -> bool:
+    """Whether a saved extract describes the document the caller actually sent.
+
+    The cache is keyed on (email_id, role) alone, so on its own it cannot tell
+    "the same document again" from "a different document under the same id" -
+    and it used to win either way, silently discarding the pairs, the title and
+    the parse status the caller was asked to supply. A caller reporting a file
+    that would not open, or a title that resolves to another document type, is
+    describing something this record does not hold.
+    """
+    if parse_status != cached.get("parse_status"):
+        return False
+    if title is None:
+        return True
+
+    return detect_doc_type(title) == cached.get("detected_doc_type")
+
+
 async def extract_document(
     email_id: str,
     role: str,
@@ -151,7 +170,7 @@ async def extract_document(
 ) -> Dict[str, Any]:
     """Cache first, model second. Milk's saved results answer instantly."""
     cached = load_saved_extract(email_id, role)
-    if cached:
+    if cached and is_cache_current(cached, title, parse_status):
         return cached
 
     return await extract_live(email_id, role, pairs, title, parse_status)
