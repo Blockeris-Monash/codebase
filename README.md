@@ -3,6 +3,41 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
+## Setup
+
+Python 3.12. No database. Nothing below needs an API key.
+
+```bash
+git clone git@github.com:Blockeris-Monash/codebase.git
+cd codebase
+
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+.venv/bin/python -m pytest -q          # 175 passed
+```
+
+### See the prototype
+
+```bash
+cd frontend && ../.venv/bin/python -m http.server 8099
+```
+
+Open <http://localhost:8099>. All 520 emails, every comparison already run.
+The page is static — it reads `frontend/results.js` — so it needs no backend,
+no key and no network.
+
+### Run the API
+
+```bash
+.venv/bin/python -m uvicorn backend.app:app --port 8010
+```
+
+<http://localhost:8010/docs>. `POST /extract-clean-compare` answers with no
+key, from the saved extracts in `results/extracts/`. `POST /classify` calls a
+model, so it needs `GOOGLE_API_KEY` — copy `.env.example` to `.env` and fill
+it in. Ports 8010 and 8099 are suggestions; anything free will do.
+
 ## The dataset is in the repo
 
 `data/` holds the 520 emails and 250 attachments. The organisers confirmed
@@ -44,7 +79,9 @@ backend/
     ├── normalise.py    per-field normalisation
     └── comparator.py   the verdict
 
-cli/    demo_read  demo_pipeline  smoke_test  validate_contracts  make_fixtures
+cli/      demo_read  demo_pipeline  smoke_test  validate_contracts
+          make_fixtures  make_results
+frontend/ index.html  results.js  config.js   the review UI, static
 ```
 
 Run a CLI as a module so imports resolve from the repo root:
@@ -54,7 +91,7 @@ python3 -m cli.demo_read                 # what each reader does to each format
 python3 -m cli.demo_pipeline email_004   # one email through all five stages
 ```
 
-## Quick start
+## Developer checks
 
 ```bash
 # 1. dataset reachable, both ways
