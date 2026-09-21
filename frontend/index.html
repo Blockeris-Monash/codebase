@@ -58,6 +58,8 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
 .split{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;padding:14px 16px 40px}
 .list{display:flex;flex-direction:column;gap:6px;min-width:0}
 .item{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.item{cursor:pointer;transition:background .12s,border-color .12s}
+.item:hover{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
 .item.on{border-color:var(--accent);background:var(--accent-soft)}
 .item.checked{opacity:.6}
 .item .t{display:flex;justify-content:space-between;gap:8px;align-items:center}
