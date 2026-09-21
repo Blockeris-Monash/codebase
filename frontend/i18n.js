@@ -190,7 +190,9 @@ window.I18N = {
   "More languages": "Lebih banyak bahasa",
   "This is a demo": "Ini demo",
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "Bahasa Inggeris, Melayu dan Cina berfungsi hari ini. Menambah lebih banyak bahasa dirancang untuk kemas kini akan datang.",
-  "See what's next": "Lihat apa seterusnya"
+  "See what's next": "Lihat apa seterusnya",
+  "Colour-blind friendly themes": "Tema mesra buta warna",
+  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "Tema warna tambahan untuk orang yang buta warna, supaya Tidak sepadan, Perlu disemak dan Sepadan dapat dibezakan tanpa bergantung pada merah dan hijau."
  },
  "zh": {
   "Shipper": "托运人",
@@ -381,6 +383,8 @@ window.I18N = {
   "More languages": "更多语言",
   "This is a demo": "这是演示",
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "目前支持英文、马来文和中文。添加更多语言已列入后续更新计划。",
-  "See what's next": "查看下一步"
+  "See what's next": "查看下一步",
+  "Colour-blind friendly themes": "色盲友好主题",
+  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "为色盲用户提供额外的配色主题，这样无需依赖红色和绿色，也能分辨“不一致”“需要审核”和“一致”。"
  }
 };
