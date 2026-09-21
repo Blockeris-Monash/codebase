@@ -154,6 +154,8 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .item.checked{opacity:.6}
 .item .t{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .item .t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .tr{display:flex;gap:6px;align-items:center;flex:none}
+.item mark{background:rgba(255,138,61,.35);color:inherit;border-radius:3px;padding:0 1px}
 .item .sub{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--mute)}
 .pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;align-self:start;position:sticky;top:64px;min-width:0;box-shadow:var(--card)}
 .empty{padding:40px 10px;text-align:center;color:var(--mute)}
@@ -436,6 +438,15 @@ const items = ()=>{
   return RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")).toLowerCase().includes(term));
 };
 const who = e=>esc(e.from.replace(/<.*>/,"").trim()||e.from);
+/* Search highlight: wrap each match in <mark>. Every piece is escaped, so an email cannot inject HTML. */
+const hl = s=>{
+  s = String(s??""); const t = S.q.trim().replace(/^#/,"");
+  if(!t) return esc(s);
+  const lo = s.toLowerCase(), tl = t.toLowerCase(); let out = "", i = 0, j;
+  while((j = lo.indexOf(tl,i)) >= 0){ out += esc(s.slice(i,j)) + "<mark>" + esc(s.slice(j,j+t.length)) + "</mark>"; i = j + t.length; }
+  return out + esc(s.slice(i));
+};
+const numChip = e=>{ const n = e.id.replace("email_",""), t = S.q.trim().replace(/^#/,""); return t && n.toLowerCase().includes(t.toLowerCase()) ? `<span class="badge b-none">#${hl(n)}</span>` : ""; };
 
 function loadMarks(){ try{ return JSON.parse(localStorage.getItem("blockeris.marks")||"{}"); }catch(_){ return {}; } }
 function loadSent(){ try{ return JSON.parse(localStorage.getItem("blockeris.sent")||"{}"); }catch(_){ return {}; } }
@@ -681,7 +692,7 @@ function render(){
   const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
-    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${who(e)}</b>${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Checked"):t("Replied")}</span>`:badge(e)}</span><span class="sub">${esc(e.subject)}</span></button>`;
+    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Checked"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span></button>`;
   }).join("");
   const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
