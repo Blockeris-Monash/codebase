@@ -241,9 +241,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .mi:hover,.mi:focus-visible{background:var(--accent-soft)}.mi.on{color:var(--accent);font-weight:600}
 .mtick{width:16px;flex:none;display:inline-flex}.mtick .ico{margin:0;width:16px;height:16px}
 .msep{height:1px;background:var(--line);margin:6px 4px}
-.trbar{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}.tbtn .ico{margin-right:6px}
-.trbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel);margin:12px 0;box-shadow:var(--card)}
-.trbox .text{margin-bottom:8px}.ok{color:var(--ok)}
+.ok{color:var(--ok)}
 .nextpage{flex:1;min-height:0}
 .nx{max-width:900px;margin:0 auto;padding:24px 16px 60px}
 .nx h1{font-size:30px;line-height:1.15;margin:18px 0 6px}.nx h2{font-size:18px;margin:28px 0 12px}.nx .lead{font-size:16px;margin:0}
@@ -345,6 +343,7 @@ const ROADMAP = [
   [T("A second AI that double checks"), T("A critic agent scores how sure it is about each extracted field. Low scores are retried, then sent to a person.")],
   [T("Read scanned and cut-off files"), T("Scanned PDFs are sent to review today. OCR would read most of them, so fewer emails need a person.")],
   [T("Shared review queue for a team"), T("Several reviewers work the same queue, with who checked what and when.")],
+  [T("Translate an email"), T("Translate an email and its documents into the reviewer's language with one click, for people who do not read English.")],
   [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")],
   [T("Colour-blind friendly themes"), T("Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.")]
 ];
@@ -426,7 +425,7 @@ function helpHTML(){
     <div class="tabs" role="tablist">${tabs}</div><div class="dlgb">${body}</div></div></div>`;
 }
 
-const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, tr:{}, live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -467,7 +466,6 @@ const ICON = {
   LEFT: ICO('<path d="M15 5l-7 7 7 7"/>'),
   RIGHT: ICO('<path d="M9 5l7 7-7 7"/>'),
   GLOBE: ICO('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
-  TRANSLATE: ICO('<path d="M4 6h9M8.500 4v2M6 6c0 4 3 7 6 8M11 6c0 3-2.500 6.500-6 8"/><path d="M13 20l4-9 4 9M14.500 17h5"/>'),
   CHEV: ICO('<path d="M6 9l6 6 6-6"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
@@ -570,33 +568,6 @@ function how(e){
     (open ? `<ol class="steps">${steps.join("")}</ol>` : "");
 }
 
-const trKey = e=>e.id+"|"+LANG;
-function translateBar(e){
-  const cur = S.tr[trKey(e)], lang = allLangs().find(l=>l.code===LANG) || LANGS.en;
-  const btn = `<button class="ghost tbtn" data-a="translate" data-id="${e.id}">${ICON.TRANSLATE}${t("Translate to {lang}",{lang:esc(lang.name)})}</button>`;
-  if(!cur) return `<div class="trbar">${btn}</div>`;
-  if(cur.busy) return `<div class="trbar"><span class="spin"></span><span>${t("Translating...")}</span></div>`;
-  if(cur.err) return `<div class="trbar">${btn}<span class="err small">${esc(cur.err)}</span></div>`;
-  const parts = [["subject",T("Subject")],["body",T("Cover email")],["SI",T("Shipping Instruction")],["BL",T("Draft Bill of Lading")]].filter(([k])=>cur.texts[k]);
-  return `<div class="trbox"><div class="doch">${t("Translation in {lang}",{lang:esc(lang.name)})}</div>${parts.map(([k,n])=>`<div class="fl small">${t(n)}</div><div class="text">${esc(cur.texts[k])}</div>`).join("")}<div class="actions"><button class="ghost" data-a="trhide" data-id="${e.id}">${t("Hide translation")}</button></div><div class="small mute" style="margin-top:8px">${t("Translated by the AI. Check important details in the original.")}</div></div>`;
-}
-async function translate(id){
-  const e = byId[id], key = trKey(e), lang = allLangs().find(l=>l.code===LANG) || LANGS.en;
-  const texts = {subject:e.subject, body:e.body};
-  for(const r of ["SI","BL"]) if(e.docs && e.docs[r] && e.docs[r].text) texts[r] = e.docs[r].text;
-  if(!API_BASE){ S.tr[key] = {err:t("Translation needs the live AI service, which is not connected in this demo.")}; return render(); }
-  if(Object.values(texts).join("").length > 30000){ S.tr[key] = {err:t("This email is too long to translate in one go.")}; return render(); }
-  S.tr[key] = {busy:true}; render();
-  const ctrl = new AbortController(), timer = setTimeout(()=>ctrl.abort(), 90000);
-  try{
-    const res = await fetch(API_BASE+"/translate", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal, body:JSON.stringify({target:lang.english, texts})});
-    if(res.status===413) throw new Error("long");
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    S.tr[key] = {texts:(await res.json()).texts};
-  }catch(err){
-    S.tr[key] = {err:t(err.message==="long" ? T("This email is too long to translate in one go.") : T("Could not reach the AI service. Try again in a moment."))};
-  }finally{ clearTimeout(timer); render(); }
-}
 
 function canRecheck(e){ return API_BASE && e.docs && e.docs.SI && e.docs.BL && e.docs.SI.pairs.length && e.docs.BL.pairs.length; }
 
@@ -604,7 +575,7 @@ function detail(e){
   const live = S.live[e.id];
   const view = live && live.result ? {...e, ...live.result} : e;
   const fresh = live && live.fresh ? "fresh" : "";
-  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}${translateBar(e)}`;
+  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}`;
   if(view.status==="MISMATCH"){
     const n = view.defect_fields.length;
     h += `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${t(n>1?T("{n} fields differ"):T("{n} field differs"),{n})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div>${table(view.rows)}`;
@@ -754,8 +725,6 @@ document.addEventListener("click", ev=>{
   else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
   else if(a==="langclose"){ S.langDlg=false; }
   else if(a==="langnext"){ S.langDlg=false; location.hash="#/next"; window.scrollTo(0,0); }
-  else if(a==="translate") return translate(id);
-  else if(a==="trhide"){ delete S.tr[trKey(byId[id])]; }
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
   else if(a==="kind") S.fb.kind=k;
   else if(a==="rate") S.fb.rating = S.fb.rating===+k ? 0 : +k;
