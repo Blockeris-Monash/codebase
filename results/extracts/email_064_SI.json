@@ -38,7 +38,7 @@
     },
     "gross_weight_kg": {
       "present": true,
-      "label_seen": "Gross Weightæ¯›é‡�(KGS)",
+      "label_seen": "Gross Weight毛重(KGS)",
       "raw": "103,800 KG"
     }
   }

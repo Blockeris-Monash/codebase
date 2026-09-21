@@ -1,0 +1,45 @@
+{
+  "email_id": "email_097",
+  "declared_role": "SI",
+  "source_path": "attachments/email_097_SI.xlsx",
+  "format": "xlsx",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "ROXCEL TRADING GMBH"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "NAGAPPA EXPORTS"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "SINGAPORE"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "BRISBANE, AUSTRALIA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "10 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "GROSS WEIGHT",
+      "raw": "216950"
+    }
+  }
+}

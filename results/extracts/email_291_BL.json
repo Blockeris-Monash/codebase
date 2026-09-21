@@ -1,0 +1,45 @@
+{
+  "email_id": "email_291",
+  "declared_role": "BL",
+  "source_path": "attachments/email_291_BL.docx",
+  "format": "docx",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER (发货人)",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of (收货人)",
+      "raw": "TOPKOPY MIDDLE EAST FZE"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party (通知人)",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port (装货港)",
+      "raw": "NANTONG, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "PORT OF DISCHARGE (卸货港)",
+      "raw": "SAVANNAH, US"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers (箱数)",
+      "raw": "3 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs) (毛重 KGS)",
+      "raw": "21,745"
+    }
+  }
+}

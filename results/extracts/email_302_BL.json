@@ -1,0 +1,45 @@
+{
+  "email_id": "email_302",
+  "declared_role": "BL",
+  "source_path": "attachments/email_302_BL.docx",
+  "format": "docx",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter (发货人)",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable) (收货人)",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify (通知人)",
+      "raw": "KTP CO., LTD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (装货港)",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port (卸货港)",
+      "raw": "BRISBANE, AUSTRALIA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers (箱数)",
+      "raw": "4 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs) (毛重 KGS)",
+      "raw": "40,176"
+    }
+  }
+}

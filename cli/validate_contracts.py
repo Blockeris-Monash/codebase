@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Check data against the contracts in contracts/.
 
-    python3 tools/validate_contracts.py                 # check every fixture
-    python3 tools/validate_contracts.py mine.json ComparisonResult
+    python3 -m cli.validate_contracts                 # check every fixture
+    python3 -m cli.validate_contracts mine.json ComparisonResult
 
 Exits non-zero on the first contract violation, so it drops straight into CI
 or a pre-commit hook. Supports the subset of JSON Schema the contracts use;

@@ -1,0 +1,45 @@
+{
+  "email_id": "email_275",
+  "declared_role": "BL",
+  "source_path": "attachments/email_275_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "PACIFIC OFFICE (M) SDN BHD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "PACIFIC OFFICE (M) SDN BHD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "POD",
+      "raw": "FREMANTLE, AUSTRALIA (AUFRE)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "12 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "271,932 KG"
+    }
+  }
+}

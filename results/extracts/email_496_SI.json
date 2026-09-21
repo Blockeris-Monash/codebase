@@ -1,0 +1,45 @@
+{
+  "email_id": "email_496",
+  "declared_role": "SI",
+  "source_path": "attachments/email_496_SI.xlsx",
+  "format": "xlsx",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "3S PAPER PRODUCTS SDN BHD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "3S PAPER PRODUCTS SDN BHD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading",
+      "raw": "NANTONG, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "POD",
+      "raw": "PYEONGTAEK, SOUTH KOREA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "15 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight (KG)",
+      "raw": "328665"
+    }
+  }
+}

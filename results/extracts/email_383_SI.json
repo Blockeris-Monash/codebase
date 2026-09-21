@@ -1,0 +1,45 @@
+{
+  "email_id": "email_383",
+  "declared_role": "SI",
+  "source_path": "attachments/email_383_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "AL GURG STATIONERY LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party/Intermediate Consignee",
+      "raw": "AL GURG STATIONERY LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "POD",
+      "raw": "BALTIMORE, US (USBAL)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "10 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "229,130 KG"
+    }
+  }
+}

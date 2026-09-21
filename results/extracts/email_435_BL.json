@@ -1,0 +1,45 @@
+{
+  "email_id": "email_435",
+  "declared_role": "BL",
+  "source_path": "attachments/email_435_BL.docx",
+  "format": "docx",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter (发货人)",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable) (收货人)",
+      "raw": "AL GURG STATIONERY LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY (通知人)",
+      "raw": "AL GURG STATIONERY LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING (装货港)",
+      "raw": "SINGAPORE"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (卸货港)",
+      "raw": "AQABA, JORDAN"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers (箱数)",
+      "raw": "10 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs) (毛重 KGS)",
+      "raw": "214,770"
+    }
+  }
+}

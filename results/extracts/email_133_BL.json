@@ -1,0 +1,45 @@
+{
+  "email_id": "email_133",
+  "declared_role": "BL",
+  "source_path": "attachments/email_133_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "MOORIM SP CO., LTD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "NANTONG, CHINA (CNNTG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "CALLAO, PERU (PECLL)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "6 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "144,848 KG"
+    }
+  }
+}

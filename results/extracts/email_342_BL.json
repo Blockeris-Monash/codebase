@@ -1,0 +1,45 @@
+{
+  "email_id": "email_342",
+  "declared_role": "BL",
+  "source_path": "attachments/email_342_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "MOORIM SP CO., LTD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "SAFQA LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "NHAVA SHEVA, INDIA (INNSA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "PORT OF DISCHARGE",
+      "raw": "AQABA, JORDAN (JOAQB)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "2 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight (KG)",
+      "raw": "23,794 KG"
+    }
+  }
+}

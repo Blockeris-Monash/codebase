@@ -1,0 +1,45 @@
+{
+  "email_id": "email_453",
+  "declared_role": "SI",
+  "source_path": "attachments/email_453_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA (CNSHA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "CONAKRY, GUINEA (GNCKY)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "5 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "102,720 KG"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "email_id": "email_256",
+  "declared_role": "SI",
+  "source_path": "attachments/email_256_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "SAFQA LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party/Intermediate Consignee",
+      "raw": "HABRAS INTERNATIONAL LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge",
+      "raw": "VALPARAISO, CHILE (CLVAP)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "12 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "262,224 KG"
+    }
+  }
+}

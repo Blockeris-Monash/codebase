@@ -1,0 +1,45 @@
+{
+  "email_id": "email_504",
+  "declared_role": "SI",
+  "source_path": "attachments/email_504_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "PACIFIC OFFICE (M) SDN BHD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "PACIFIC OFFICE (M) SDN BHD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port",
+      "raw": "BUATAN, INDONESIA (IDBUA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "ASHDOD, ISRAEL (ILASH)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "10 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "221,170 KG"
+    }
+  }
+}

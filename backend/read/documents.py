@@ -290,7 +290,7 @@ def read_document(path: Path) -> tuple[str, LabelledPairs]:
 def main() -> int:
     """Read any document and print what the pipeline would see.
 
-        python3 tools/read_documents.py <file> [<file> ...]
+        python3 -m backend.read.documents <file> [<file> ...]
     """
     import sys
 
