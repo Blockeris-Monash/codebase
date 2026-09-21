@@ -3,5 +3,5 @@
   "category": "BL_COMPARISON",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email asks to confirm the BL is in order and attaches the SI together with another document (Certificate of Origin), which matches the BL_COMPARISON rule."
+  "evidence": "The email says 'Please find attached the SI and the Certificate of Origin... Kindly confirm the BL is in order.' Per the rules, attaching the SI with another document and asking for the BL to be checked or confirmed is BL_COMPARISON."
 }

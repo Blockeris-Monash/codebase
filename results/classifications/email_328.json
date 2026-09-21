@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is an operational update stating 'Loading completed, documents to follow' with no request to compare a BL/SI, create an SI, or query invoices."
+  "evidence": "The email is an internal operational update stating 'UPDATE SUMMARY', 'Loading completed, documents to follow', with no request to compare a draft BL, create/submit an SI, or query invoices."
 }

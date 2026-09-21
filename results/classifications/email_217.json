@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction' with full SI details, indicating a request to create/submit a new Shipping Instruction."
+  "evidence": "Subject says REQUEST SI and body provides Shipping Instruction details, ending with 'Please revert with draft BL once available', which matches SI_REQUEST rather than BL_COMPARISON."
 }

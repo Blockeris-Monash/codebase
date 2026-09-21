@@ -3,5 +3,5 @@
   "category": "BL_COMPARISON",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email asks to confirm the BL is in order and attaches the SI with another document, matching the BL comparison rule."
+  "evidence": "Subject requests a BL draft and the body asks to confirm the BL is in order, with an SI attached alongside another document, which matches BL_COMPARISON."
 }

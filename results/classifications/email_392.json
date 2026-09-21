@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email uses an urgent storage-limit threat, asks the recipient to verify an account via an external link, and comes from a suspicious non-operational sender, indicating phishing/scam."
+  "evidence": "The email uses urgent phishing language, asks the recipient to verify an account via an external link, and contains no shipping operations content."
 }

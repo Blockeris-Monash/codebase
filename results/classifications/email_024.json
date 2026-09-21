@@ -3,5 +3,5 @@
   "category": "INVOICE_QUERY",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email references invoice 5250070084, a missing GR, and asks to post the GR so billing can proceed, which is an invoice/billing inquiry."
+  "evidence": "The email references invoice 5250070084, a missing GR, and the need to proceed with billing."
 }

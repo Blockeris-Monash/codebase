@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction for 5ALT-93136' with full SI details, indicating submission of a new Shipping Instruction."
+  "evidence": "The email sends Shipping Instruction details for 5ALT-93136 and only asks to revert with the draft BL once available, not to check or compare it now."
 }

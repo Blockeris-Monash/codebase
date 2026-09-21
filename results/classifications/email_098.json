@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Automated operational notification stating a billing process completed successfully and no action is required, with no request to compare BL, create SI, or query invoices."
+  "evidence": "Automated operational notification stating a billing process completed successfully and no action is required; it does not request BL comparison, SI creation, or invoice inquiry."
 }

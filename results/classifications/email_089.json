@@ -1,7 +1,7 @@
 {
   "email_id": "email_089",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email explicitly asks the recipient to 'submit SI & AED for all pending shipments', which is a request to submit Shipping Instructions."
+  "confidence": 1.0,
+  "evidence": "The email is a general reminder to submit SI & AED for all pending shipments and references an outstanding list, not a specific shipment SI request or BL comparison."
 }

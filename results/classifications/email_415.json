@@ -2,6 +2,6 @@
   "email_id": "email_415",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.65,
-  "evidence": "The body is a New Year operational notice stating office resumes normal operations, but the subject line mentions an approval/time-off request, creating some conflicting signals."
+  "confidence": 1.0,
+  "evidence": "The email is a New Year greeting and operational notice that office resumes normal operations, with no BL, SI, or invoice content."
 }

@@ -3,5 +3,5 @@
   "category": "BL_COMPARISON",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email explicitly states 'Attached SI and draft BL ... for checking' and includes both email_513_SI.pdf and email_513_BL.pdf as attachments."
+  "evidence": "The email states 'Attached SI and draft BL ... for checking' and includes both email_513_SI.pdf and email_513_BL.pdf as attachments."
 }

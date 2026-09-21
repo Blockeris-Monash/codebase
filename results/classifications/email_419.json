@@ -1,7 +1,7 @@
 {
   "email_id": "email_419",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks someone to send a draft BL for checking, but no SI or draft BL is attached, so it does not meet the BL_COMPARISON requirement. It is an operational documentation request."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks to send the draft BL for checking and names the BL/container reference MCLSINJEA2571840."
 }

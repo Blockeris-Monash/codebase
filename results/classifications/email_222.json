@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The subject line advertises a Bitcoin investment with guaranteed returns, and the body contains a promotional limited-time offer, which are clear spam/scam signals."
+  "evidence": "The subject advertises a Bitcoin investment with guaranteed returns and the body is a promotional limited-time offer, indicating spam/scam content."
 }

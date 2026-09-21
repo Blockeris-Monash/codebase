@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email uses urgent account-verification language, a suspicious external sender, and a prize/gift-card link, which are clear phishing/scam signals."
+  "evidence": "The email contains a prize/gift card lure, urgent account verification language, and a suspicious shortened link, indicating phishing/scam spam."
 }

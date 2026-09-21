@@ -3,5 +3,5 @@
   "category": "INVOICE_QUERY",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email explicitly requests cancellation of invoice 5250070136 and reversal of the PGI, with the subject referencing billing."
+  "evidence": "The email explicitly requests cancellation of invoice 5250070136 and reversal of PGI due to a booking amendment, which is a billing/invoice issue."
 }

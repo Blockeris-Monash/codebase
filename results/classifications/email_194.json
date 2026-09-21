@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Automated RPA notification stating a billing process completed successfully and no action is required, which is an operational update rather than a BL, SI, invoice query, or spam."
+  "evidence": "The email is an automated operational notification stating that a billing process completed successfully and that no action is required, with no request to compare a BL, create an SI, or query an invoice."
 }

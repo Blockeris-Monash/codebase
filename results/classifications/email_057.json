@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction for 5SUS-88442' with full SI details; no draft BL is attached, so it is not a BL comparison."
+  "evidence": "Subject says 'REQUEST SI' and body provides Shipping Instruction details for 5SUS-88442, ending with 'Please revert with draft BL once available', which matches SI_REQUEST rather than BL_COMPARISON."
 }

@@ -2,6 +2,6 @@
   "email_id": "email_441",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "Automated RPA notification states the billing process completed successfully and no action is required, indicating an internal operational update rather than a BL comparison, SI request, invoice query, or spam."
+  "confidence": 1.0,
+  "evidence": "The email is an automated RPA notification stating that a billing process completed successfully and no action is required, which is an internal operational update rather than a BL comparison, SI request, invoice query, or spam."
 }

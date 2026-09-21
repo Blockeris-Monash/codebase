@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject is 'daily Berthing Report' and the body is an internal operational request to action an outstanding BL list, with no request to compare a draft BL against an SI."
+  "evidence": "The email is a daily operational reminder about outstanding BL items and does not request a draft BL comparison, new SI, or invoice query."
 }

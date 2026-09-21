@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains a Bitcoin investment promise, a prize claim, a suspicious link, and a request to pay shipping, all typical phishing/scam signals."
+  "evidence": "The email advertises guaranteed Bitcoin returns and a prize-winning iPhone scam requiring payment, with a suspicious external link."
 }

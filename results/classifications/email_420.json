@@ -3,5 +3,5 @@
   "category": "INVOICE_QUERY",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email explicitly asks about invoice 5250071441 and whether THC/local charges are included or billed separately, requesting a billing breakdown."
+  "evidence": "The email explicitly asks about invoice 5250071441 and requests a breakdown of whether THC/local charges are included or billed separately."
 }

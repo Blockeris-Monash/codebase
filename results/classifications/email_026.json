@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is a promotional offer with urgency language ('LIMITED TIME OFFER!', 'Buy now before this deal expires!') and no operational shipping request."
+  "evidence": "The email is a promotional offer with urgency language ('LIMITED TIME OFFER!', 'Buy now before this deal expires!') and a sales pitch for a logistics automation suite, matching spam/promotional content."
 }

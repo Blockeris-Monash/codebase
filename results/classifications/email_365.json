@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is from a suspicious prize-claims domain, claims the recipient won an iPhone, asks them to complete a survey, and requests payment of $1 shipping via an external link, which are clear phishing/scam indicators."
+  "evidence": "The email claims a prize, asks the recipient to complete a survey and pay a shipping fee, and includes a suspicious external link, which are typical phishing/scam indicators."
 }

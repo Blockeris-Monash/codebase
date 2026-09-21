@@ -3,5 +3,5 @@
   "category": "INVOICE_QUERY",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email explicitly asks to confirm D&D / detention charges for a container before releasing payment, which matches invoice/freight billing inquiries."
+  "evidence": "The email explicitly asks to confirm D&D / detention charges before releasing payment."
 }

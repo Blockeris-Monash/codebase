@@ -1,7 +1,7 @@
 {
   "email_id": "email_431",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject and body explicitly request submission of SI for pending shipments: 'Submit SI & AED' and 'Please submit SI & AED for all pending shipments by end of day.'"
+  "evidence": "The email is a general reminder to submit SI & AED for all pending shipments and refers to an outstanding list, with no specific shipment or attached SI, matching the rule that general reminders are GENERAL."
 }

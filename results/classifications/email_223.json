@@ -1,7 +1,7 @@
 {
   "email_id": "email_223",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
   "confidence": 0.85,
-  "evidence": "The email asks Arlene to send a draft BL for checking, but no SI or draft BL is attached and the sender does not say documents are missing, so it is not BL_COMPARISON. It is an operational documentation request, not an invoice query, SI request, or spam."
+  "evidence": "The email explicitly asks: 'Please assist to send the draft BL for SIJ0061675 for checking asap,' which is a request to send a draft BL for checking."
 }

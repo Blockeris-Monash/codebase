@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email uses urgent account verification language and a limited-time promotional offer, which matches phishing/scam/promotional spam rather than shipping operations."
+  "evidence": "The subject line uses urgent account verification language, and the body is a promotional offer for a logistics automation suite, matching spam/phishing signals."
 }

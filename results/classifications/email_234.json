@@ -1,7 +1,7 @@
 {
   "email_id": "email_234",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject and body explicitly request submission of SI for pending shipments."
+  "evidence": "The email is a general reminder to submit SI & AED for all pending shipments and references an outstanding list, not a specific shipment SI request."
 }

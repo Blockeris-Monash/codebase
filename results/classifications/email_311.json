@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction for 5AKR-88443' with full shipping details, indicating a new Shipping Instruction request. No draft BL is attached, so it is not BL_COMPARISON."
+  "evidence": "Subject says 'REQUEST SI' and body provides Shipping Instruction details, ending with 'Please revert with draft BL once available', which matches SI_REQUEST rather than BL_COMPARISON."
 }

@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The subject line advertises a gift card prize and the body contains a promotional discount offer, which matches spam/phishing/promotional content."
+  "evidence": "The email is a promotional prize/limited-time offer with a suspicious sender domain and no operational shipping content."
 }

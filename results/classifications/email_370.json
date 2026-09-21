@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email provides Shipping Instruction details for 5AAT-26978 and asks for a draft BL once available, with no draft BL attached for comparison."
+  "evidence": "The email sends Shipping Instruction details for 5AAT-26978 and asks to revert with the draft BL once available, which matches SI_REQUEST rather than BL_COMPARISON."
 }

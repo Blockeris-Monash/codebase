@@ -2,6 +2,6 @@
   "email_id": "email_255",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email is an internal operational update asking the team to action outstanding BL items, but it does not request a draft BL vs SI comparison and no attachments are present."
+  "confidence": 1.0,
+  "evidence": "The email asks the team to action a list of outstanding BL items, which is a general operational reminder/list of outstanding items, not a request to compare a draft BL against an SI."
 }

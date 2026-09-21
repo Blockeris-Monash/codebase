@@ -1,7 +1,7 @@
 {
   "email_id": "email_436",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.5,
-  "evidence": "The email only asks someone to send a draft BL for checking and has no attachments, so it is not BL_COMPARISON; it is not an SI request, invoice query, or spam, leaving GENERAL as the best residual operational category."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks to send the draft BL for I733055978 for checking."
 }

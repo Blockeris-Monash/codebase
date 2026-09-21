@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains a Bitcoin investment promise of guaranteed 300% returns and a prize/gift card claim link, which are clear spam/scam signals unrelated to shipping operations."
+  "evidence": "The email advertises a Bitcoin investment opportunity with guaranteed returns and includes a prize-claim link, which is a clear phishing/scam/spam signal."
 }

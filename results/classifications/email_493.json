@@ -1,7 +1,7 @@
 {
   "email_id": "email_493",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The sender asks Syed to send the draft BL for checking, with no attachments; per the rules, a request only to provide a draft BL is not BL_COMPARISON, so it is best classified as a general operational documentation request."
+  "confidence": 1.0,
+  "evidence": "The sender explicitly asks: 'Please assist to send the draft BL for MCLSINJEA2578020 for checking asap.'"
 }

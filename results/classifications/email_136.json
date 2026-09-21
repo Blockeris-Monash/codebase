@@ -1,7 +1,7 @@
 {
   "email_id": "email_136",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks someone to send a draft BL for checking, but no documents are attached, so it is not BL_COMPARISON; it is an operational shipping documentation request."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks: 'Please assist to send the draft BL for 14353682 for checking asap.'"
 }

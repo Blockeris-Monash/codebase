@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is an unsolicited prize/investment scam with a suspicious sender, guaranteed returns claim, and a click-to-claim link."
+  "evidence": "The email is an unsolicited prize/investment scam with a suspicious link and guaranteed returns, matching spam/phishing."
 }

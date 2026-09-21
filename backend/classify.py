@@ -128,14 +128,15 @@ Classify this email into EXACTLY ONE category.
 
 Categories:
 - BL_COMPARISON: Asking to check, verify, confirm, or compare a draft Bill of Lading (BL) against a Shipping Instruction (SI).
-- SI_REQUEST: Requesting to create or submit a new Shipping Instruction.
+- SI_REQUEST: Requesting to create or submit a new Shipping Instruction, or sending one over for a shipment. A general reminder to all staff, a greeting, or a list of outstanding items is NOT SI_REQUEST; it is GENERAL.
 - INVOICE_QUERY: Inquiries about ocean invoices, D&D / detention fees, freight billing.
 - GENERAL: Internal operational updates, vessel berthing notices, daily schedules.
 - SPAM: Phishing, scams, promotions, or external spam.
 
 Attachments matter. The email lists the files attached to it.
 - BL_COMPARISON means the SI and the draft BL are there to be compared: they are attached, or the sender says they were dropped or are missing.
-- An email that only asks someone to SEND or provide a draft BL, with nothing attached, is NOT BL_COMPARISON.
+- An email that asks for the draft BL to be sent or checked, and names the draft BL, IS BL_COMPARISON even with nothing attached. A later stage flags the missing attachment for a person to review, so do not judge that yourself.
+- An email that sends the Shipping Instruction details (or asks for one) and only adds that the draft BL will follow later, for example "please revert with draft BL once available", is SI_REQUEST. It is BL_COMPARISON only when it asks for the draft BL to be sent for checking or checked now.
 - An email that attaches the SI together with another document (a packing list, commercial invoice, certificate of origin or anything else) and asks for it to be checked or confirmed IS BL_COMPARISON. Do not judge the attached document yourself: a later stage checks the document type and flags a wrong one.
 
 For confidence_tier, you MUST select ONLY one of these four exact strings:

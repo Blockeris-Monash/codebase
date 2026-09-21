@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Automated RPA notification that an internal billing process completed successfully and requires no action, with no BL, SI, or invoice inquiry."
+  "evidence": "Automated RPA notification that a billing process completed successfully and no action is required, which is an operational update rather than a BL comparison, SI request, invoice query, or spam."
 }

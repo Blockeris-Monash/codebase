@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email uses a sensational subject line, claims the mailbox exceeded storage, and asks the recipient to verify the account through an external suspicious link, which is a phishing/scam pattern."
+  "evidence": "The email uses a sensational subject line and asks the recipient to verify their account via an external link, which is a phishing/scam pattern."
 }

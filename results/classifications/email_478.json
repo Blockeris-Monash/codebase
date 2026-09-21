@@ -2,6 +2,6 @@
   "email_id": "email_478",
   "category": "SI_REQUEST",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email provides full Shipping Instruction details (POL, POD, shipper, consignee, goods, documents) and asks for a draft BL once available, but no draft BL is attached, so it is not BL_COMPARISON."
+  "confidence": 1.0,
+  "evidence": "The email says 'Please find Shipping instruction for 5RUS-92024' and provides full SI details, then asks to 'revert with draft BL once available', which matches sending a Shipping Instruction rather than comparing a draft BL now."
 }

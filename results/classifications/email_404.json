@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is from an external suspicious sender, uses urgent payment language, and includes a link to pay an alleged customs fee, which is a common phishing/scam pattern."
+  "evidence": "The email uses a suspicious external sender, claims an unpaid customs fee, and pressures the recipient to pay via a link within 24 hours, which is a common phishing/scam pattern."
 }
