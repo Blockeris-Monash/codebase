@@ -65,7 +65,7 @@ class PairedInput(BaseModel):
 
 
 # =====================================================================
-# 2. Stage 2 Extraction: Hybrid (Pre-computed Cache + Live Qwen AI)
+# 2. Stage 3 Extraction: Hybrid (Pre-computed Cache + Live Qwen AI)
 # =====================================================================
 
 extractor = AiExtractor(qwen_model)
@@ -138,7 +138,7 @@ async def extract_document(
 
 
 # =====================================================================
-# 3. Stage 3 Normalization: Formatting for JJ's Comparator
+# 3. Normalization: contract 03 fields into comparable form (stage 4's front half)
 # =====================================================================
 
 def clean_entity(text: str) -> str:
