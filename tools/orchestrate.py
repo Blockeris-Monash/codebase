@@ -1,154 +1,194 @@
+"""Pipeline Orchestrator: Ingests document pairs, extracts via AI (Qwen/Cached),
+cleans fields, and runs deterministic comparison.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
 import os
 import re
-import asyncio
-from typing import Dict, List, Any, Optional
-from fastapi import FastAPI
-from pydantic import BaseModel
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Query
+from pydantic import BaseModel
 
-# Import Milk's extractor
-from google import genai
-from google.genai import types
+# Import Milk's Extractor and Model
+from extract_ai import AiExtractor
+from qwen_model import qwen_model
 
-# Import JJ's deterministic comparator
-from comparator import compare_documents, ComparisonReport
+# Import JJ's Deterministic Comparator
+from comparator import ComparisonReport, compare_documents
 
 load_dotenv()
-app = FastAPI()
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+log = logging.getLogger(__name__)
+
+app = FastAPI(title="Document Discrepancy Orchestrator")
+
+# Directory where Milk's pre-extracted results are stored
+ROOT_DIR = Path(__file__).resolve().parents[1]
+EXTRACTS_DIR = ROOT_DIR / "results" / "extracts"
+
+FIELD_NAMES = [
+    "shipper",
+    "consignee",
+    "notify_party",
+    "port_of_loading",
+    "port_of_discharge",
+    "container_count",
+    "gross_weight_kg",
+]
 
 SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
 
-# ==========================================
-# 1. Input/Output Models
-# ==========================================
+# =====================================================================
+# 1. Input/Output Request Models
+# =====================================================================
+
 class PairedInput(BaseModel):
     email_id: str
     si_pairs: List[tuple[str, str]]
     bl_pairs: List[tuple[str, str]]
 
-class ExtractedField(BaseModel):
-    present: bool
-    label_seen: Optional[str] = None
-    raw: Optional[str] = None
 
-class ModelFields(BaseModel):
-    shipper: ExtractedField
-    consignee: ExtractedField
-    notify_party: ExtractedField
-    port_of_loading: ExtractedField
-    port_of_discharge: ExtractedField
-    container_count: ExtractedField
-    gross_weight_kg: ExtractedField
+# =====================================================================
+# 2. Stage 2 Extraction: Hybrid (Pre-computed Cache + Live Qwen AI)
+# =====================================================================
 
-# ==========================================
-# 2. Milk's AI Extractor (Adapted for Async FastAPI)
-# ==========================================
-PROMPT = """You extract fields from one shipping document (a Shipping Instruction or a Bill of Lading), given as lines of "label: value".
-Return these 7 fields: shipper, consignee, notify_party, port_of_loading, port_of_discharge, container_count, gross_weight_kg.
-For each field return:
-present: true if the document gives a real value, false if the field is missing, blank, TBA, TBC, N/A, or only underscores.
-label_seen: the label exactly as written. null if not present.
-raw: the value exactly as written, copied character for character. Do not fix, translate, reformat or normalise. null if not present.
-DOCUMENT:
+extractor = AiExtractor(qwen_model)
 
-"""
+def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
+    """Loads pre-extracted JSON from results/extracts/ if it exists."""
+    extract_file = EXTRACTS_DIR / f"{email_id}_{role}.json"
+    if extract_file.exists():
+        try:
+            data = json.loads(extract_file.read_text(encoding="utf-8"))
+            # Unwrap the "fields" dictionary from DocumentExtract
+            return data.get("fields", data)
+        except Exception as e:
+            log.warning("Failed to load cached extract for %s: %s", extract_file.name, e)
+    return None
 
-def pairs_as_text(pairs: List[tuple[str, str]]) -> str:
-    return "\n".join(f"{label}: {value}" for label, value in pairs)
+async def extract_document_fields(
+    email_id: str,
+    role: str,
+    pairs: List[tuple[str, str]],
+    force_live: bool = False,
+) -> Dict[str, Any]:
+    """Hybrid extractor: Uses Milk's saved results for instant speed,
+    or falls back to live Qwen model with retry and hallucination checks.
+    """
+    # 1. Try cached extract if not forcing live AI
+    if not force_live:
+        cached = load_saved_extract(email_id, role)
+        if cached:
+            return cached
 
-async def extract_fields_async(email_id: str, pairs: List[tuple[str, str]]) -> Dict[str, dict]:
-    text = pairs_as_text(pairs)
+    # 2. Live extraction via Milk's AiExtractor (run in threadpool for async non-blocking concurrency)
     try:
-        response = await client.aio.models.generate_content(
-            model="gemini-3.5-flash-lite",
-            contents=PROMPT + text,
-            config=types.GenerateContentConfig(
-                temperature=0,
-                response_mime_type="application/json",
-                response_schema=ModelFields,
-            ),
-        )
-        parsed_fields = ModelFields.model_validate_json(response.text)
-        return parsed_fields.model_dump()
+        raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
     except Exception as e:
-        print(f"Extraction failed for {email_id}: {e}")
-        return {}
+        log.error("Live extraction failed for %s (%s): %s", email_id, role, e)
+        raw_fields = None
 
-# ==========================================
-# 3. Hanif's Data Cleaner (Adjusted for JJ)
-# ==========================================
+    # 3. Graceful fallback if model returns None or fails
+    if not raw_fields:
+        return {field: {"present": False, "raw": None, "label_seen": None} for field in FIELD_NAMES}
+
+    return raw_fields
+
+
+# =====================================================================
+# 3. Stage 3 Normalization: Formatting for JJ's Comparator
+# =====================================================================
+
 def clean_entity(text: str) -> str:
-    text = text.upper().strip()
-    text = re.sub(r'[.,;:]+$', '', text) 
-    text = re.sub(r'\s+', ' ', text)     
-    return text
+    """Takes only the entity name before any address pipe ' | '."""
+    first_segment = re.split(r"\s*\|\s*|\s{2,}", text)[0]
+    return re.sub(r"\s+", " ", first_segment).upper().strip(" ,.;:")
 
 def clean_port(text: str) -> str:
-    text_no_locode = re.sub(r'\s*\(\s*[A-Z]{5}\s*\)', '', text.upper())
-    return clean_entity(text_no_locode)
+    first_segment = re.split(r"\s*\|\s*|\s{2,}", text)[0]
+    # Remove UN/LOCODE in parentheses e.g. (MYPKG)
+    text_no_locode = re.sub(r"\s*\(\s*[A-Z0-9]{5}\s*\)", "", first_segment, flags=re.I)
+    return re.sub(r"\s+", " ", text_no_locode).upper().strip(" ,.;:")
 
 def clean_containers(text: str) -> str:
     text = text.upper().strip()
-    return re.sub(r'\s*X\s*', ' x ', text) 
+    return re.sub(r"\s*X\s*", " x ", text)
 
 def clean_weight(text: str) -> str:
     text_upper = text.upper()
     is_mt = "MT" in text_upper or "M/T" in text_upper
-    numeric_str = re.sub(r'[^\d.]', '', text)
-    if not numeric_str: return ""
+    numeric_str = re.sub(r"[^\d.]", "", text.replace(",", ""))
+    if not numeric_str:
+        return ""
     try:
         weight_val = float(numeric_str)
-        if is_mt: weight_val *= 1000
-        # JJ expects a float string like "135126.0" for his math tolerance
-        return str(float(weight_val)) 
+        if is_mt:
+            weight_val *= 1000.0
+        return str(weight_val)
     except ValueError:
         return text.strip()
 
-def apply_cleaner(fields: Dict[str, dict]) -> Dict[str, dict]:
-    cleaned = {}
-    for key, field_data in fields.items():
+def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
+    cleaned: Dict[str, Any] = {}
+    for key in FIELD_NAMES:
+        field_data = fields.get(key, {"present": False, "raw": None})
         raw_text = field_data.get("raw")
         present = field_data.get("present", False)
-        
-        if not present or not raw_text or SENTINEL.match(raw_text.strip()):
+
+        if not present or not raw_text or SENTINEL.match(str(raw_text).strip()):
             field_data["norm"] = None
         else:
+            raw_str = str(raw_text).strip()
             if key in ["shipper", "consignee", "notify_party"]:
-                field_data["norm"] = clean_entity(raw_text)
+                field_data["norm"] = clean_entity(raw_str)
             elif key in ["port_of_loading", "port_of_discharge"]:
-                field_data["norm"] = clean_port(raw_text)
+                field_data["norm"] = clean_port(raw_str)
             elif key == "container_count":
-                field_data["norm"] = clean_containers(raw_text)
+                field_data["norm"] = clean_containers(raw_str)
             elif key == "gross_weight_kg":
-                field_data["norm"] = clean_weight(raw_text)
+                field_data["norm"] = clean_weight(raw_str)
             else:
-                field_data["norm"] = raw_text.strip()
-                
+                field_data["norm"] = raw_str
+
         cleaned[key] = field_data
     return cleaned
 
-# ==========================================
-# 4. FastAPI Orchestrator Route
-# ==========================================
+
+# =====================================================================
+# 4. FastAPI Endpoint: Extract -> Clean -> Compare
+# =====================================================================
+
 @app.post("/extract-clean-compare", response_model=ComparisonReport)
-async def run_pipeline(payload: PairedInput):
-    
-    # 1. EXTRACTION: Run Milk's logic on both documents concurrently
-    si_task = extract_fields_async(payload.email_id, payload.si_pairs)
-    bl_task = extract_fields_async(payload.email_id, payload.bl_pairs)
-    
+async def run_pipeline(
+    payload: PairedInput,
+    live: bool = Query(
+        False, description="Set to true to force live Qwen AI call instead of loading saved extracts"
+    ),
+):
+    """Orchestrates the full flow:
+    1. Extracts SI & BL concurrently using Milk's AiExtractor (Hybrid mode).
+    2. Cleans & normalizes values into standard comparable formats.
+    3. Evaluates discrepancies using JJ's deterministic engine.
+    """
+    # 1. Concurrently extract SI and BL
+    si_task = extract_document_fields(payload.email_id, "SI", payload.si_pairs, force_live=live)
+    bl_task = extract_document_fields(payload.email_id, "BL", payload.bl_pairs, force_live=live)
+
     si_raw_fields, bl_raw_fields = await asyncio.gather(si_task, bl_task)
-    
-    # 2. CLEANING: Run Hanif's normalizer
-    si_cleaned_fields = apply_cleaner(si_raw_fields)
-    bl_cleaned_fields = apply_cleaner(bl_raw_fields)
-    
-    # Format into nodes for JJ's comparator
-    si_doc = {"email_id": payload.email_id, "fields": si_cleaned_fields}
-    bl_doc = {"email_id": payload.email_id, "fields": bl_cleaned_fields}
-    
-    # 3. COMPARISON: Run JJ's deterministic engine
+
+    # 2. Clean & normalize
+    si_cleaned = apply_cleaner(si_raw_fields)
+    bl_cleaned = apply_cleaner(bl_raw_fields)
+
+    si_doc = {"email_id": payload.email_id, "fields": si_cleaned}
+    bl_doc = {"email_id": payload.email_id, "fields": bl_cleaned}
+
+    # 3. Deterministic comparison (JJ's Engine)
     report = compare_documents(si_doc, bl_doc)
-    
+
     return report
