@@ -1,7 +1,7 @@
 {
   "email_id": "email_440",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks someone to send a draft BL for checking but has no attachments, so it is not BL_COMPARISON; it is an internal operational request."
+  "confidence": 1.0,
+  "evidence": "Subject says REQUEST BL DRAFT and body explicitly asks to send the draft BL for ONEYSINF47068 for checking."
 }

@@ -39,3 +39,20 @@ def test_the_prompt_sends_an_si_plus_another_document_to_comparison() -> None:
     prompt = classify.CLASSIFICATION_PROMPT.lower()
 
     assert "packing list" in prompt and "certificate of origin" in prompt and "is bl_comparison" in prompt
+
+
+def test_the_prompt_sends_a_draft_bl_request_with_nothing_attached_to_comparison() -> None:
+    # 91 "please send the draft BL for checking" emails carry no files. They are comparison
+    # emails, and the compare stage escalates them as a missing attachment.
+    prompt = classify.CLASSIFICATION_PROMPT
+
+    assert "even with nothing attached" in prompt
+    assert "NOT BL_COMPARISON" not in prompt
+
+
+def test_the_prompt_keeps_staff_reminders_and_greetings_out_of_si_request() -> None:
+    assert "A general reminder to all staff" in classify.CLASSIFICATION_PROMPT
+
+
+def test_the_prompt_keeps_a_plain_si_email_out_of_comparison() -> None:
+    assert "draft BL will follow later" in classify.CLASSIFICATION_PROMPT

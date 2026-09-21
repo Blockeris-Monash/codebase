@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains a prize/gift card lure, a shortened external link, and an account suspension threat, which are typical phishing/scam signals."
+  "evidence": "The email is a prize/gift-card scam with a suspicious external link and no legitimate shipping operations content."
 }

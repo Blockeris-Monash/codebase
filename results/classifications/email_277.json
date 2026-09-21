@@ -2,6 +2,6 @@
   "email_id": "email_277",
   "category": "SI_REQUEST",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email provides full Shipping Instruction details for 5AAT-76563 and asks the recipient to proceed, with a later request for draft BL, but no draft BL is attached for comparison."
+  "confidence": 1.0,
+  "evidence": "The email says 'Please find Shipping instruction for 5AAT-76563', provides full SI details, and only asks to 'revert with draft BL once available', which matches SI_REQUEST."
 }

@@ -1,7 +1,7 @@
 {
   "email_id": "email_271",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks Teo to send the draft BL for SIJ3466925 for checking, but no documents are attached, so it is not a BL comparison; it is an operational shipping documentation request."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks Teo to send the draft BL for SIJ3466925 for checking asap, which is a request to check a draft Bill of Lading."
 }

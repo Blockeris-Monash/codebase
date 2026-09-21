@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "The body is an operational update stating a daily berthing report and that vessel SOLID 16 V.044NW2 berthed on schedule, while the subject mentions submitting an SI, creating conflicting signals."
+  "evidence": "The body is a daily berthing report stating vessel SOLID 16 V.044NW2 berthed on schedule, which is an internal operational update. The subject mentions submitting SI & AED, but the body does not request or provide a Shipping Instruction, and there is no BL comparison or invoice query."
 }

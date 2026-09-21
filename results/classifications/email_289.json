@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject includes 'REQUEST SI' and body says 'Please find Shipping instruction for 5RCY-51076' with full SI details (POL, POD, shipper, consignee, goods, documents). No draft BL is attached, so it is not a BL comparison."
+  "evidence": "The email says 'Please find Shipping instruction for 5RCY-51076' and includes SI details, then asks 'Please revert with draft BL once available', which matches sending a Shipping Instruction rather than requesting an immediate draft BL comparison."
 }

@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email provides an operational update for vessel LE HAVRE V.QI540A, stating loading is completed and documents will follow, with no request to compare BL/SI, create SI, or query invoices."
+  "evidence": "The email provides an internal operational update for LE HAVRE V.QI540A, stating loading is completed and documents will follow, with no request to compare a BL, create an SI, or query invoices."
 }

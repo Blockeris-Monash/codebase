@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains a prize claim, survey request, suspicious link, and payment request, which are typical phishing/scam indicators."
+  "evidence": "The email contains a prize scam, survey request, payment demand, and suspicious external link, indicating phishing/spam."
 }

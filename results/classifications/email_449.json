@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains a suspicious sender domain, a Bitcoin investment promise of guaranteed returns, and a fake customs fee payment request with an external tracking link, all indicating phishing/scam spam."
+  "evidence": "The email is from a suspicious external sender, advertises guaranteed Bitcoin returns, and pressures payment of a customs fee via an untrusted link, indicating phishing/scam."
 }

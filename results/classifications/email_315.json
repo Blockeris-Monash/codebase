@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email contains promotional language, a suspicious prize claim, and a request to pay shipping via an external link, indicating spam/phishing."
+  "evidence": "The email is a promotional/scam message offering a discount and claiming the recipient won an iPhone, with a suspicious link asking for payment."
 }

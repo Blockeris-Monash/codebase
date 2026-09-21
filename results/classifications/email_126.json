@@ -2,6 +2,6 @@
   "email_id": "email_126",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "Subject is a daily berthing report and the body is an internal request to action outstanding BL items, not a request to compare a draft BL with an SI."
+  "confidence": 1.0,
+  "evidence": "The email is a daily operational reminder asking the team to action pending items from a list of outstanding BLs, not a request to compare a draft BL with an SI or create/submit an SI."
 }

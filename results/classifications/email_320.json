@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email states 'Please find Shipping instruction for 5AAT-20967' and provides full shipping instruction details (POL, POD, shipper, consignee, goods, documents), indicating submission of a new SI. It only asks for a draft BL later and has no draft BL attached, so it is not BL_COMPARISON."
+  "evidence": "The email says 'Please find Shipping instruction for 5AAT-20967' and provides full SI details, then asks to 'revert with draft BL once available', which is a future request rather than a current BL comparison."
 }

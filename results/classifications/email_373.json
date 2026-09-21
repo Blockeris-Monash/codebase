@@ -3,5 +3,5 @@
   "category": "INVOICE_QUERY",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject references invoice cancellation and body asks to confirm D&D/detention charges before payment."
+  "evidence": "Subject requests cancellation of an invoice and the body asks to confirm D&D/detention charges before releasing payment."
 }

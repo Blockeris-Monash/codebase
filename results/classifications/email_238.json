@@ -1,7 +1,7 @@
 {
   "email_id": "email_238",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "Subject explicitly says 'Submit SI & AED' and the body asks the team to action outstanding BL items, indicating a request to submit pending Shipping Instructions rather than compare a draft BL."
+  "confidence": 1.0,
+  "evidence": "The email is a reminder to action a list of outstanding BL items, which is explicitly treated as a general reminder/list of outstanding items rather than a new SI request or BL comparison."
 }

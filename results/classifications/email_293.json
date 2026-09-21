@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "Subject says 'REQUEST SI' and body provides full shipping instruction details (POL, POD, shipper, consignee, goods) for a new booking."
+  "evidence": "Subject says 'REQUEST SI' and body provides Shipping Instruction details for 5APH-97374, then asks to 'revert with draft BL once available', which is a later-stage request rather than a request to check or compare a draft BL now."
 }

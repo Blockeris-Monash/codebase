@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is a prize/gift-card scam with a suspicious sender, promotional subject line, and a shortened external link asking the recipient to click to claim money."
+  "evidence": "The email is from an external sender, uses a sensational subject line, and contains a prize/gift card claim link, which are clear spam/phishing signals."
 }

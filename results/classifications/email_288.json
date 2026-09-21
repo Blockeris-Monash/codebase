@@ -1,7 +1,7 @@
 {
   "email_id": "email_288",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The sender asks Lee to send the draft BL for checking, but no SI or draft BL is attached, so it is an operational documentation request rather than BL_COMPARISON."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks to send the draft BL for ONEYSINF14150 for checking, and the subject names the draft BL."
 }

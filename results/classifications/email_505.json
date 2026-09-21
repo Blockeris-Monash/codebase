@@ -2,6 +2,6 @@
   "email_id": "email_505",
   "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks to confirm the BL is in order and attaches an SI with another document, which matches the BL_COMPARISON rule even if the second attachment is not a draft BL."
+  "confidence": 1.0,
+  "evidence": "The email asks to confirm the BL is in order and attaches the SI with a Certificate of Origin; per the rules, an SI attached with another document and a request to check/confirm is BL_COMPARISON."
 }

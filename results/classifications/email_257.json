@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The subject and body explicitly state 'Please find Shipping instruction' and provide full SI details (POL, POD, shipper, consignee, goods, documents), with no draft BL attached; the request to revert with a draft BL is a follow-up, not a BL comparison."
+  "evidence": "The email sends Shipping Instruction details for 5RSG-93788 and only asks to 'revert with draft BL once available', which matches SI_REQUEST rather than a current BL comparison request."
 }

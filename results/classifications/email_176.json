@@ -1,7 +1,7 @@
 {
   "email_id": "email_176",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email asks Arlene to send a draft BL for checking, but no draft BL or SI is attached, so it is not BL_COMPARISON. It is an operational shipping documentation request, not an SI request, invoice query, or spam."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks Arlene to send the draft BL for checking and the subject identifies the draft BL as 'Draft BL MMSS 2507 V.257087E PORT KLANG (WESTPORT) - amend BL 053'."
 }

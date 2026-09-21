@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is an operational update stating a daily berthing report and that vessel NAP 914 V.BS007 berthed on schedule, with no BL, SI, or invoice content."
+  "evidence": "The email is a daily berthing report update stating vessel NAP 914 V.BS007 berthed on schedule, which matches internal operational updates and vessel berthing notices."
 }

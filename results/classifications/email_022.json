@@ -3,5 +3,5 @@
   "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email states 'Please find Shipping instruction for 5RCY-52735' and provides full shipping instruction details, indicating submission of a new SI."
+  "evidence": "The email says 'Please find Shipping instruction for 5RCY-52735' and provides SI details, then only asks to 'revert with draft BL once available', which matches SI_REQUEST rather than a current BL comparison request."
 }

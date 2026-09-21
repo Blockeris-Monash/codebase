@@ -1,7 +1,7 @@
 {
   "email_id": "email_385",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The email only asks Willy to send a draft BL for checking and lists no attachments, so it does not meet the BL_COMPARISON requirement of having the draft BL/SI available for comparison."
+  "confidence": 1.0,
+  "evidence": "The email explicitly asks to send the draft BL for 070500209961 for checking."
 }

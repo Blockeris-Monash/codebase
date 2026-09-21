@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email is an unsolicited prize/gift-card scam with a suspicious external link and no operational shipping content."
+  "evidence": "The email is a prize/gift-card scam with a suspicious external link and no operational shipping content."
 }

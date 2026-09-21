@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The body provides an operational update for MMSS 2507 V.257087E, stating loading is completed and documents will follow, with no request to compare BL/SI, create an SI, or query invoices."
+  "evidence": "The email provides an operational update stating loading is completed and documents will follow, with no request to create, check, or compare a Shipping Instruction or draft Bill of Lading."
 }

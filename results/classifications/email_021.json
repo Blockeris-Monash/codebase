@@ -1,7 +1,7 @@
 {
   "email_id": "email_021",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.85,
-  "evidence": "The body explicitly asks the recipient to submit SI for pending shipments, making Shipping Instruction submission the primary intent despite the billing-related subject."
+  "confidence": 1.0,
+  "evidence": "The email is a general reminder to submit SI & AED for all pending shipments and references an outstanding list, which is explicitly classified as GENERAL rather than SI_REQUEST."
 }

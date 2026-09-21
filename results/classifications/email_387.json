@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email uses a promotional subject line and a fake customs fee payment request with an external link, which are typical phishing/scam indicators."
+  "evidence": "The email uses a sensational subject line and asks for urgent payment of a small customs fee via an external link, which is a typical phishing/scam pattern."
 }

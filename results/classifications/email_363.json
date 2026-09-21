@@ -3,5 +3,5 @@
   "category": "SPAM",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email promises guaranteed Bitcoin investment returns, claims to be a bank officer with a large business proposal, and asks the recipient to provide bank details, which are classic phishing/scam indicators."
+  "evidence": "The email is an unsolicited financial proposal promising guaranteed returns and asks the recipient to provide bank details, which is a clear phishing/scam pattern."
 }
