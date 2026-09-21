@@ -276,8 +276,8 @@ const LABEL = {MISMATCH:"Mismatch", NEEDS_REVIEW:"Needs review", OK:"Match"};
 const OTHER = {SI_REQUEST:"SI request", INVOICE_QUERY:"Invoice", GENERAL:"General", SPAM:"Spam", BL_COMPARISON:"SI vs BL"};
 const FOLDERS = [
   {k:"all", n:"All mail", f:()=>true},
-  {k:"MISMATCH", n:"Mismatch", f:e=>e.status==="MISMATCH"},
-  {k:"NEEDS_REVIEW", n:"Needs review", f:e=>e.status==="NEEDS_REVIEW"},
+  {k:"MISMATCH", n:"Mismatch", f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
+  {k:"NEEDS_REVIEW", n:"Needs review", f:e=>e.status==="NEEDS_REVIEW" && !S.marks[e.id]},
   {k:"OK", n:"Match", f:e=>e.status==="OK"},
   {k:"CHECKED", n:"Checked", f:e=>!!S.marks[e.id]},
   {k:"cmp", n:"SI vs BL checks", f:e=>e.category==="BL_COMPARISON"},
@@ -372,7 +372,9 @@ const folder = k=>FOLDERS.find(x=>x.k===k);
 const count = k=>RESULTS.filter(folder(k).f).length;
 const items = ()=>{
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
-  return RESULTS.filter(folder(S.f).f).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")).toLowerCase().includes(term));
+  // an email you just marked stays in the list until you open another one, so the list does not jump under you
+  const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
+  return RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")).toLowerCase().includes(term));
 };
 const who = e=>esc(e.from.replace(/<.*>/,"").trim()||e.from);
 
