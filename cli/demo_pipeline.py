@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Walk one email through every stage and print what each one did.
 
-    python3 tools/demo_pipeline.py email_025          a defect
-    python3 tools/demo_pipeline.py email_055          Excel SI against a Word BL
-    python3 tools/demo_pipeline.py email_501          the BL is a commercial invoice
-    python3 tools/demo_pipeline.py --data data email_064
+    python3 -m cli.demo_pipeline email_025          a defect
+    python3 -m cli.demo_pipeline email_055          Excel SI against a Word BL
+    python3 -m cli.demo_pipeline email_501          the BL is a commercial invoice
+    python3 -m cli.demo_pipeline --data data email_064
 
 Built for the demo and for debugging: when a verdict looks wrong, this
 shows which stage made it wrong.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the AI extractor over every SI and BL attachment and save one DocumentExtract JSON each.
 
-    python3 tools/batch_extract.py --data data --out results/extracts --model qwen
+    python3 -m backend.extract.batch --data data --out results/extracts --model qwen
 
 A rerun skips saved results, and retries any document the model failed on.
 """
