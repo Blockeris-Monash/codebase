@@ -3,6 +3,15 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
+## Try it live
+
+- Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
+  comparison already run. On a phone you can add it to the home screen as an
+  icon that opens the same page.
+- Backend: <https://blockeris-backend.onrender.com> (`/health` answers `ok`).
+  The **Check again with AI** button in the app calls it. It runs on a free
+  host, so the first request after a quiet spell can take about 100 seconds.
+
 ## Setup
 
 Python 3.12. No database. Nothing below needs an API key.
@@ -14,7 +23,7 @@ cd codebase
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-.venv/bin/python -m pytest -q          # 175 passed
+.venv/bin/python -m pytest -q          # 192 passed, 5 skipped (skips need a model key)
 ```
 
 ### See the prototype
@@ -33,10 +42,12 @@ no key and no network.
 .venv/bin/python -m uvicorn backend.app:app --port 8010
 ```
 
-<http://localhost:8010/docs>. `POST /extract-clean-compare` answers with no
-key, from the saved extracts in `results/extracts/`. `POST /classify` calls a
-model, so it needs `GOOGLE_API_KEY` — copy `.env.example` to `.env` and fill
-it in. Ports 8010 and 8099 are suggestions; anything free will do.
+<http://localhost:8010/docs>. `GET /health` and `POST /extract-clean-compare`
+answer with no key, from the saved extracts in `results/extracts/`.
+`POST /classify`, `POST /process-email` and `POST /extract-clean-compare?live=true`
+call Qwen, so they need `QWEN_API_KEY` (and `QWEN_BASE_URL` if you go through
+the team proxy). Copy `.env.example` to `.env` and fill it in. Ports 8010 and
+8099 are suggestions; anything free will do.
 
 ## The dataset is in the repo
 
@@ -65,7 +76,7 @@ serves. Anything you run by hand is under `cli/`.
 ```
 backend/
 ├── contracts.py      the five contract types, one source of truth
-├── app.py            FastAPI service: /classify, /extract-clean-compare
+├── app.py            FastAPI service: /health, /classify, /extract-clean-compare, /process-email
 ├── classify.py       stage 1 - email to category
 ├── read/             stage 2 - file bytes to (label, value) pairs
 │   ├── documents.py    txt, docx, xlsx, pdf
@@ -80,8 +91,9 @@ backend/
     └── comparator.py   the verdict
 
 cli/      demo_read  demo_pipeline  smoke_test  validate_contracts
-          make_fixtures  make_results
+          make_fixtures  make_results  evidence  mutation_check  latency
 frontend/ index.html  results.js  config.js   the review UI, static
+          manifest.json  sw.js  icons         home screen icon on a phone
 ```
 
 Run a CLI as a module so imports resolve from the repo root:
@@ -90,6 +102,20 @@ Run a CLI as a module so imports resolve from the repo root:
 python3 -m cli.demo_read                 # what each reader does to each format
 python3 -m cli.demo_pipeline email_004   # one email through all five stages
 ```
+
+## Evidence
+
+One command rebuilds every validation number from files in this repo:
+
+```bash
+python3 -m cli.evidence            # writes results/evidence.md
+python3 -m cli.mutation_check      # break one BL field at a time, check the verdict
+python3 -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
+```
+
+`cli.evidence` compares the saved AI extraction with the rules reader,
+summarises the pipeline results and the classifier, and reads the hand labels in
+`results/classifier_handlabels.json`. No organiser answer key is used anywhere.
 
 ## Developer checks
 
