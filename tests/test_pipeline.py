@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from contract_types import FIELD_NAMES, ParseStatusType, ReviewReasonType, StatusType
-from make_fixtures import build, canonical_field, classify_from_body, load_scenarios
-from normalise import compare_row, normalise
-from read_documents import read_document
-from validate_contracts import load_contract, validate
+from backend.contracts import FIELD_NAMES, ParseStatusType, ReviewReasonType, StatusType
+from cli.make_fixtures import build, canonical_field, classify_from_body, load_scenarios
+from backend.compare.normalise import compare_row, normalise
+from backend.read.documents import read_document
+from cli.validate_contracts import load_contract, validate
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 

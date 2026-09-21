@@ -10,7 +10,7 @@ import os
 
 from pydantic import BaseModel
 
-from contract_types import ExtractedField
+from backend.contracts import ExtractedField
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 KEY_NAMES = ("GOOGLE_API_KEY", "GEMINI_API_KEY")
@@ -20,7 +20,7 @@ Return these 7 fields: shipper, consignee, notify_party, port_of_loading, port_o
 For each field return:
 - present: true if the document gives a real value, false if the field is missing, blank, TBA, TBC, N/A, or only underscores.
 - label_seen: the label exactly as written, without a trailing colon (for example "To the Order of" is the consignee label). null if not present.
-- raw: the value exactly as written, copied character for character. Do not fix, translate, reformat or normalise. For a party, keep only the name, the first segment before any " | ". null if not present.
+- raw: the value exactly as written, copied character for character. Do not fix, translate, reformat or normalise. For a party or a port, keep only the name, the first segment before any " | ". null if not present.
 Ignore every other field (vessel, voyage, HS code, booking, freight).
 
 DOCUMENT:

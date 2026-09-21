@@ -16,10 +16,10 @@ import json
 import unicodedata
 from pathlib import Path
 
-from contract_types import FIELD_NAMES, ParseStatusType, StatusType
-from labels import canonical_field
-from make_fixtures import build, classify_from_body
-from read_documents import document_title, read_document
+from backend.contracts import FIELD_NAMES, ParseStatusType, StatusType
+from backend.read.labels import canonical_field
+from cli.make_fixtures import build, classify_from_body
+from backend.read.documents import document_title, read_document
 
 DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data")
 

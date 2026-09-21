@@ -16,9 +16,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
 
-from contract_types import FormatType, ParseStatusType
-from labels import canonical_field
-from read_edi import edi_title, read_edi
+from backend.contracts import FormatType, ParseStatusType
+from backend.read.labels import canonical_field
+from backend.read.edi import edi_title, read_edi
 
 XML_TAG = re.compile(r"<[^>]+>")
 CELL_SEPARATOR = " | "
@@ -294,7 +294,7 @@ def main() -> int:
     """
     import sys
 
-    from make_fixtures import canonical_field, detect_doc_type
+    from backend.read.labels import canonical_field, detect_doc_type
 
     paths = [Path(a) for a in sys.argv[1:]]
     if not paths:

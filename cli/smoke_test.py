@@ -9,8 +9,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from loader import Inbox  # noqa: E402
+from loader import Inbox
 
 EXPECTED_EMAILS = 520
 EXPECTED_WITH_ATTACHMENTS = 126

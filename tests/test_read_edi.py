@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from contract_types import FIELD_NAMES
-from labels import canonical_field
-from read_documents import READERS, document_title, read_document
-from read_edi import delimiters, element, gross_weight_kg, ports, segments
+from backend.contracts import FIELD_NAMES
+from backend.read.labels import canonical_field
+from backend.read.documents import READERS, document_title, read_document
+from backend.read.edi import delimiters, element, gross_weight_kg, ports, segments
 
 SAMPLE = Path(__file__).resolve().parent / "samples" / "Edi304Sample.edi"
 
