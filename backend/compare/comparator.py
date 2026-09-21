@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field

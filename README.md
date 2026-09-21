@@ -32,15 +32,15 @@ backend/
 ├── contracts.py      the five contract types, one source of truth
 ├── app.py            FastAPI service: /classify, /extract-clean-compare
 ├── classify.py       stage 1 - email to category
-├── read/             stage 2a - file bytes to (label, value) pairs
+├── read/             stage 2 - file bytes to (label, value) pairs
 │   ├── documents.py    txt, docx, xlsx, pdf
 │   ├── edi.py          X12 304
 │   └── labels.py       label spellings the readers align on
-├── extract/          stage 2b - pairs to the seven fields
+├── extract/          stage 3 - pairs to the seven fields
 │   ├── rules.py        deterministic, no API calls
 │   ├── ai.py           model-backed extractor
 │   ├── gemini.py  qwen.py  batch.py  sample.py
-└── compare/          stage 3 - SI against BL
+└── compare/          stage 4 - SI against BL
     ├── normalise.py    per-field normalisation
     └── comparator.py   the verdict
 
