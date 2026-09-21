@@ -129,8 +129,8 @@ not hardcode 8080.
 
 ```bash
 cd ~/Projects/hackathon/codebase
-python3 tools/smoke_test.py ../
-python3 tools/smoke_test.py http://localhost:8081
+python3 -m cli.smoke_test ../
+python3 -m cli.smoke_test http://localhost:8081
 ```
 
 Both must print 520 / 126. The code reaches data through `DATA_DIR`, so the

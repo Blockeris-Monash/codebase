@@ -1,0 +1,45 @@
+{
+  "email_id": "email_107",
+  "declared_role": "BL",
+  "source_path": "attachments/email_107_BL.docx",
+  "format": "docx",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER (发货人)",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of (收货人)",
+      "raw": "VITAL SOLUTIONS PTE. LTD."
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party (通知人)",
+      "raw": "KTP CO., LTD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (装货港)",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "PORT OF DISCHARGE (卸货港)",
+      "raw": "MOMBASA, KENYA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers (箱数)",
+      "raw": "3 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS) (毛重 KGS)",
+      "raw": "41,124"
+    }
+  }
+}

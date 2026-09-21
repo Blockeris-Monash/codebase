@@ -1,0 +1,45 @@
+{
+  "email_id": "email_111",
+  "declared_role": "SI",
+  "source_path": "attachments/email_111_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA (CNSHA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge",
+      "raw": "APAPA, NIGERIA (NGAPP)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "4 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "91,524 KG"
+    }
+  }
+}

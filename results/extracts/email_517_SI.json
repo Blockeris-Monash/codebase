@@ -1,0 +1,45 @@
+{
+  "email_id": "email_517",
+  "declared_role": "SI",
+  "source_path": "attachments/email_517_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "port_of_loading": {
+      "present": false,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "____MT"
+    },
+    "port_of_discharge": {
+      "present": false,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "TBA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "15 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "GROSS WEIGHT",
+      "raw": "340,770 KG"
+    }
+  }
+}

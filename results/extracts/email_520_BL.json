@@ -1,0 +1,45 @@
+{
+  "email_id": "email_520",
+  "declared_role": "BL",
+  "source_path": "attachments/email_520_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party/Intermediate Consignee",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "SINGAPORE (SGSIN)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge",
+      "raw": "PYEONGTAEK, SOUTH KOREA (KRPTK)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers or Packages",
+      "raw": "6 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight (KG)",
+      "raw": "122,640 KG"
+    }
+  }
+}

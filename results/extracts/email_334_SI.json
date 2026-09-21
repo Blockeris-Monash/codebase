@@ -1,0 +1,45 @@
+{
+  "email_id": "email_334",
+  "declared_role": "SI",
+  "source_path": "attachments/email_334_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "EAST BRIGHT FZ-LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "EAST BRIGHT FZ-LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port",
+      "raw": "SINGAPORE (SGSIN)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "YANGON, MYANMAR (MMRGN)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "6 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight (KG)",
+      "raw": "127,692 KG"
+    }
+  }
+}

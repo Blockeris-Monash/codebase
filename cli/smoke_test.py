@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Prove the loader reaches the data, both from disk and over HTTP.
 
-    python3 tools/smoke_test.py
-    python3 tools/smoke_test.py http://localhost:8081
+    python3 -m cli.smoke_test
+    python3 -m cli.smoke_test http://localhost:8081
 """
 from __future__ import annotations
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Showcase the readers: five input formats, one output shape.
 
-    python3 tools/demo_read.py                    every format, side by side
-    python3 tools/demo_read.py <file> [<file>]    one file, raw then parsed
-    python3 tools/demo_read.py --raw              every format, raw then parsed
+    python3 -m cli.demo_read                    every format, side by side
+    python3 -m cli.demo_read <file> [<file>]    one file, raw then parsed
+    python3 -m cli.demo_read --raw              every format, raw then parsed
 
 Lane A's whole job is that nothing downstream can tell what a value was
 read from. This shows that happening, starting from what the file actually

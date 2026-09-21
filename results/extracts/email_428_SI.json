@@ -1,0 +1,45 @@
+{
+  "email_id": "email_428",
+  "declared_role": "SI",
+  "source_path": "attachments/email_428_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "HABRAS INTERNATIONAL LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "HABRAS INTERNATIONAL LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge",
+      "raw": "FREMANTLE, AUSTRALIA (AUFRE)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers or Packages",
+      "raw": "4 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "GROSS WEIGHT",
+      "raw": "88,308 KG"
+    }
+  }
+}

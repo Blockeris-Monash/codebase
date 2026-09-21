@@ -1,0 +1,45 @@
+{
+  "email_id": "email_494",
+  "declared_role": "SI",
+  "source_path": "attachments/email_494_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING",
+      "raw": "NANTONG, CHINA (CNNTG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "POD",
+      "raw": "KLAIPEDA, LITHUANIA (LTKLJ)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "15 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "348,705 KG"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "email_id": "email_129",
+  "declared_role": "SI",
+  "source_path": "attachments/email_129_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "SHIPPER",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "SAFQA LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "SAFQA LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading",
+      "raw": "NHAVA SHEVA, INDIA (INNSA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "ASHDOD, ISRAEL (ILASH)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "6 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "124,188 KG"
+    }
+  }
+}

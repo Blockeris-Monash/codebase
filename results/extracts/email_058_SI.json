@@ -1,0 +1,45 @@
+{
+  "email_id": "email_058",
+  "declared_role": "SI",
+  "source_path": "attachments/email_058_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "CLIFFORD PAPER INC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port",
+      "raw": "SINGAPORE (SGSIN)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "MERSIN, TURKEY (TRMER)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "4 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "81,512 KG"
+    }
+  }
+}

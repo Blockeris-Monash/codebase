@@ -1,0 +1,45 @@
+{
+  "email_id": "email_273",
+  "declared_role": "SI",
+  "source_path": "attachments/email_273_SI.pdf",
+  "format": "pdf",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "CONAKRY, GUINEA"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "2 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "TOTAL Gross Weight (KG)",
+      "raw": "41,604 KG"
+    }
+  }
+}

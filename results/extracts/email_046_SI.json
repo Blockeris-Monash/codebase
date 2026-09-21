@@ -1,0 +1,45 @@
+{
+  "email_id": "email_046",
+  "declared_role": "SI",
+  "source_path": "attachments/email_046_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "SAFQA LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "TOPKOPY MIDDLE EAST FZE"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "PORT OF DISCHARGE",
+      "raw": "SAVANNAH, US (USSAV)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "12 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "257,340 KG"
+    }
+  }
+}

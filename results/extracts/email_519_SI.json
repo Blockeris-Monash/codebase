@@ -1,0 +1,45 @@
+{
+  "email_id": "email_519",
+  "declared_role": "SI",
+  "source_path": "attachments/email_519_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": false,
+      "label_seen": "SHIPPER",
+      "raw": null
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "UAB NOVAKOPA"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "UAB NOVAKOPA"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING",
+      "raw": "BUATAN, INDONESIA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "BUSAN, SOUTH KOREA"
+    },
+    "container_count": {
+      "present": false,
+      "label_seen": "No. of Containers",
+      "raw": null
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "70,572 KG"
+    }
+  }
+}

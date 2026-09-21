@@ -1,0 +1,45 @@
+{
+  "email_id": "email_509",
+  "declared_role": "SI",
+  "source_path": "attachments/email_509_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "PORT OF LOADING",
+      "raw": "BUATAN, INDONESIA (IDBUA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "CALLAO, PERU (PECLL)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "6 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs)",
+      "raw": "123,060 KG"
+    }
+  }
+}
