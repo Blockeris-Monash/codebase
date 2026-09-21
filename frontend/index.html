@@ -636,7 +636,7 @@ async function recheck(id){
   const tick = setInterval(()=>{ const el=document.getElementById("elapsed"); if(el) el.textContent=Math.floor((Date.now()-S.live[id].t0)/1000); }, 1000);
   const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 90000);
   try{
-    const res = await fetch(API_BASE+"/process-email", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
+    const res = await fetch(API_BASE+"/process-email?live=true", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
       /* attachments must be sent: EmailInput defaults the field to [], and the
          router locates the SI and BL by walking that list. Omit it and every
          email resolves to no files and comes back NEEDS_REVIEW. Bare file
