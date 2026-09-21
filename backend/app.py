@@ -9,7 +9,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
@@ -26,6 +26,7 @@ from backend.extract.qwen import qwen_model
 from backend.compare.comparator import ComparisonResult, compare
 from backend.contracts import DocumentRoleType, ParseStatusType
 from backend.read.labels import detect_doc_type
+from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 
 
@@ -282,6 +283,31 @@ async def run_pipeline(
 
 
 # --- classification (Hanif's, lifted out of its own server) -------------
+
+# --- translation for the UI's Translate button --------------------------
+
+class TranslateRequest(BaseModel):
+    # A free-text target is interpolated straight into the prompt, so a caller
+    # could send instructions dressed as a language. The UI only ever offers
+    # these three.
+    target: Literal["English", "Malay", "Chinese"]
+    texts: Dict[str, str]
+
+
+class TranslateResponse(BaseModel):
+    texts: Dict[str, str]
+
+
+@app.post("/translate", response_model=TranslateResponse)
+async def translate(request: TranslateRequest) -> TranslateResponse:
+    """The email and its documents translated into one language."""
+    try:
+        return TranslateResponse(texts=await asyncio.to_thread(translate_texts, request.texts, request.target))
+    except TooMuchText as error:
+        raise HTTPException(status_code=413, detail=str(error)) from error
+    except (TranslationFailed, RuntimeError) as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
 
 @app.post("/classify", response_model=ClassificationResult)
 async def classify(email: EmailInput) -> ClassificationResult:
