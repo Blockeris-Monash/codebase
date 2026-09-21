@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from contract_types import ComparisonRow, VerdictType
+from backend.contracts import ComparisonRow, VerdictType
 
 LOCODE = re.compile(r"\s*\(([A-Z]{5})\)\s*$")
 SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)

@@ -13,18 +13,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
 # Import Milk's Extractor and Model
-from extract_ai import AiExtractor
-from qwen_model import qwen_model
+from backend.classify import ClassificationFailed, ClassificationResult, EmailInput, classify_email
+from backend.extract.ai import AiExtractor
+from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
-# One comparator, JJ's, in backend/. tools/comparator.py was an older
-# copy of the same file and shadowed it on sys.path.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from comparator import ComparisonResult, compare  # noqa: E402
+from backend.compare.comparator import ComparisonResult, compare
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -196,3 +194,14 @@ async def run_pipeline(
     report = compare(payload.email_id, si_doc, bl_doc)
 
     return report
+
+
+# --- classification (Hanif's, lifted out of its own server) -------------
+
+@app.post("/classify", response_model=ClassificationResult)
+async def classify(email: EmailInput) -> ClassificationResult:
+    """One email in, one ClassificationResult out. Contract 02."""
+    try:
+        return await classify_email(email)
+    except ClassificationFailed as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error

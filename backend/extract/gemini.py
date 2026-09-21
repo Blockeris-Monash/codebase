@@ -10,7 +10,7 @@ import os
 
 from pydantic import BaseModel
 
-from contract_types import ExtractedField
+from backend.contracts import ExtractedField
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 KEY_NAMES = ("GOOGLE_API_KEY", "GEMINI_API_KEY")

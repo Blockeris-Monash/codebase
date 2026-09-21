@@ -15,9 +15,9 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from contract_types import FIELD_NAMES, ParseStatusType
-from labels import canonical_field
-from read_documents import READERS, document_title, read_document
+from backend.contracts import FIELD_NAMES, ParseStatusType
+from backend.read.labels import canonical_field
+from backend.read.documents import READERS, document_title, read_document
 
 ATTACHMENTS = Path(__file__).resolve().parents[1] / "data" / "attachments"
 SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "samples"
@@ -78,7 +78,7 @@ def raw_preview(path: Path) -> list[str]:
                  if l.strip() and not l.startswith("#")]
         return lines[:RAW_LINES]
     if suffix == "pdf":
-        from read_documents import _pdf_text
+        from backend.read.documents import _pdf_text
         return [l for l in _pdf_text(path).split("\n") if l.strip()][:RAW_LINES]
 
     import re

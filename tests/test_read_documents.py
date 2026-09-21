@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from contract_types import FIELD_NAMES, ParseStatusType
-from make_fixtures import canonical_field, detect_doc_type
-from read_documents import READERS, document_title, read_document
+from backend.contracts import FIELD_NAMES, ParseStatusType
+from cli.make_fixtures import canonical_field, detect_doc_type
+from backend.read.documents import READERS, document_title, read_document
 
 # Measured over the provided dataset. A change here means the data changed
 # or a reader regressed - both worth failing on.

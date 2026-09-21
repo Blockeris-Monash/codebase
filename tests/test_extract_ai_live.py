@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from extract_ai import AiExtractor
-from gemini_model import gemini_model
+from backend.extract.ai import AiExtractor
+from backend.extract.gemini import gemini_model
 
 pytestmark = pytest.mark.skipif(
     not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")),

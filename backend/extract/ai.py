@@ -12,7 +12,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from contract_types import ExtractedField
+from backend.contracts import ExtractedField
 
 log = logging.getLogger(__name__)
 

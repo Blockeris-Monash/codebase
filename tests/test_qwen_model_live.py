@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from extract_ai import AiExtractor
-from qwen_model import qwen_model
+from backend.extract.ai import AiExtractor
+from backend.extract.qwen import qwen_model
 from test_extract_ai_live import PAIRS
 
 pytestmark = pytest.mark.skipif(not os.environ.get("QWEN_API_KEY"), reason="no QWEN_API_KEY")

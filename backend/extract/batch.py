@@ -13,10 +13,10 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from contract_types import DocumentExtract, FIELD_NAMES, ParseStatusType
-from extract_ai import AiExtractor
-from labels import detect_doc_type
-from read_documents import document_title, read_document
+from backend.contracts import DocumentExtract, FIELD_NAMES, ParseStatusType
+from backend.extract.ai import AiExtractor
+from backend.read.labels import detect_doc_type
+from backend.read.documents import document_title, read_document
 
 ATTACHMENT_NAME = re.compile(r"^(?P<email_id>email_\d+)_(?P<role>SI|BL)\.(?P<format>\w+)$")
 
@@ -84,9 +84,9 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.model == "qwen":
-        from qwen_model import qwen_model as model
+        from backend.extract.qwen import qwen_model as model
     else:
-        from gemini_model import gemini_model as model
+        from backend.extract.gemini import gemini_model as model
 
     summary = run_batch(Path(args.data) / "attachments", Path(args.out), AiExtractor(model),
                         workers=args.workers)

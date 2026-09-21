@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from batch_extract import extract_attachment, run_batch
-from contract_types import FIELD_NAMES
+from backend.extract.batch import extract_attachment, run_batch
+from backend.contracts import FIELD_NAMES
 
 SI_TEXT = "SHIPPING INSTRUCTION\n=====\nShipper: ACME LTD\nLoad Port: SINGAPORE\nPOD: KARACHI\n"
 

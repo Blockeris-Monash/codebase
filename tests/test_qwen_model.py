@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-import qwen_model as qm
+from backend.extract import qwen as qm
 
 FIELDS = ("shipper", "consignee", "notify_party", "port_of_loading",
           "port_of_discharge", "container_count", "gross_weight_kg")

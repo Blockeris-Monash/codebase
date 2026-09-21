@@ -7,9 +7,9 @@ load_dotenv()  # <-- Reads .env
 
 sys.path.insert(0, "tools")
 
-from batch_extract import extract_attachment
-from extract_ai import AiExtractor
-from qwen_model import qwen_model
+from backend.extract.batch import extract_attachment
+from backend.extract.ai import AiExtractor
+from backend.extract.qwen import qwen_model
 
 
 # 1. Output directory

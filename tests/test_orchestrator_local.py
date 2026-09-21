@@ -6,8 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 from fastapi.testclient import TestClient
-from orchestrate import app
-from read_documents import read_document
+from backend.app import app
+from backend.read.documents import read_document
 
 client = TestClient(app)
 

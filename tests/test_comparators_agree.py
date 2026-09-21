@@ -13,10 +13,9 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from comparator import compare  # noqa: E402
+from backend.compare.comparator import compare
 
-from make_fixtures import build  # noqa: E402
+from cli.make_fixtures import build
 
 COMPARISON_EMAILS = 126
 

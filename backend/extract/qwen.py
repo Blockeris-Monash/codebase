@@ -13,8 +13,8 @@ from typing import Callable
 
 from pydantic import ValidationError
 
-from contract_types import ExtractedField
-from gemini_model import PROMPT, ModelFields
+from backend.contracts import ExtractedField
+from backend.extract.gemini import PROMPT, ModelFields
 
 DEFAULT_BASE_URL = "https://gateway.9arm.co"
 DEFAULT_MODEL = "qwen3.8-27b-fp8"

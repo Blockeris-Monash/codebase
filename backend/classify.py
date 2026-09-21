@@ -1,8 +1,8 @@
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import Literal, List
-from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -11,10 +11,29 @@ from google import genai
 from google.genai import types
 
 load_dotenv()
+log = logging.getLogger(__name__)
+
+
+class ClassificationFailed(RuntimeError):
+    """The model never returned a usable classification."""
 
 # Initialize async client
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-app = FastAPI()
+_client: genai.Client | None = None
+
+
+def get_client() -> genai.Client:
+    """Built on first use, not at import. Constructing it at module level
+    means the whole app fails to import without a key - which breaks the
+    tests, a clean clone, and any build step that only needs to load the
+    module."""
+    global _client
+    if _client is None:
+        key = os.getenv("GOOGLE_API_KEY")
+        if not key:
+            raise ClassificationFailed("GOOGLE_API_KEY is not set")
+        _client = genai.Client(api_key=key)
+
+    return _client
 
 # ==========================================
 # 1. Input/Output Contracts
@@ -64,7 +83,6 @@ class GeminiClassificationSchema(BaseModel):
 # ==========================================
 # 3. Merged Async Route
 # ==========================================
-@app.post("/classify", response_model=ClassificationResult)
 async def classify_email(email: EmailInput):
     # JJ's prompt logic + Your FastAPI context
     prompt = f"""
@@ -88,7 +106,7 @@ async def classify_email(email: EmailInput):
 
     try:
         # Use the SDK's async method (generate_content_async)
-        response = await client.aio.models.generate_content(
+        response = await get_client().aio.models.generate_content(
             model="gemini-3.5-flash-lite", # Or gemini-3.6-flash depending on your latency needs
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -110,5 +128,8 @@ async def classify_email(email: EmailInput):
             evidence=parsed.evidence
         )
         
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as error:
+        # The caller decides how to surface this; classify.py stays transport
+        # agnostic now that the route lives in app.py.
+        log.exception("classification failed for %s", email.email_id)
+        raise ClassificationFailed(str(error)) from error

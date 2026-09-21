@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import pytest
 
-from contract_types import ExtractedField
-from extract_ai import AiExtractor
+from backend.contracts import ExtractedField
+from backend.extract.ai import AiExtractor
 
 # Pairs as Lane A's reader returns them for email_055_SI.xlsx.
 PAIRS = [
@@ -112,7 +112,7 @@ def test_a_value_differing_only_in_spacing_is_accepted() -> None:
 
 
 def test_prompt_tells_the_model_to_stop_a_port_at_the_first_segment() -> None:
-    from gemini_model import PROMPT
+    from backend.extract.gemini import PROMPT
 
     # Lane A's PDF reader sometimes glues the next row (vessel, voyage) onto a port cell.
     assert 'For a party or a port, keep only the name, the first segment before any " | "' in PROMPT

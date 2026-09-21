@@ -8,13 +8,11 @@ from __future__ import annotations
 import json
 import re
 import sys
-from pathlib import Path as _Path
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "tools"))
-from normalise import normalise  # noqa: E402
+from backend.compare.normalise import normalise
 
 # Distinguishes "no norm key at all" from "norm supplied as None".
 _MISSING = object()

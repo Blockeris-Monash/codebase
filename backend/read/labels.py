@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-from contract_types import DocumentRoleType
+from backend.contracts import DocumentRoleType
 
 # Label variants observed across the corpus, aligned by meaning not by text.
 # Matched AFTER prefixes, parentheticals and CJK are stripped, so
