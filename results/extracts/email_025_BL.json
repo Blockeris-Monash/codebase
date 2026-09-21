@@ -1,0 +1,45 @@
+{
+  "email_id": "email_025",
+  "declared_role": "BL",
+  "source_path": "attachments/email_025_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "CERIEX"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "ROXCEL TRADING GMBH"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "BUSAN, SOUTH KOREA (AUFRE)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Total Containers",
+      "raw": "5 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight (KG)",
+      "raw": "135,126 KG"
+    }
+  }
+}
