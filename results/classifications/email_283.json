@@ -1,0 +1,7 @@
+{
+  "email_id": "email_283",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction' with full SI details, but no draft BL is attached and it only asks to revert with draft BL later."
+}

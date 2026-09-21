@@ -17,7 +17,7 @@ from pathlib import Path
 
 from backend.contracts import FIELD_NAMES, ParseStatusType
 from backend.read.labels import canonical_field
-from backend.read.documents import READERS, document_title, read_document
+from backend.read.documents import document_title, read_document
 
 ATTACHMENTS = Path(__file__).resolve().parents[1] / "data" / "attachments"
 SAMPLES = Path(__file__).resolve().parents[1] / "tests" / "samples"
@@ -99,14 +99,14 @@ def raw_preview(path: Path) -> list[str]:
 
 
 def show_raw(path: Path) -> None:
-    print(f"\n  WHAT THE FILE ACTUALLY CONTAINS")
+    print("\n  WHAT THE FILE ACTUALLY CONTAINS")
     print(f"  {'\u2500' * 84}")
     for line in raw_preview(path):
         print(f"  \u2502 {line[:RAW_WIDTH]}")
-    print(f"  \u2502 \u2026")
+    print("  \u2502 \u2026")
 
 
-def show_one(path: Path, with_raw: bool = True) -> None:
+def show_one(path: Path) -> None:
     """Every pair the reader found, and which of the seven it maps to."""
     status, pairs = read_document(path)
     kind = FORMAT_NAMES.get(path.suffix.lstrip(".").lower(), path.suffix)
@@ -117,10 +117,9 @@ def show_one(path: Path, with_raw: bool = True) -> None:
         print("  could not be read - escalates to a human")
         return
 
-    if with_raw:
-        show_raw(path)
-        print(f"\n  WHAT THE READER GETS OUT OF IT")
-        print(f"  {'\u2500' * 84}")
+    show_raw(path)
+    print("\n  WHAT THE READER GETS OUT OF IT")
+    print(f"  {'\u2500' * 84}")
     print(f"  the document calls itself {document_title(path)!r}")
     print(f"\n  {pad('label the document used', 40)}{pad('value', 32)}we call it")
     print(f"  {'─' * 84}")
@@ -143,8 +142,8 @@ def show_all() -> None:
         status, found = fields_of(path)
         print(f"  {pad(FORMAT_NAMES[fmt], 14)}{pad(path.name, 26)}"
               f"{pad(status, 8)}{len(found)} of 7 fields")
-    print(f"\n  Every one of those produced the same thing - a list of "
-          f"(label, value) pairs.\n  Nothing after this point can tell them apart.\n")
+    print("\n  Every one of those produced the same thing - a list of "
+          "(label, value) pairs.\n  Nothing after this point can tell them apart.\n")
 
     print(f"{'─' * 92}")
     print("  THE LABEL EACH FORMAT USED FOR THE SAME FIELD")
@@ -157,7 +156,7 @@ def show_all() -> None:
         cells = "".join(pad(read[fmt].get(field, ("-", ""))[0], 17) for fmt, _ in available)
         print(f"  {pad(field, 20)}{cells}")
 
-    print(f"\n  Seven fields. Five formats. Twenty-plus different label spellings,")
+    print("\n  Seven fields. Five formats. Twenty-plus different label spellings,")
     print("  two written languages, and one of them is not a document at all.")
     print("\n  The EDI column is the one place the label is ours: an X12 file has no")
     print("  labels, only segment codes, so the reader names them on the way out -")

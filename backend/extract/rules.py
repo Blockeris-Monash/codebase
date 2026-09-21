@@ -12,7 +12,7 @@ from pathlib import Path
 
 from backend.contracts import (
     Attachment, ClassificationResult, ComparisonResult, DocumentExtract,
-    DocumentRoleType, EmailRecord, ExtractedField, FIELD_NAMES, FormatType,
+    DocumentRoleType, EmailRecord, ExtractedField, FIELD_NAMES,
     ParseStatusType, ReviewReasonType, Scenario, StatusType, SubmissionEntry,
     VerdictType,
 )

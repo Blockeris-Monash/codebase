@@ -1,0 +1,7 @@
+{
+  "email_id": "email_127",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email states 'Please find Shipping instruction for 5RFR-98270' and provides full shipping instruction details (POL, POD, shipper, consignee, goods, documents), indicating a request to submit/process a new SI."
+}

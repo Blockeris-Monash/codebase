@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from backend.contracts import FIELD_NAMES, ParseStatusType, ReviewReasonType, StatusType
-from cli.make_fixtures import build, canonical_field, classify_from_body, load_scenarios
+from backend.contracts import FIELD_NAMES, ReviewReasonType, StatusType
+from backend.read.labels import canonical_field
+from cli.make_fixtures import build, classify_from_body, load_scenarios
 from backend.compare.normalise import compare_row, normalise
 from backend.read.documents import read_document
 from cli.validate_contracts import load_contract, validate

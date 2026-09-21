@@ -1,0 +1,7 @@
+{
+  "email_id": "email_042",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject begins with 'SI' and the body says 'Please find Shipping instruction for 5RFR-02296' while providing full shipping instruction details (POL, POD, shipper, consignee, goods, documents required). No draft BL is attached, so it is not a BL comparison."
+}

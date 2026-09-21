@@ -1,0 +1,7 @@
+{
+  "email_id": "email_450",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email contains a prize/gift card lure, a shortened external link, and an account suspension threat, which are typical phishing/scam signals."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_072",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email is a prize/gift-card lure with a suspicious shortened link and no legitimate shipping operational content."
+}

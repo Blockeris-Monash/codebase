@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Turn any attachment into the same {label: value} pairs.
 
 Lane A. Text, Word and Excel need no third-party package — .docx and .xlsx
@@ -10,6 +9,7 @@ Downstream stages never learn which format a value came from.
 from __future__ import annotations
 
 import html
+import logging
 import re
 import zipfile
 from collections.abc import Callable
@@ -20,16 +20,24 @@ from backend.contracts import FormatType, ParseStatusType
 from backend.read.labels import canonical_field
 from backend.read.edi import edi_title, read_edi
 
+log = logging.getLogger(__name__)
+
 XML_TAG = re.compile(r"<[^>]+>")
 CELL_SEPARATOR = " | "
 LINE_BREAK = "\x00"
 LabelledPairs = list[tuple[str, str]]
 
+# Every way a file can defeat a reader. One tuple, because these used to
+# be written out twice and IndexError was in only one of them - which made
+# read_document raise on an .xlsx with a dangling shared-string index.
+UNREADABLE_ERRORS = (zipfile.BadZipFile, OSError, ValueError, KeyError,
+                     StopIteration, IndexError)
+
 
 def read_txt(path: Path) -> LabelledPairs:
     """One `label: value` per line; an indented line continues the value above."""
     pairs: LabelledPairs = []
-    for line in path.read_text(errors="replace").split("\n"):
+    for line in path.read_text(encoding="utf-8", errors="replace").split("\n"):
         label, separator, value = line.partition(":")
         if separator:
             pairs.append((label.strip(), value.strip()))
@@ -50,7 +58,8 @@ def _cell_paragraphs(cell: str) -> str:
 
 
 def _docx_rows(path: Path) -> list[list[str]]:
-    document = zipfile.ZipFile(path).read("word/document.xml").decode("utf8")
+    with zipfile.ZipFile(path) as archive:
+        document = archive.read("word/document.xml").decode("utf8")
     rows = []
     for row in re.findall(r"<w:tr[ >].*?</w:tr>", document, re.S):
         cells = [_cell_paragraphs(c) for c in re.findall(r"<w:tc[ >].*?</w:tc>", row, re.S)]
@@ -60,7 +69,8 @@ def _docx_rows(path: Path) -> list[list[str]]:
 
 
 def _docx_paragraphs(path: Path) -> list[str]:
-    document = zipfile.ZipFile(path).read("word/document.xml").decode("utf8")
+    with zipfile.ZipFile(path) as archive:
+        document = archive.read("word/document.xml").decode("utf8")
     texts = ["".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", p))
              for p in re.findall(r"<w:p[ >].*?</w:p>", document, re.S)]
 
@@ -108,10 +118,11 @@ def _cell_text(cell: str, shared: list[str]) -> str:
 
 def read_xlsx(path: Path) -> LabelledPairs:
     """Excel keeps most text in a shared-string table, referenced by index."""
-    archive = zipfile.ZipFile(path)
-    shared = _shared_strings(archive)
-    sheet = next(n for n in archive.namelist() if n.startswith("xl/worksheets/sheet"))
-    xml = archive.read(sheet).decode("utf8")
+    with zipfile.ZipFile(path) as archive:
+        shared = _shared_strings(archive)
+        sheet = next(n for n in archive.namelist()
+                     if n.startswith("xl/worksheets/sheet"))
+        xml = archive.read(sheet).decode("utf8")
 
     pairs: LabelledPairs = []
     for row in re.findall(r"<row[ >].*?</row>", xml, re.S):
@@ -203,7 +214,7 @@ def read_pdf(path: Path) -> LabelledPairs:
 
 
 def txt_title(path: Path) -> str | None:
-    return path.read_text(errors="replace").split("\n", 1)[0].strip() or None
+    return path.read_text(encoding="utf-8", errors="replace").split("\n", 1)[0].strip() or None
 
 
 def docx_title(path: Path) -> str | None:
@@ -260,8 +271,11 @@ def document_title(path: Path) -> str | None:
 
     try:
         return reader.title(path)
-    except (ImportError, zipfile.BadZipFile, OSError, ValueError, KeyError,
-            StopIteration, IndexError):
+    except ImportError as error:
+        log.warning("%s: no reader available (%s)", path.name, error)
+        return None
+    except UNREADABLE_ERRORS as error:
+        log.warning("%s: no title could be read (%s)", path.name, error)
         return None
 
 
@@ -278,44 +292,11 @@ def read_document(path: Path) -> tuple[str, LabelledPairs]:
         pairs = reader.pairs(path)
     except ImportError:
         return ParseStatusType.NotAttempted, []
-    except (zipfile.BadZipFile, OSError, ValueError, KeyError, StopIteration):
+    except UNREADABLE_ERRORS as error:
+        log.warning("%s: unreadable (%s)", path.name, error)
         return ParseStatusType.Unreadable, []
 
     if len(pairs) < MINIMUM_PAIRS:
         return ParseStatusType.Unreadable, pairs
 
     return ParseStatusType.Ok, pairs
-
-
-def main() -> int:
-    """Read any document and print what the pipeline would see.
-
-        python3 -m backend.read.documents <file> [<file> ...]
-    """
-    import sys
-
-    from backend.read.labels import canonical_field, detect_doc_type
-
-    paths = [Path(a) for a in sys.argv[1:]]
-    if not paths:
-        print(main.__doc__)
-        return 2
-
-    for path in paths:
-        status, pairs = read_document(path)
-        print(f"\n{'=' * 78}\n{path.name}   [{status}]   {len(pairs)} labelled pairs\n{'=' * 78}")
-        if path.suffix.lstrip(".").lower() == FormatType.Txt:
-            print(f"declared type: {detect_doc_type(path.read_text(errors='replace'))}")
-        matched = 0
-        for label, value in pairs:
-            field = canonical_field(label)
-            matched += field is not None
-            marker = f"-> {field}" if field else ""
-            print(f"  {label[:38]:40}{value[:30]:32}{marker}")
-        print(f"\n  {matched} of these map to one of the seven compared fields")
-
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

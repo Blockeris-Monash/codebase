@@ -1,0 +1,7 @@
+{
+  "email_id": "email_233",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email says 'Please find Shipping instruction for 5RMY-89317' and includes full SI details (POL, POD, shipper, consignee, notify party, cargo), then asks to 'revert with draft BL once available'. No draft BL is attached and there is no request to compare or verify a draft BL against the SI."
+}
