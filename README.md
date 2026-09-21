@@ -8,7 +8,7 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
 - Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
   comparison already run. On a phone you can add it to the home screen as an
   icon that opens the same page.
-- Backend: <https://blockeris-backend.onrender.com> (`/health` answers `ok`).
+- Backend: <https://blockeris-backend.onrender.com> (`/health` returns `{"status": "ok"}`).
   The **Check again with AI** button in the app calls it. It runs on a free
   host, so the first request after a quiet spell can take about 100 seconds.
 
