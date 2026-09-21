@@ -1,0 +1,7 @@
+{
+  "email_id": "email_465",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "The email asks someone to send a draft BL for checking, but no draft BL or SI is attached, so it does not meet the BL_COMPARISON requirement. It is not an invoice query, SI creation request, or spam, making GENERAL the best fit."
+}

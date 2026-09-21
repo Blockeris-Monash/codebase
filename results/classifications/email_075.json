@@ -1,0 +1,7 @@
+{
+  "email_id": "email_075",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The body is an automated RPA notification stating that a billing process completed successfully and no action is required, which fits an internal operational update rather than a BL comparison, SI request, invoice query, or spam."
+}

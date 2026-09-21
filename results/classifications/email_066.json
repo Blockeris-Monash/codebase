@@ -1,0 +1,7 @@
+{
+  "email_id": "email_066",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "The email only asks for a draft BL to be sent for checking and has no attachments, so it does not meet the BL_COMPARISON requirement of having the SI and draft BL available for comparison. It is an operational documentation request, best classified as GENERAL."
+}

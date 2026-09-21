@@ -1,0 +1,7 @@
+{
+  "email_id": "email_137",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject and body state 'Please find Shipping instruction for 5RCY-92995' and provide full SI details (POL, POD, shipper, consignee, goods, documents), indicating submission of a new Shipping Instruction; no draft BL is attached for comparison."
+}

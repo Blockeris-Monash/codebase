@@ -1,0 +1,7 @@
+{
+  "email_id": "email_347",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "Subject explicitly says 'Submit SI & AED', indicating a request to submit a Shipping Instruction, but the body is an operational update ('Loading completed, documents to follow'), so intent is mixed."
+}

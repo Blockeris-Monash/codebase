@@ -1,0 +1,7 @@
+{
+  "email_id": "email_176",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email asks Arlene to send a draft BL for checking, but no draft BL or SI is attached, so it is not BL_COMPARISON. It is an operational shipping documentation request, not an SI request, invoice query, or spam."
+}

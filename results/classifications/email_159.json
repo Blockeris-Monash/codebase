@@ -1,0 +1,7 @@
+{
+  "email_id": "email_159",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "The email is an internal RPA operational update about a completed billing process and asks the team to action outstanding BL items. It does not request a new SI, ask about invoices/detention fees, or provide/compare a draft BL with an SI."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_015",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email uses urgent account-verification language, a suspicious external link, and a promotional/scam-style subject line, indicating phishing or spam."
+}

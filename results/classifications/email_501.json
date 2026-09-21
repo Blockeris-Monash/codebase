@@ -1,0 +1,7 @@
+{
+  "email_id": "email_501",
+  "category": "BL_COMPARISON",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The sender asks to confirm the BL and attaches the SI, but notes that the second attachment is a Commercial Invoice, not the draft BL, indicating the draft BL is missing for comparison."
+}

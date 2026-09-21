@@ -1,0 +1,7 @@
+{
+  "email_id": "email_382",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email uses urgent account-verification language and asks for bank details in connection with a large money proposal, which is a phishing/scam pattern."
+}

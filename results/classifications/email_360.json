@@ -1,0 +1,7 @@
+{
+  "email_id": "email_360",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject includes 'CUST SI' and body says 'Please find Shipping instruction for 5ALT-01576' with full SI details (POL, POD, shipper, consignee, goods), indicating submission of a new Shipping Instruction."
+}
