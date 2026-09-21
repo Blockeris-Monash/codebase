@@ -9,6 +9,7 @@
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
   --accent:#e8620c; --accent-ink:#ffffff; --accent-soft:#fdeadb; --hl:#ffd54a; --hl-ink:#211b16;
   --bad:#c62828; --bad-soft:#fde8e6; --rev:#8a5a00; --rev-soft:#fff0b8; --ok:#1f8a4c; --ok-soft:#e2f4e9;
+  color-scheme:light;
   --shadow:0 1px 2px rgba(33,27,22,.06),0 6px 20px rgba(33,27,22,.08);
   --card:0 1px 2px rgba(150,70,20,.06),0 8px 24px rgba(150,70,20,.10);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#ffd9b8 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#ffd3d6 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#fff0b5 0%,transparent 62%),#fff8f1;
@@ -17,6 +18,7 @@
   --bg:#1e1a17; --panel:#292420; --sunk:#302a25; --line:#453b33; --ink:#f4ece4; --mute:#a99a8d;
   --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
+  color-scheme:dark;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}}
@@ -24,6 +26,7 @@
   --bg:#1e1a17; --panel:#292420; --sunk:#302a25; --line:#453b33; --ink:#f4ece4; --mute:#a99a8d;
   --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
+  color-scheme:dark;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}
@@ -220,6 +223,16 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .rt{font-weight:600;margin-bottom:2px}.rt .pill{margin-left:8px}
 .hb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .themesw{display:inline-flex;gap:4px}
+.langwrap{position:relative;display:inline-block}
+.langbtn .ico{margin:0}.langbtn .lname{margin:0 6px 0 6px;font-weight:600}.langbtn .ico:last-child{width:.9em;height:.9em}
+.menu{position:absolute;right:0;top:calc(100% + 8px);min-width:210px;display:flex;flex-direction:column;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--card);z-index:20}
+.mi{display:flex;align-items:center;gap:8px;background:none;border:0;border-radius:8px;padding:9px 10px;text-align:left;color:var(--ink)}
+.mi:hover,.mi:focus-visible{background:var(--accent-soft)}.mi.on{color:var(--accent);font-weight:600}
+.mtick{width:16px;flex:none;display:inline-flex}.mtick .ico{margin:0;width:16px;height:16px}
+.msep{height:1px;background:var(--line);margin:6px 4px}
+.trbar{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}.tbtn .ico{margin-right:6px}
+.trbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel);margin:12px 0;box-shadow:var(--card)}
+.trbox .text{margin-bottom:8px}.ok{color:var(--ok)}
 .nextpage{flex:1;min-height:0}
 .nx{max-width:900px;margin:0 auto;padding:24px 16px 60px}
 .nx h1{font-size:30px;line-height:1.15;margin:18px 0 6px}.nx h2{font-size:18px;margin:28px 0 12px}.nx .lead{font-size:16px;margin:0}
@@ -229,7 +242,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:28px;padding:16px 18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--card)}
 .cta .btn{margin-left:auto}
 @media (min-width:821px){.nextpage{overflow-y:auto}}
-@media (max-width:560px){.hb .lbl{display:none}}
+@media (max-width:560px){.hb .lbl{display:none}.langbtn .lname{display:none}}
 .dlg ol{padding-left:20px;margin:0 0 16px;display:flex;flex-direction:column;gap:8px}
 @media (min-width:821px){
   html,body{height:100%}
@@ -263,38 +276,65 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <div id="app"></div>
 <script src="config.js"></script>
 <script src="results.js"></script>
+<script src="i18n.js"></script>
 <script>
 const API_BASE = (window.BLOCKERIS_API_BASE || "").replace(/\/$/, "");
 const PAGE = 30;
-const FIELDS = {shipper:"Shipper",consignee:"Consignee",notify_party:"Notify party",port_of_loading:"Port of loading",port_of_discharge:"Port of discharge",container_count:"Containers",gross_weight_kg:"Gross weight"};
+const T = s=>s;   // marks a string that has translations, translated where it is shown with t()
+
+/* ---- languages: English is the text in this file, Malay and Chinese come from i18n.js ---- */
+const LANGS = {en:{name:"English", english:"English"}, ms:{name:"Bahasa Malaysia", english:"Malay"}, zh:{name:"\u4e2d\u6587", english:"Simplified Chinese"}};
+const BUILTIN = window.I18N || {};
+const allLangs = ()=>Object.entries(LANGS).map(([code,l])=>({code,...l}));
+function pickLang(){
+  let saved = null; try{ saved = localStorage.getItem("blockeris.lang"); }catch(_){}
+  if(saved && LANGS[saved]) return saved;
+  const n = (navigator.language||"en").toLowerCase();
+  return n.startsWith("ms") ? "ms" : n.startsWith("zh") ? "zh" : "en";
+}
+let LANG = pickLang();
+document.documentElement.lang = LANG;
+function t(key, vars){
+  const table = LANG==="en" ? null : BUILTIN[LANG];
+  const s = (table && typeof table[key]==="string" && table[key]) || key;
+  return vars ? s.replace(/\{(\w+)\}/g, (m,k)=>k in vars ? vars[k] : m) : s;
+}
+function setLang(code){
+  LANG = code; document.documentElement.lang = code;
+  try{ localStorage.setItem("blockeris.lang", code); }catch(_){}
+}
+
+const FIELDS = {shipper:T("Shipper"),consignee:T("Consignee"),notify_party:T("Notify party"),port_of_loading:T("Port of loading"),port_of_discharge:T("Port of discharge"),container_count:T("Containers"),gross_weight_kg:T("Gross weight")};
+const fld = f=>t(FIELDS[f]);
 const REASON = {
-  missing_value:"A field is blank in one of the two documents.",
-  unreadable:"One attachment could not be read (scanned or cut off).",
-  wrong_doc_type:"One attachment is not a Shipping Instruction or a Bill of Lading.",
-  missing_attachment:"The SI or the BL is not attached to this email."};
-const LABEL = {MISMATCH:"Mismatch", NEEDS_REVIEW:"Needs review", OK:"Match"};
-const OTHER = {SI_REQUEST:"SI request", INVOICE_QUERY:"Invoice", GENERAL:"General", SPAM:"Spam", BL_COMPARISON:"SI vs BL"};
+  missing_value:T("A field is blank in one of the two documents."),
+  unreadable:T("One attachment could not be read (scanned or cut off)."),
+  wrong_doc_type:T("One attachment is not a Shipping Instruction or a Bill of Lading."),
+  missing_attachment:T("The SI or the BL is not attached to this email.")};
+const LABEL = {MISMATCH:T("Mismatch"), NEEDS_REVIEW:T("Needs review"), OK:T("Match")};
+const OTHER = {SI_REQUEST:T("SI request"), INVOICE_QUERY:T("Invoice"), GENERAL:T("General"), SPAM:T("Spam"), BL_COMPARISON:T("SI vs BL")};
 const FOLDERS = [
-  {k:"all", n:"All mail", f:()=>true},
-  {k:"MISMATCH", n:"Mismatch", f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
-  {k:"NEEDS_REVIEW", n:"Needs review", f:e=>e.status==="NEEDS_REVIEW" && !S.marks[e.id]},
-  {k:"OK", n:"Match", f:e=>e.status==="OK"},
-  {k:"CHECKED", n:"Checked", f:e=>!!S.marks[e.id]},
-  {k:"cmp", n:"SI vs BL checks", f:e=>e.category==="BL_COMPARISON"},
-  {k:"SI_REQUEST", n:"SI requests", f:e=>e.category==="SI_REQUEST"},
-  {k:"INVOICE_QUERY", n:"Invoice queries", f:e=>e.category==="INVOICE_QUERY"},
-  {k:"GENERAL", n:"General", f:e=>e.category==="GENERAL"},
-  {k:"SPAM", n:"Spam", f:e=>e.category==="SPAM"},
+  {k:"all", n:T("All mail"), f:()=>true},
+  {k:"MISMATCH", n:T("Mismatch"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
+  {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !S.marks[e.id]},
+  {k:"OK", n:T("Match"), f:e=>e.status==="OK"},
+  {k:"CHECKED", n:T("Checked"), f:e=>!!S.marks[e.id]},
+  {k:"cmp", n:T("SI vs BL checks"), f:e=>e.category==="BL_COMPARISON"},
+  {k:"SI_REQUEST", n:T("SI requests"), f:e=>e.category==="SI_REQUEST"},
+  {k:"INVOICE_QUERY", n:T("Invoice queries"), f:e=>e.category==="INVOICE_QUERY"},
+  {k:"GENERAL", n:T("General"), f:e=>e.category==="GENERAL"},
+  {k:"SPAM", n:T("Spam"), f:e=>e.category==="SPAM"},
 ];
 const MENU = ["all","MISMATCH","NEEDS_REVIEW","cmp","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
 const SUPPORT_EMAIL = (window.BLOCKERIS_SUPPORT_EMAIL || "").trim();
-const KINDS = {question:"Question", problem:"Problem", idea:"Idea"};
+const KINDS = {question:T("Question"), problem:T("Problem"), idea:T("Idea")};
 const ROADMAP = [
-  ["Connect a real mailbox", "Sign in with Outlook, Gmail or any IMAP mailbox (OAuth) so new emails arrive on their own, instead of the saved dataset."],
-  ["Send replies from this page", "Send is a demo today. Next, the reply goes out from your own mailbox, with a copy kept in the thread."],
-  ["A second AI that double checks", "A critic agent scores how sure it is about each extracted field. Low scores are retried, then sent to a person."],
-  ["Read scanned and cut-off files", "Scanned PDFs are sent to review today. OCR would read most of them, so fewer emails need a person."],
-  ["Shared review queue for a team", "Several reviewers work the same queue, with who checked what and when."]
+  [T("Connect a real mailbox"), T("Sign in with Outlook, Gmail or any IMAP mailbox (OAuth) so new emails arrive on their own, instead of the saved dataset.")],
+  [T("Send replies from this page"), T("Send is a demo today. Next, the reply goes out from your own mailbox, with a copy kept in the thread.")],
+  [T("A second AI that double checks"), T("A critic agent scores how sure it is about each extracted field. Low scores are retried, then sent to a person.")],
+  [T("Read scanned and cut-off files"), T("Scanned PDFs are sent to review today. OCR would read most of them, so fewer emails need a person.")],
+  [T("Shared review queue for a team"), T("Several reviewers work the same queue, with who checked what and when.")],
+  [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")]
 ];
 function feedbackText(){
   const f = S.fb;
@@ -305,67 +345,76 @@ function saveFeedback(list){ try{ localStorage.setItem("blockeris.feedback", JSO
 const kbd = t=>`<kbd>${t}</kbd>`;
 
 function guideHTML(){
-  const pills = ["All mail","Mismatch","Needs review","Match","Checked"].map(t=>`<span class="pillx">${t}</span>`).join("");
+  const pills = [T("All mail"),T("Mismatch"),T("Needs review"),T("Match"),T("Checked")].map(n=>`<span class="pillx">${t(n)}</span>`).join("");
   const legend = [
-    ["MISMATCH","Mismatch","The Shipping Instruction and the Bill of Lading disagree. The different field is marked. Fix the Bill of Lading."],
-    ["NEEDS_REVIEW","Needs review","A person needs to look. The reason is under the banner (blank field, unreadable file, wrong document)."],
-    ["OK","Match","All 7 fields match. Nothing to do."]
-  ].map(([k,n,t])=>`<div class="lg"><span class="badge b-${k}">${ICON[k]}${n}</span><span>${t}</span></div>`).join("");
+    ["MISMATCH",T("Mismatch"),T("The Shipping Instruction and the Bill of Lading disagree. The different field is marked. Fix the Bill of Lading.")],
+    ["NEEDS_REVIEW",T("Needs review"),T("A person needs to look. The reason is under the banner (blank field, unreadable file, wrong document).")],
+    ["OK",T("Match"),T("All 7 fields match. Nothing to do.")]
+  ].map(([k,n,d])=>`<div class="lg"><span class="badge b-${k}">${ICON[k]}${t(n)}</span><span>${t(d)}</span></div>`).join("");
   return `<ol class="steps">` +
-    step(1,"Pick a folder",`<div class="pills">${pills}</div><div class="cap">The boxes at the top filter the list. The Show menu has more folders, like invoices, SI requests and spam.</div>`) +
-    step(2,"Open an email",`<div class="cap">Click one in the list. Search by subject, sender or number, and press ${kbd("Esc")} to clear it. Once an email is open, ${kbd("←")} ${kbd("→")} move to the previous or next email. On a phone, List takes you back.</div>`) +
-    step(3,"Read the colour",`<div class="legend">${legend}</div>`) +
-    step(4,"Check the details",`<div class="cap">Click a row in the table to highlight where that value sits in the original documents. Open <b>How Ship Happens decided</b> to see every step, from the cover email to the field by field check.</div>`) +
-    step(5,"Finish",`<div class="mockbtns"><span class="btn">Mark as checked</span><span class="btn alt">Reply to sender</span></div><div class="cap"><b>Reply to sender</b> writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.</div>`) +
+    step(1,t("Pick a folder"),`<div class="pills">${pills}</div><div class="cap">${t("The boxes at the top filter the list. The Show menu has more folders, like invoices, SI requests and spam.")}</div>`) +
+    step(2,t("Open an email"),`<div class="cap">${t("Click one in the list. Search by subject, sender or number, and press {esc} to clear it. Once an email is open, {left} {right} move to the previous or next email. On a phone, List takes you back.",{esc:kbd("Esc"),left:kbd("←"),right:kbd("→")})}</div>`) +
+    step(3,t("Read the colour"),`<div class="legend">${legend}</div>`) +
+    step(4,t("Check the details"),`<div class="cap">${t("Click a row in the table to highlight where that value sits in the original documents. Open {how} to see every step, from the cover email to the field by field check.",{how:"<b>"+t("How Ship Happens decided")+"</b>"})}</div>`) +
+    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as checked")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
     `</ol>`;
 }
 
 function supportHTML(){
   const f = S.fb;
-  if(f.sent) return `<div class="thanks">${ICON.OK}<b>Thank you, we got it.</b><span>${f.sent==="mailto"?"Your email app should have opened with the message ready to send.":"It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent."}</span><button class="btn alt" data-a="fbagain">Write another</button></div>`;
-  const about = S.sel ? `<div class="small mute">This note will mention email ${esc(S.sel.replace("email_","#"))}.</div>` : "";
-  const kinds = Object.entries(KINDS).map(([k,n])=>`<button class="segb ${f.kind===k?"on":""}" data-a="kind" data-k="${k}" aria-pressed="${f.kind===k}">${n}</button>`).join("");
-  const stars = [1,2,3,4,5].map(n=>`<button class="star ${f.rating>=n?"on":""}" data-a="rate" data-k="${n}" aria-label="${n} out of 5">${f.rating>=n?"★":"☆"}</button>`).join("");
-  return `<div class="fb"><h3>Need a hand?</h3><p class="mute small">Ask the support team a question, report a problem or share an idea. Every note helps us improve the next version.</p>
-    <div class="fl">What is it about?</div><div class="seg">${kinds}</div>
-    <label class="fl" for="fb-msg">Your message</label><textarea id="fb-msg" data-fb="msg" rows="5" placeholder="Tell us what happened or what you would like">${esc(f.msg)}</textarea>
-    ${f.err?`<div class="err small">Please write a short message first.</div>`:""}
-    <label class="fl" for="fb-from">Your email, if you want a reply (optional)</label><input id="fb-from" data-fb="from" type="email" value="${esc(f.from)}" placeholder="name@example.com">
-    <div class="fl">How is Ship Happens working for you?</div><div class="stars">${stars}</div>
+  if(f.sent) return `<div class="thanks">${ICON.OK}<b>${t("Thank you, we got it.")}</b><span>${f.sent==="mailto"?t("Your email app should have opened with the message ready to send."):t("It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.")}</span><button class="btn alt" data-a="fbagain">${t("Write another")}</button></div>`;
+  const about = S.sel ? `<div class="small mute">${t("This note will mention email {id}.",{id:esc(S.sel.replace("email_","#"))})}</div>` : "";
+  const kinds = Object.entries(KINDS).map(([k,n])=>`<button class="segb ${f.kind===k?"on":""}" data-a="kind" data-k="${k}" aria-pressed="${f.kind===k}">${t(n)}</button>`).join("");
+  const stars = [1,2,3,4,5].map(n=>`<button class="star ${f.rating>=n?"on":""}" data-a="rate" data-k="${n}" aria-label="${t("{n} out of 5",{n})}">${f.rating>=n?"★":"☆"}</button>`).join("");
+  return `<div class="fb"><h3>${t("Need a hand?")}</h3><p class="mute small">${t("Ask the support team a question, report a problem or share an idea. Every note helps us improve the next version.")}</p>
+    <div class="fl">${t("What is it about?")}</div><div class="seg">${kinds}</div>
+    <label class="fl" for="fb-msg">${t("Your message")}</label><textarea id="fb-msg" data-fb="msg" rows="5" placeholder="${t("Tell us what happened or what you would like")}">${esc(f.msg)}</textarea>
+    ${f.err?`<div class="err small">${t("Please write a short message first.")}</div>`:""}
+    <label class="fl" for="fb-from">${t("Your email, if you want a reply (optional)")}</label><input id="fb-from" data-fb="from" type="email" value="${esc(f.from)}" placeholder="name@example.com">
+    <div class="fl">${t("How is Ship Happens working for you?")}</div><div class="stars">${stars}</div>
     ${about}
-    <div class="actions"><button class="btn" data-a="fbsend">${SUPPORT_EMAIL?"Send to support":"Send feedback"}</button><button class="btn alt" data-a="fbcopy">${f.copied?"Copied":"Copy message"}</button></div></div>`;
+    <div class="actions"><button class="btn" data-a="fbsend">${SUPPORT_EMAIL?t("Send to support"):t("Send feedback")}</button><button class="btn alt" data-a="fbcopy">${f.copied?t("Copied"):t("Copy message")}</button></div></div>`;
 }
 
 const TODAY = [
-  "Sorts every email into one of five types with AI",
-  "Reads the SI and the draft BL from text, Word, Excel and PDF files",
-  "Pulls the 7 fields out of each document with AI",
-  "Compares the fields with plain rules, so every result can be explained",
-  "Sends unclear cases to a review queue with the reason",
-  "Writes a draft reply for the sender (sending is a demo)"
+  T("Sorts every email into one of five types with AI"),
+  T("Reads the SI and the draft BL from text, Word, Excel and PDF files"),
+  T("Pulls the 7 fields out of each document with AI"),
+  T("Compares the fields with plain rules, so every result can be explained"),
+  T("Sends unclear cases to a review queue with the reason"),
+  T("Writes a draft reply for the sender (sending is a demo)"),
+  T("Translates the page into English, Malay and Chinese")
 ];
 function nextPage(){
-  return `<main class="nextpage"><div class="nx"><button class="ghost" data-a="home">\u2190 Back to inbox</button>
-    <h1>What is next for Ship Happens</h1>
-    <p class="mute lead">Here is what works today and what we plan to build after the hackathon.</p>
-    <h2>Working today</h2>
-    <div class="grid2">${TODAY.map(t=>`<div class="tcard">${ICON.OK}<span>${t}</span></div>`).join("")}</div>
-    <h2>Planned</h2>
-    <div class="road">${ROADMAP.map(([t,d],i)=>`<div class="rcard"><span class="rnum">${i+1}</span><div><div class="rt">${t}<span class="pill">Planned</span></div><div class="small mute">${d}</div></div></div>`).join("")}</div>
-    <div class="cta"><b>Got an idea?</b><span class="mute">Tell the team what would help you most.</span><button class="btn" data-a="idea">Share an idea</button></div>
+  return `<main class="nextpage"><div class="nx"><button class="ghost" data-a="home">\u2190 ${t("Back to inbox")}</button>
+    <h1>${t("What is next for Ship Happens")}</h1>
+    <p class="mute lead">${t("Here is what works today and what we plan to build after the hackathon.")}</p>
+    <h2>${t("Working today")}</h2>
+    <div class="grid2">${TODAY.map(x=>`<div class="tcard">${ICON.OK}<span>${t(x)}</span></div>`).join("")}</div>
+    <h2>${t("Planned")}</h2>
+    <div class="road">${ROADMAP.map(([h,d],i)=>`<div class="rcard"><span class="rnum">${i+1}</span><div><div class="rt">${t(h)}<span class="pill">${t("Planned")}</span></div><div class="small mute">${t(d)}</div></div></div>`).join("")}</div>
+    <div class="cta"><b>${t("Got an idea?")}</b><span class="mute">${t("Tell the team what would help you most.")}</span><button class="btn" data-a="idea">${t("Share an idea")}</button></div>
   </div></main>`;
 }
 
+function langHTML(){
+  return `<div class="ov" data-a="langclose"><div class="dlg wide" role="dialog" aria-label="${t("More languages")}" data-a="stay">
+    <div class="dlgh"><h2>${t("More languages")}</h2><button class="ghost" data-a="langclose" aria-label="${t("Close")}">${t("Close")}</button></div>
+    <div class="dlgb"><div class="thanks">${ICON.GLOBE}<b>${t("This is a demo")}</b><span>${t("English, Malay and Chinese work today. Adding more languages is planned for a future update.")}</span>
+      <div class="rcard" style="text-align:left"><span class="rnum">${ICON.NEXT}</span><div><div class="rt">${t("Add more languages")}<span class="pill">${t("Planned")}</span></div><div class="small mute">${t("Load a language pack file, or let the AI translate the page into any language you choose.")}</div></div></div>
+      <div class="actions" style="justify-content:center"><button class="btn" data-a="langnext">${t("See what's next")}</button></div></div></div></div></div>`;
+}
+
 function helpHTML(){
-  const tabs = [["guide","Guide"],["support","Contact support"]]
-    .map(([k,n])=>`<button class="tab ${S.tab===k?"on":""}" data-a="tab" data-k="${k}" role="tab" aria-selected="${S.tab===k}">${n}</button>`).join("");
+  const tabs = [["guide",T("Guide")],["support",T("Contact support")]]
+    .map(([k,n])=>`<button class="tab ${S.tab===k?"on":""}" data-a="tab" data-k="${k}" role="tab" aria-selected="${S.tab===k}">${t(n)}</button>`).join("");
   const body = S.tab==="support" ? supportHTML() : guideHTML();
-  return `<div class="ov" data-a="helpclose"><div class="dlg wide" role="dialog" aria-label="Help" data-a="stay">
-    <div class="dlgh"><h2>Help</h2><button class="ghost" data-a="helpclose" aria-label="Close">Close</button></div>
+  return `<div class="ov" data-a="helpclose"><div class="dlg wide" role="dialog" aria-label="${t("Help")}" data-a="stay">
+    <div class="dlgh"><h2>${t("Help")}</h2><button class="ghost" data-a="helpclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="tabs" role="tablist">${tabs}</div><div class="dlgb">${body}</div></div></div>`;
 }
 
-const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, tr:{}, live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -396,17 +445,20 @@ const ICON = {
   MOON: ICO('<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>'),
   LEFT: ICO('<path d="M15 5l-7 7 7 7"/>'),
   RIGHT: ICO('<path d="M9 5l7 7-7 7"/>'),
+  GLOBE: ICO('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
+  TRANSLATE: ICO('<path d="M4 6h9M8.500 4v2M6 6c0 4 3 7 6 8M11 6c0 3-2.500 6.500-6 8"/><path d="M13 20l4-9 4 9M14.500 17h5"/>'),
+  CHEV: ICO('<path d="M6 9l6 6 6-6"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
-const badge = e=>e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${LABEL[e.status]}</span>`:`<span class="badge b-none">${OTHER[e.category]||esc(e.category)}</span>`;
+const badge = e=>e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${t(LABEL[e.status])}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
 
 function rowsHTML(rows){
   return rows.map(r=>{
     const bad = r.verdict==="mismatch", gap = r.verdict==="missing";
-    return `<tr class="src ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="Show where this is in the original documents"><td class="f">${FIELDS[r.field]}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||"(blank)"}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||"(blank)"}</td></tr>`;
+    return `<tr class="src ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="${t("Show where this is in the original documents")}"><td class="f">${fld(r.field)}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||t("(blank)")}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||t("(blank)")}</td></tr>`;
   }).join("");
 }
-const table = rows=>`<div class="tblwrap"><table class="tbl"><thead><tr><th>Field</th><th>Shipping Instruction</th><th>Draft Bill of Lading</th></tr></thead><tbody>${rowsHTML(rows)}</tbody></table></div>`;
+const table = rows=>`<div class="tblwrap"><table class="tbl"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead><tbody>${rowsHTML(rows)}</tbody></table></div>`;
 
 /* find the lines of the original text that hold a field's value: a "Label: value" line first, then any line containing it */
 function sourceLines(text, raw){
@@ -431,11 +483,11 @@ function docsHTML(e, rows){
   const box = (role,name)=>{
     const d = e.docs[role];
     const raw = row ? row[role==="SI"?"si_raw":"bl_raw"] : "";
-    const body = !d ? "Not attached to this email." : d.text ? textHTML(d.text, row?sourceLines(d.text, raw):null) : "This file could not be read.";
+    const body = !d ? t("Not attached to this email.") : d.text ? textHTML(d.text, row?sourceLines(d.text, raw):null) : t("This file could not be read.");
     return `<div class="doc"><div class="doch">${name}${d?` (${esc(d.name)})`:""}</div><div class="text">${body}</div></div>`;
   };
-  const note = row ? `<div class="small mute" style="margin-top:6px">Highlighted: <b>${FIELDS[row.field]}</b>. Click the row again to clear.</div>` : "";
-  return `<button class="linkbtn" data-a="docs">${S.docs?"▾":"▸"} Original documents</button>` + (S.docs?note+`<div class="docs">${box("SI","Shipping Instruction")}${box("BL","Draft Bill of Lading")}</div>`:"");
+  const note = row ? `<div class="small mute" style="margin-top:6px">${t("Highlighted: {field}. Click the row again to clear.",{field:"<b>"+fld(row.field)+"</b>"})}</div>` : "";
+  return `<button class="linkbtn" data-a="docs">${S.docs?"▾":"▸"} ${t("Original documents")}</button>` + (S.docs?note+`<div class="docs">${box("SI",t("Shipping Instruction"))}${box("BL",t("Draft Bill of Lading"))}</div>`:"");
 }
 
 const line = r=>`- ${FIELDS[r.field]}: the SI says ${r.si_raw||"(blank)"}, the draft BL says ${r.bl_raw||"(blank)"}`;
@@ -467,34 +519,62 @@ function step(n, title, evidence){
 const cut = (t,n)=>t.length>n ? t.slice(0,n).replace(/\s+\S*$/,"")+"…" : t;
 
 function how(e){
-  const cat = esc(e.category==="BL_COMPARISON" ? "SI vs BL" : (OTHER[e.category]||e.category).toLowerCase());
+  const cat = esc(e.category==="BL_COMPARISON" ? t("SI vs BL") : (OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase());
   const ai = e.decided_by!=="fallback";
-  const pct = typeof e.class_confidence==="number" ? `<span class="pill">${Math.round(e.class_confidence*100)}% sure</span>` : "";
-  const steps = [step(1, ai ? `The AI read the cover email and filed it under <b>${cat}</b> ${pct}` : `A keyword rule read the cover email and filed it under <b>${cat}</b>`,
+  const pct = typeof e.class_confidence==="number" ? `<span class="pill">${t("{n}% sure",{n:Math.round(e.class_confidence*100)})}</span>` : "";
+  const steps = [step(1, ai ? `${t("The AI read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"})} ${pct}` : t("A keyword rule read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"}),
     `<blockquote>${esc(cut(e.body.replace(/\s+/g," ").trim(),240))}</blockquote>` +
-    (ai && e.class_evidence ? `<div class="cap">AI reason: ${esc(e.class_evidence)}</div>` : ai ? "" : `<div class="cap">Not the AI. A simple rule on the subject and text.</div>`))];
+    (ai && e.class_evidence ? `<div class="cap">${t("AI reason:")} ${esc(e.class_evidence)}</div>` : ai ? "" : `<div class="cap">${t("Not the AI. A simple rule on the subject and text.")}</div>`))];
   if(e.category!=="BL_COMPARISON"){
-    steps.push(step(2, "Stopped here", `<div class="cap">Only SI vs BL emails are compared, so nothing else was run.</div>`));
+    steps.push(step(2, t("Stopped here"), `<div class="cap">${t("Only SI vs BL emails are compared, so nothing else was run.")}</div>`));
   } else {
     const docs = e.docs ? ["SI","BL"].filter(r=>e.docs[r]).map(r=>e.docs[r]) : [];
-    steps.push(step(2, docs.length ? `Opened ${docs.length} attached file${docs.length>1?"s":""}` : "Looked for the SI and the draft BL",
-      docs.length ? `<div class="files">${docs.map(d=>`<div class="file"><b>${esc(d.name)}</b><span>${esc(d.title||"no title found")} · ${d.pairs.length} label/value pairs${d.parse_status&&d.parse_status!=="ok"?` · ${esc(d.parse_status)}`:""}</span></div>`).join("")}</div>`
-        : `<div class="cap">Nothing readable is attached.</div>`));
+    steps.push(step(2, docs.length ? t(docs.length>1?T("Opened {n} attached files"):T("Opened {n} attached file"),{n:docs.length}) : t("Looked for the SI and the draft BL"),
+      docs.length ? `<div class="files">${docs.map(d=>`<div class="file"><b>${esc(d.name)}</b><span>${esc(d.title||t("no title found"))} · ${t("{n} label/value pairs",{n:d.pairs.length})}${d.parse_status&&d.parse_status!=="ok"?` · ${esc(d.parse_status)}`:""}</span></div>`).join("")}</div>`
+        : `<div class="cap">${t("Nothing readable is attached.")}</div>`));
     const rows = e.rows||[];
     if(!rows.length){
-      steps.push(step(3, "Could not go further", `<div class="cap">${esc(REASON[e.review_reason]||"A person needs to look.")}</div>`));
+      steps.push(step(3, t("Could not go further"), `<div class="cap">${esc(REASON[e.review_reason]?t(REASON[e.review_reason]):t("A person needs to look."))}</div>`));
     } else {
-      steps.push(step(3, "The AI read the 7 fields from each document", `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>Field</th><th>SI says</th><th>BL says</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="f">${FIELDS[r.field]}</td><td>${esc(r.si_raw)||"(blank)"}</td><td>${esc(r.bl_raw)||"(blank)"}</td></tr>`).join("")}</tbody></table></div><div class="cap">Each value has to appear word for word in the document, or it is dropped.</div>`));
-      const fixes = rows.flatMap(r=>[["SI",r.si_raw,r.si_norm],["BL",r.bl_raw,r.bl_norm]].filter(x=>(x[1]||"")!==(x[2]||"")).map(x=>`<div class="fix"><b>${FIELDS[r.field]} (${x[0]})</b> ${esc(x[1])} <i>→</i> ${esc(x[2])||"(blank)"}</div>`));
-      steps.push(step(4, "Cleaned the values", fixes.length ? fixes.join("") : `<div class="cap">Nothing needed cleaning.</div>`));
+      steps.push(step(3, t("The AI read the 7 fields from each document"), `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>${t("Field")}</th><th>${t("SI says")}</th><th>${t("BL says")}</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="f">${fld(r.field)}</td><td>${esc(r.si_raw)||t("(blank)")}</td><td>${esc(r.bl_raw)||t("(blank)")}</td></tr>`).join("")}</tbody></table></div><div class="cap">${t("Each value has to appear word for word in the document, or it is dropped.")}</div>`));
+      const fixes = rows.flatMap(r=>[["SI",r.si_raw,r.si_norm],["BL",r.bl_raw,r.bl_norm]].filter(x=>(x[1]||"")!==(x[2]||"")).map(x=>`<div class="fix"><b>${fld(r.field)} (${x[0]})</b> ${esc(x[1])} <i>→</i> ${esc(x[2])||t("(blank)")}</div>`));
+      steps.push(step(4, t("Cleaned the values"), fixes.length ? fixes.join("") : `<div class="cap">${t("Nothing needed cleaning.")}</div>`));
       const V = {match:["OK","Match"], mismatch:["MISMATCH","Differs"], missing:["NEEDS_REVIEW","Missing"]};
-      steps.push(step(5, e.status==="OK" ? "Compared field by field: all match" : `Compared field by field: ${(e.defect_fields||[]).length} differ`,
-        `<div class="chips">${rows.map(r=>`<span class="chip c-${V[r.verdict][0]}">${ICON[V[r.verdict][0]]}${FIELDS[r.field]}</span>`).join("")}</div>`));
+      steps.push(step(5, e.status==="OK" ? t("Compared field by field: all match") : t("Compared field by field: {n} differ",{n:(e.defect_fields||[]).length}),
+        `<div class="chips">${rows.map(r=>`<span class="chip c-${V[r.verdict][0]}">${ICON[V[r.verdict][0]]}${fld(r.field)}</span>`).join("")}</div>`));
     }
   }
   const open = S.how;
-  return `<button class="linkbtn how" data-a="how">${open?"▾":"▸"} How Ship Happens decided</button>` +
+  return `<button class="linkbtn how" data-a="how">${open?"▾":"▸"} ${t("How Ship Happens decided")}</button>` +
     (open ? `<ol class="steps">${steps.join("")}</ol>` : "");
+}
+
+const trKey = e=>e.id+"|"+LANG;
+function translateBar(e){
+  const cur = S.tr[trKey(e)], lang = allLangs().find(l=>l.code===LANG) || LANGS.en;
+  const btn = `<button class="ghost tbtn" data-a="translate" data-id="${e.id}">${ICON.TRANSLATE}${t("Translate to {lang}",{lang:esc(lang.name)})}</button>`;
+  if(!cur) return `<div class="trbar">${btn}</div>`;
+  if(cur.busy) return `<div class="trbar"><span class="spin"></span><span>${t("Translating...")}</span></div>`;
+  if(cur.err) return `<div class="trbar">${btn}<span class="err small">${esc(cur.err)}</span></div>`;
+  const parts = [["subject",T("Subject")],["body",T("Cover email")],["SI",T("Shipping Instruction")],["BL",T("Draft Bill of Lading")]].filter(([k])=>cur.texts[k]);
+  return `<div class="trbox"><div class="doch">${t("Translation in {lang}",{lang:esc(lang.name)})}</div>${parts.map(([k,n])=>`<div class="fl small">${t(n)}</div><div class="text">${esc(cur.texts[k])}</div>`).join("")}<div class="actions"><button class="ghost" data-a="trhide" data-id="${e.id}">${t("Hide translation")}</button></div><div class="small mute" style="margin-top:8px">${t("Translated by the AI. Check important details in the original.")}</div></div>`;
+}
+async function translate(id){
+  const e = byId[id], key = trKey(e), lang = allLangs().find(l=>l.code===LANG) || LANGS.en;
+  const texts = {subject:e.subject, body:e.body};
+  for(const r of ["SI","BL"]) if(e.docs && e.docs[r] && e.docs[r].text) texts[r] = e.docs[r].text;
+  if(!API_BASE){ S.tr[key] = {err:t("Translation needs the live AI service, which is not connected in this demo.")}; return render(); }
+  if(Object.values(texts).join("").length > 30000){ S.tr[key] = {err:t("This email is too long to translate in one go.")}; return render(); }
+  S.tr[key] = {busy:true}; render();
+  const ctrl = new AbortController(), timer = setTimeout(()=>ctrl.abort(), 90000);
+  try{
+    const res = await fetch(API_BASE+"/translate", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal, body:JSON.stringify({target:lang.english, texts})});
+    if(res.status===413) throw new Error("long");
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    S.tr[key] = {texts:(await res.json()).texts};
+  }catch(err){
+    S.tr[key] = {err:t(err.message==="long" ? T("This email is too long to translate in one go.") : T("Could not reach the AI service. Try again in a moment."))};
+  }finally{ clearTimeout(timer); render(); }
 }
 
 function canRecheck(e){ return API_BASE && e.docs && e.docs.SI && e.docs.BL && e.docs.SI.pairs.length && e.docs.BL.pairs.length; }
@@ -503,37 +583,37 @@ function detail(e){
   const live = S.live[e.id];
   const view = live && live.result ? {...e, ...live.result} : e;
   const fresh = live && live.fresh ? "fresh" : "";
-  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}`;
+  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}${translateBar(e)}`;
   if(view.status==="MISMATCH"){
     const n = view.defect_fields.length;
-    h += `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${n} field${n>1?"s":""} differ<span>Fix the Bill of Lading before it is released.</span></div>${table(view.rows)}`;
+    h += `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${t(n>1?T("{n} fields differ"):T("{n} field differs"),{n})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div>${table(view.rows)}`;
   } else if(view.status==="NEEDS_REVIEW"){
-    h += `<div class="banner NEEDS_REVIEW ${fresh}">${ICON.NEEDS_REVIEW}Needs a person to look<span>${REASON[view.review_reason]||""}</span></div>`;
+    h += `<div class="banner NEEDS_REVIEW ${fresh}">${ICON.NEEDS_REVIEW}${t("Needs a person to look")}<span>${REASON[view.review_reason]?t(REASON[view.review_reason]):""}</span></div>`;
     if(view.rows.length) h += table(view.rows);
   } else if(view.status==="OK"){
-    h += `<div class="banner OK ${fresh}">${ICON.OK}All 7 fields match<span>Nothing to do.</span></div>${table(view.rows)}`;
+    h += `<div class="banner OK ${fresh}">${ICON.OK}${t("All 7 fields match")}<span>${t("Nothing to do.")}</span></div>${table(view.rows)}`;
   } else {
-    h += `<div class="banner plain">Not an SI vs BL check<span>Filed under ${esc((OTHER[e.category]||e.category).toLowerCase())}${e.decided_by==="fallback"?" by a simple keyword rule, not the AI":""}.</span></div>`;
+    h += `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by==="fallback"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
   if(e.docs) h += docsHTML(e, view.rows||[]);
-  h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} Cover email</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
+  h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
   const m = S.marks[e.id];
   if(e.status==="MISMATCH"||e.status==="NEEDS_REVIEW"){
     const d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
-    if(m) h += `<div class="done"><span>${m==="ok"?"Marked as checked":"Reply sent (demo)"}</span><button class="btn alt" data-a="undo" data-id="${e.id}">Undo</button></div>` +
-      (sent?`<div class="mute small" style="margin-top:8px">To ${esc(sent.to)}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
-    else if(d) h += `<div class="reply"><div class="doch">Reply to the sender</div>
-      <label class="small mute" for="r-to">To</label><input id="r-to" data-f="to" value="${esc(d.to)}">
-      <label class="small mute" for="r-sub">Subject</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
-      <label class="small mute" for="r-body">Message</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
-      <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">Send reply</button><button class="btn alt" data-a="copy">${S.copied===e.id?"Copied":"Copy"}</button><button class="btn alt" data-a="mailto">Open in your email app</button><button class="ghost" data-a="discard">Discard</button></div>
-      <div class="small mute" style="margin-top:8px">Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.</div></div>`;
-    else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">Mark as checked</button><button class="btn alt" data-a="draft" data-id="${e.id}">Reply to sender</button></div>`;
+    if(m) h += `<div class="done"><span>${m==="ok"?t("Marked as checked"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
+      (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
+    else if(d) h += `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
+      <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
+      <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
+      <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
+      <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">${t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
+      <div class="small mute" style="margin-top:8px">${t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
+    else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as checked")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
   }
   if(canRecheck(e)){
     h += `<div class="live" aria-live="polite">${live&&live.busy
-      ? `<div class="checking"><span class="spin"></span><span>Checking with the AI<span class="mute"> \u00b7 <span id="elapsed">${Math.floor((Date.now()-live.t0)/1000)}</span>s</span></span></div><div class="prog"><i></i></div><div class="mute small">The first check can take up to a minute while the server wakes up.</div>`
-      : `${live&&live.result?"":`<span class="mute small">Showing the saved AI result. </span>`}<button class="ghost" data-a="recheck" data-id="${e.id}">Check again with AI</button>`}`;
+      ? `<div class="checking"><span class="spin"></span><span>${t("Checking with the AI")}<span class="mute"> \u00b7 <span id="elapsed">${Math.floor((Date.now()-live.t0)/1000)}</span>s</span></span></div><div class="prog"><i></i></div><div class="mute small">${t("The first check can take up to a minute while the server wakes up.")}</div>`
+      : `${live&&live.result?"":`<span class="mute small">${t("Showing the saved AI result.")} </span>`}<button class="ghost" data-a="recheck" data-id="${e.id}">${t("Check again with AI")}</button>`}`;
     if(live&&live.note) h += ` <span class="${live.error?"":"mute"}">${esc(live.note)}</span>`;
     h += `</div>`;
   }
@@ -552,9 +632,9 @@ async function recheck(id){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const result = await res.json();
     const same = result.status===e.status && JSON.stringify(result.defect_fields)===JSON.stringify(e.defect_fields);
-    S.live[id] = {result, fresh:true, note: same?"Live AI check done. Same result as the saved one.":"Live AI check done. It differs from the saved result, so please look closely."};
+    S.live[id] = {result, fresh:true, note: t(same?T("Live AI check done. Same result as the saved one."):T("Live AI check done. It differs from the saved result, so please look closely."))};
   }catch(err){
-    S.live[id] = {error:true, note:"Could not reach the AI service, so this shows the saved result. Try again in a moment."};
+    S.live[id] = {error:true, note:t("Could not reach the AI service, so this shows the saved result. Try again in a moment.")};
   }finally{ clearTimeout(timer); clearInterval(tick); render(); if(S.live[id]) S.live[id].fresh=false; }
 }
 
@@ -580,23 +660,23 @@ function render(){
   const keep = S.reset ? null : {pane:(q(".pane")||{}).scrollTop, list:(q(".list")||{}).scrollTop, y:window.scrollY};
   S.reset = false;
   const list = items(), total = list.length, from = total?S.page*PAGE+1:0, to = Math.min(total,(S.page+1)*PAGE);
-  const pagerHTML = `<div class="pager small num"><span>${from}\u2013${to} of ${total}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="Newer emails" title="Newer emails">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="Older emails" title="Older emails">${ICON.RIGHT}</button></span></div>`;
-  const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${label}</button>`;
+  const pagerHTML = `<div class="pager small num"><span>${t("{from}\u2013{to} of {total}",{from,to,total})}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="${t("Newer emails")}" title="${t("Newer emails")}">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="${t("Older emails")}" title="${t("Older emails")}">${ICON.RIGHT}</button></span></div>`;
+  const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
-    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${who(e)}</b>${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?"Checked":"Replied"}</span>`:badge(e)}</span><span class="sub">${esc(e.subject)}</span></button>`;
+    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${who(e)}</b>${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Checked"):t("Replied")}</span>`:badge(e)}</span><span class="sub">${esc(e.subject)}</span></button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← List</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>Pick an email to see it here</b><span>Click one in the list. Once it is open, the left and right arrow keys move between emails.</span>${total?`<button class="btn" data-a="first">Open the first email</button>`:""}</div>`;
+  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
   const brand = q(".brand");
   document.getElementById("app").innerHTML =
-    `<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost hb" data-a="help" aria-label="Help">${ICON.HELP}<span class="lbl">Help</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="What's next" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">What's next</span></button><span class="themesw" role="group" aria-label="Colour mode"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="Light mode">${ICON.SUN}<span class="lbl">Light Mode</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="Dark mode">${ICON.MOON}<span class="lbl">Dark Mode</span></button></span></div>${onNext ? nextPage() : `
+    `<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span><button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
-     <div class="bar"><label class="mute small" for="foldersel">Show</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>Other folders</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${folder(k).n} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="Search mail" aria-label="Search mail" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
+     <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail")}" aria-label="${t("Search mail")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>Nothing here</b><span>No emails match${S.q.trim()?` \u201c${esc(S.q.trim())}\u201d`:""} in this folder.</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">Clear search</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">Show all mail</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="Drag to resize"></div><div class="pane">${pane}</div></div>`}${help}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -633,13 +713,21 @@ document.addEventListener("pointerdown", ev=>{
 });
 
 document.addEventListener("click", ev=>{
-  const t = ev.target.closest("[data-a]"); if(!t) return;
-  const a = t.dataset.a, k = t.dataset.k, id = t.dataset.id;
+  if(S.langMenu && !ev.target.closest(".langwrap")){ S.langMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
+  const el = ev.target.closest("[data-a]"); if(!el) return;
+  const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="foldersel") return;
   if(a==="theme") document.documentElement.dataset.theme = k;
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
+  else if(a==="langmenu") S.langMenu=!S.langMenu;
+  else if(a==="langpick"){ S.langMenu=false; setLang(k); }
+  else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
+  else if(a==="langclose"){ S.langDlg=false; }
+  else if(a==="langnext"){ S.langDlg=false; location.hash="#/next"; window.scrollTo(0,0); }
+  else if(a==="translate") return translate(id);
+  else if(a==="trhide"){ delete S.tr[trKey(byId[id])]; }
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
   else if(a==="kind") S.fb.kind=k;
   else if(a==="rate") S.fb.rating = S.fb.rating===+k ? 0 : +k;
@@ -681,6 +769,7 @@ document.addEventListener("input", ev=>{
 });
 document.addEventListener("change", ev=>{
   if(ev.target.dataset.a==="foldersel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.reset=true; render(); }
+
 });
 function goTo(e){
   const at = items().indexOf(e);
@@ -695,10 +784,10 @@ function stepKey(key){
 }
 document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.reset=true; render(); return; }
-  if(ev.key==="Escape"&&S.help){ S.help=false; render(); return; }
+  if(ev.key==="Escape"&&(S.help||S.langDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && ev.target.classList.contains("src")){ ev.preventDefault(); ev.target.click(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
-  if(typing||S.help||location.hash==="#/next"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
+  if(typing||S.help||S.langDlg||location.hash==="#/next"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);
