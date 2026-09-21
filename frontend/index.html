@@ -334,11 +334,18 @@ async function recheck(id){
   const tick = setInterval(()=>{ const el=document.getElementById("elapsed"); if(el) el.textContent=Math.floor((Date.now()-S.live[id].t0)/1000); }, 1000);
   const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 90000);
   try{
-    const res = await fetch(API_BASE+"/extract-clean-compare?live=true", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal, body:JSON.stringify({
-      email_id:id, si_pairs:e.docs.SI.pairs, bl_pairs:e.docs.BL.pairs, si_title:e.docs.SI.title, bl_title:e.docs.BL.title,
-      si_parse_status:e.docs.SI.parse_status, bl_parse_status:e.docs.BL.parse_status})});
+    const res = await fetch(API_BASE+"/process-email", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
+      /* attachments must be sent: EmailInput defaults the field to [], and the
+         router locates the SI and BL by walking that list. Omit it and every
+         email resolves to no files and comes back NEEDS_REVIEW. Bare file
+         names are fine - resolve_attachment_path looks them up under
+         data/attachments/. */
+      body:JSON.stringify({email_id:id, from:e.from, subject:e.subject, body:e.body,
+        attachments:[e.docs.SI.name, e.docs.BL.name].filter(Boolean)})});
     if(!res.ok) throw new Error("HTTP "+res.status);
-    const result = await res.json();
+    /* One call runs all five stages; the page only redraws the verdict. */
+    const result = (await res.json()).ComparisonResult;
+    if(!result) throw new Error("no ComparisonResult");
     const same = result.status===e.status && JSON.stringify(result.defect_fields)===JSON.stringify(e.defect_fields);
     S.live[id] = {result, fresh:true, note: same?"Live AI check done. Same result as the saved one.":"Live AI check done. It differs from the saved result, so please look closely."};
   }catch(err){
