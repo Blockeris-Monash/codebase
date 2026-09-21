@@ -56,9 +56,8 @@ def role_of(path: str) -> str:
     return "SI" if "_SI." in Path(path).name else "BL"
 
 
-def document(data_dir: Path, rel: str, email_id: str, role: str) -> dict:
+def document(path: Path, email_id: str, role: str) -> dict:
     """What the UI needs from one attachment: shown text, and the inputs for a live re-check."""
-    path = data_dir / rel
     saved = pipeline.load_saved_extract(email_id, role)
     out = {"name": path.name, "format": path.suffix.lstrip("."), "title": None, "pairs": [],
            "text": None, "parse_status": (saved or {}).get("parse_status", "ok")}
@@ -100,7 +99,7 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
                      decided_by="fallback")
 
     if entry["category"] == "BL_COMPARISON":
-        docs = {role_of(rel): document(data_dir, rel, email_id, role_of(rel)) for rel in attachments}
+        docs = {role_of(rel): document(data_dir / rel, email_id, role_of(rel)) for rel in attachments}
         result = compared(email_id, docs)
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
