@@ -1,0 +1,7 @@
+{
+  "email_id": "email_085",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email explicitly queries invoice 5250071252 and asks whether THC/local charges are included or billed separately, requesting a breakdown."
+}

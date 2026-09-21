@@ -18,6 +18,8 @@ invented. See tests/samples/Edi304Sample.edi.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 # Defaults only. X12 declares its delimiters inside the ISA segment itself,
 # so a partner using "|" and a newline is just as valid - see delimiters().
 DEFAULT_SEGMENT_TERMINATOR = "~"
@@ -39,6 +41,8 @@ PARTY_QUALIFIERS: dict[str, tuple[str, ...]] = {
 }
 PORT_QUALIFIERS: dict[str, str] = {"L": "Port of Loading", "D": "Port of Discharge"}
 
+TRANSACTION_SEGMENT = "ST"
+SHIPPING_INSTRUCTION_CODE = "304"   # X12 304 = Shipping Information
 PARTY_SEGMENT = "N1"
 PORT_SEGMENT = "R4"
 CONTAINER_SEGMENT = "N7"
@@ -55,6 +59,9 @@ PORT_NAME = 4
 LADING_WEIGHT = 4
 LADING_WEIGHT_QUALIFIER = 5
 LADING_WEIGHT_UNIT = 11
+
+# The title the label table already knows an SI by; see read/labels.py.
+SI_TITLE = "SHIPPING INSTRUCTION"
 
 LabelledPairs = list[tuple[str, str]]
 
@@ -154,9 +161,9 @@ def gross_weight_kg(found: list[list[str]]) -> LabelledPairs:
     return [("Gross Weight (KG)", f"{total:,.0f} KG")] if total else []
 
 
-def read_edi(path) -> LabelledPairs:
+def read_edi(path: Path) -> LabelledPairs:
     """Every field we compare, as labels the synonym table already knows."""
-    found = segments(path.read_text(errors="replace"))
+    found = segments(path.read_text(encoding="utf-8", errors="replace"))
     by_name: dict[str, list[list[str]]] = {}
     for segment in found:
         by_name.setdefault(segment[0], []).append(segment)
@@ -172,11 +179,13 @@ def read_edi(path) -> LabelledPairs:
     return pairs
 
 
-def edi_title(path) -> str | None:
+def edi_title(path: Path) -> str | None:
     """A 304 declares itself in its ST segment, not in a title line."""
-    transaction = next((s for s in segments(path.read_text(errors="replace"))
-                        if s[0] == "ST"), None)
+    text = path.read_text(encoding="utf-8", errors="replace")
+    transaction = next((s for s in segments(text) if s[0] == TRANSACTION_SEGMENT), None)
     if transaction is None:
         return None
 
-    return "SHIPPING INSTRUCTION" if element(transaction, 1) == "304" else None
+    is_shipping_instruction = element(transaction, 1) == SHIPPING_INSTRUCTION_CODE
+
+    return SI_TITLE if is_shipping_instruction else None

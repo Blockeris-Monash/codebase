@@ -1,0 +1,7 @@
+{
+  "email_id": "email_429",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email says 'Please find Shipping instruction for 5RUS-83625' and provides full SI details (POL, POD, shipper, consignee, goods), indicating a new Shipping Instruction submission, with no draft BL attached for comparison."
+}

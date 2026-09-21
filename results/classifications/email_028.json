@@ -1,0 +1,7 @@
+{
+  "email_id": "email_028",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject starts with 'SI' and body says 'Please find Shipping instruction for 5ALT-12567' with full SI details (POL, POD, shipper, consignee, goods, documents), then asks for draft BL once available."
+}

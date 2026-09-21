@@ -1,0 +1,7 @@
+{
+  "email_id": "email_115",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The subject and body reference an invoice and missing GR needed to proceed with billing."
+}

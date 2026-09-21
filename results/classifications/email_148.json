@@ -1,0 +1,7 @@
+{
+  "email_id": "email_148",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject includes 'CUST SI' and body says 'Please find Shipping instruction for 5APH-84518' with full SI details (POL, POD, shipper, consignee, goods, documents). It asks for a draft BL once available, but no draft BL is attached, so it is not BL_COMPARISON."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_020",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The subject and body explicitly state 'Please find Shipping instruction' and provide full SI details (POL, POD, shipper, consignee, goods, documents), indicating a new Shipping Instruction submission. No draft BL is attached, so it is not BL_COMPARISON."
+}

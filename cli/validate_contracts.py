@@ -4,9 +4,10 @@
     python3 -m cli.validate_contracts                 # check every fixture
     python3 -m cli.validate_contracts mine.json ComparisonResult
 
-Exits non-zero on the first contract violation, so it drops straight into CI
-or a pre-commit hook. Supports the subset of JSON Schema the contracts use;
-no third-party dependency, because every stage must be able to run this.
+Reports every contract violation it finds and exits non-zero if there were
+any, so it drops straight into CI or a pre-commit hook. Supports the subset
+of JSON Schema the contracts use; no third-party dependency, because every
+stage must be able to run this.
 """
 from __future__ import annotations
 
@@ -58,7 +59,10 @@ def check_enum(value: JsonValue, schema: Schema, path: str, errors: Errors) -> N
 
 def check_string(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     pattern = schema.get("pattern")
-    if pattern is None or not isinstance(value, str) or re.match(pattern, value):
+    # JSON Schema `pattern` matches anywhere in the string; re.match would
+    # anchor it at the start. Every contract pattern is anchored already,
+    # so this changes nothing today and stays correct for the next one.
+    if pattern is None or not isinstance(value, str) or re.search(pattern, value):
         return
     errors.append(f"{path}: {value!r} does not match /{pattern}/")
 

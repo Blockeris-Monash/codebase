@@ -1,0 +1,7 @@
+{
+  "email_id": "email_500",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email explicitly requests cancellation of invoice 5250078299 and reversal of the PGI for a freight booking, which is a freight billing/invoice matter."
+}

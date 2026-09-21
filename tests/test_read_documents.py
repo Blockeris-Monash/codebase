@@ -1,13 +1,12 @@
 """Lane A — every attachment format reaches the same labelled pairs."""
 from __future__ import annotations
 
-import zipfile
 from pathlib import Path
 
 import pytest
 
 from backend.contracts import FIELD_NAMES, ParseStatusType
-from cli.make_fixtures import canonical_field, detect_doc_type
+from backend.read.labels import canonical_field, detect_doc_type
 from backend.read.documents import READERS, document_title, read_document
 
 # Measured over the provided dataset. A change here means the data changed

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_054",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction for 5RCY-45054' with full SI details (POL, POD, shipper, consignee, goods, documents), indicating a request to create/submit a new Shipping Instruction."
+}

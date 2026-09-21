@@ -1,0 +1,7 @@
+{
+  "email_id": "email_265",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email only asks the recipient to send a draft BL for checking and lists no attachments, so it does not meet the BL_COMPARISON requirement; it is an operational shipping documentation request."
+}

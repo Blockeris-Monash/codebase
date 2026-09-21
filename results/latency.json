@@ -1,0 +1,79 @@
+{
+ "emails": 10,
+ "median": 24.7,
+ "mean": 25.4,
+ "slowest": 43.8,
+ "same_as_saved": 10,
+ "runs": [
+  {
+   "email_id": "email_001",
+   "seconds": 33.4,
+   "saved": "OK",
+   "live": "OK",
+   "same": true
+  },
+  {
+   "email_id": "email_044",
+   "seconds": 23.4,
+   "saved": "OK",
+   "live": "OK",
+   "same": true
+  },
+  {
+   "email_id": "email_046",
+   "seconds": 21.5,
+   "saved": "MISMATCH",
+   "live": "MISMATCH",
+   "same": true
+  },
+  {
+   "email_id": "email_097",
+   "seconds": 15.6,
+   "saved": "MISMATCH",
+   "live": "MISMATCH",
+   "same": true
+  },
+  {
+   "email_id": "email_182",
+   "seconds": 15.0,
+   "saved": "MISMATCH",
+   "live": "MISMATCH",
+   "same": true
+  },
+  {
+   "email_id": "email_249",
+   "seconds": 26.3,
+   "saved": "OK",
+   "live": "OK",
+   "same": true
+  },
+  {
+   "email_id": "email_302",
+   "seconds": 32.1,
+   "saved": "MISMATCH",
+   "live": "MISMATCH",
+   "same": true
+  },
+  {
+   "email_id": "email_408",
+   "seconds": 43.8,
+   "saved": "OK",
+   "live": "OK",
+   "same": true
+  },
+  {
+   "email_id": "email_468",
+   "seconds": 26.0,
+   "saved": "MISMATCH",
+   "live": "MISMATCH",
+   "same": true
+  },
+  {
+   "email_id": "email_491",
+   "seconds": 16.7,
+   "saved": "OK",
+   "live": "OK",
+   "same": true
+  }
+ ]
+}

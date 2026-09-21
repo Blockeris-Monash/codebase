@@ -1,0 +1,7 @@
+{
+  "email_id": "email_339",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The subject and body explicitly state 'Please find Shipping instruction for 5RUS-03037' and provide full SI details (POL, POD, shipper, consignee, goods, documents required). It requests a draft BL later, but no draft BL is attached, so it is not BL_COMPARISON."
+}

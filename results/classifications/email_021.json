@@ -1,0 +1,7 @@
+{
+  "email_id": "email_021",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The body explicitly asks the recipient to submit SI for pending shipments, making Shipping Instruction submission the primary intent despite the billing-related subject."
+}

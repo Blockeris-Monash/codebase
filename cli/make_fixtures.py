@@ -11,22 +11,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import re
 from pathlib import Path
 
 from backend.contracts import (
-    Attachment, CategoryType, ClassificationResult, ComparisonResult,
-    DocumentExtract, DocumentRoleType, EmailRecord, ExtractedField,
-    FIELD_NAMES, ParseStatusType, ReviewReasonType, Scenario,
-    StatusType, SubmissionEntry, VerdictType,
+    CategoryType, ComparisonResult, DocumentExtract, DocumentRoleType,
+    EmailRecord, ParseStatusType, ReviewReasonType, Scenario, StatusType,
+    SubmissionEntry,
 )
 from backend.extract.rules import (
-    absent_fields, attachment_meta, classification, comparison_result,
-    document_extract, email_record, fields_from_pairs, review_result,
-    submission_entry,
+    classification, comparison_result, document_extract, email_record,
+    review_result, submission_entry,
 )
-from backend.read.labels import canonical_field, detect_doc_type
 
 DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[1] / "data")
 SCENARIOS_PATH = Path(__file__).resolve().parent / "Scenarios.json"
