@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Import Milk's Extractor and Model
@@ -29,6 +30,24 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
+
+# The report UI is served from a different origin than this service - Vercel
+# for the page, Render for the API - so the browser sends a preflight before
+# every POST and blocks the call unless the origin comes back allowed.
+# CORS_ORIGINS is a comma-separated list; the default allows any origin, which
+# is what a public demo wants. Credentials stay off, so "*" is legal here.
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "*").split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Directory where Milk's pre-extracted results are stored
 ROOT_DIR = Path(__file__).resolve().parents[1]
