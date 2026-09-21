@@ -7,7 +7,6 @@ import asyncio
 import json
 import logging
 import os
-import sys
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -23,6 +22,8 @@ from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
+from backend.contracts import DocumentRoleType, ParseStatusType
+from backend.read.labels import detect_doc_type
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -53,6 +54,14 @@ class PairedInput(BaseModel):
     email_id: str
     si_pairs: List[tuple[str, str]]
     bl_pairs: List[tuple[str, str]]
+    # The reader saw the document's own header and knows whether the file
+    # opened. Neither can be recovered from the pairs - a .txt SI leads with
+    # Shipper, not with its title - and the comparator escalates any document
+    # whose type or parse status is unknown, so the caller has to say.
+    si_title: Optional[str]
+    bl_title: Optional[str]
+    si_parse_status: str = ParseStatusType.Ok
+    bl_parse_status: str = ParseStatusType.Ok
 
 
 # =====================================================================
@@ -62,44 +71,70 @@ class PairedInput(BaseModel):
 extractor = AiExtractor(qwen_model)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
-    """Loads pre-extracted JSON from results/extracts/ if it exists."""
-    extract_file = EXTRACTS_DIR / f"{email_id}_{role}.json"
-    if extract_file.exists():
-        try:
-            data = json.loads(extract_file.read_text(encoding="utf-8"))
-            # Unwrap the "fields" dictionary from DocumentExtract
-            return data.get("fields", data)
-        except Exception as e:
-            log.warning("Failed to load cached extract for %s: %s", extract_file.name, e)
-    return None
+    """The whole cached DocumentExtract, metadata included.
 
-async def extract_document_fields(
+    Returning only `fields` drops parse_status and detected_doc_type, and the
+    comparator escalates any document missing them - which was every document,
+    so every email came back NEEDS_REVIEW/unreadable.
+    """
+    extract_file = EXTRACTS_DIR / f"{email_id}_{role}.json"
+    if not extract_file.exists():
+        return None
+
+    try:
+        return json.loads(extract_file.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        log.warning("Failed to load cached extract for %s: %s", extract_file.name, error)
+        return None
+
+ABSENT_FIELDS = {"present": False, "raw": None, "label_seen": None}
+
+
+async def extract_live(
     email_id: str,
     role: str,
     pairs: List[tuple[str, str]],
-    force_live: bool = False,
+    title: Optional[str],
+    parse_status: str,
 ) -> Dict[str, Any]:
-    """Hybrid extractor: Uses Milk's saved results for instant speed,
-    or falls back to live Qwen model with retry and hallucination checks.
-    """
-    # 1. Try cached extract if not forcing live AI
-    if not force_live:
-        cached = load_saved_extract(email_id, role)
-        if cached:
-            return cached
+    """One document through Milk's AiExtractor, shaped as a DocumentExtract.
 
-    # 2. Live extraction via Milk's AiExtractor (run in threadpool for async non-blocking concurrency)
+    Run in a threadpool so the SI and the BL extract concurrently.
+    """
     try:
         raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
-    except Exception as e:
-        log.error("Live extraction failed for %s (%s): %s", email_id, role, e)
+    except Exception as error:  # third-party model client, any failure is one
+        log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
         raw_fields = None
 
-    # 3. Graceful fallback if model returns None or fails
     if not raw_fields:
-        return {field: {"present": False, "raw": None, "label_seen": None} for field in FIELD_NAMES}
+        # A model that returned nothing is not evidence that the fields are
+        # absent, so every field is marked missing and the comparator sends
+        # the pair to a human rather than calling it a match.
+        raw_fields = {field: dict(ABSENT_FIELDS) for field in FIELD_NAMES}
 
-    return raw_fields
+    return {
+        "email_id": email_id,
+        "declared_role": role,
+        "detected_doc_type": detect_doc_type(title) if title else None,
+        "parse_status": parse_status,
+        "fields": raw_fields,
+    }
+
+
+async def extract_document(
+    email_id: str,
+    role: str,
+    pairs: List[tuple[str, str]],
+    title: Optional[str],
+    parse_status: str,
+) -> Dict[str, Any]:
+    """Cache first, model second. Milk's saved results answer instantly."""
+    cached = load_saved_extract(email_id, role)
+    if cached:
+        return cached
+
+    return await extract_live(email_id, role, pairs, title, parse_status)
 
 
 # =====================================================================
@@ -178,17 +213,17 @@ async def run_pipeline(
     3. Evaluates discrepancies using JJ's deterministic engine.
     """
     # 1. Concurrently extract SI and BL
-    si_task = extract_document_fields(payload.email_id, "SI", payload.si_pairs, force_live=live)
-    bl_task = extract_document_fields(payload.email_id, "BL", payload.bl_pairs, force_live=live)
+    extract = extract_live if live else extract_document
+    si_extract, bl_extract = await asyncio.gather(
+        extract(payload.email_id, DocumentRoleType.Si, payload.si_pairs,
+                payload.si_title, payload.si_parse_status),
+        extract(payload.email_id, DocumentRoleType.Bl, payload.bl_pairs,
+                payload.bl_title, payload.bl_parse_status),
+    )
 
-    si_raw_fields, bl_raw_fields = await asyncio.gather(si_task, bl_task)
-
-    # 2. Clean & normalize
-    si_cleaned = apply_cleaner(si_raw_fields)
-    bl_cleaned = apply_cleaner(bl_raw_fields)
-
-    si_doc = {"email_id": payload.email_id, "fields": si_cleaned}
-    bl_doc = {"email_id": payload.email_id, "fields": bl_cleaned}
+    # 2. Clean & normalize, keeping the metadata the comparator prechecks on
+    si_doc = {**si_extract, "fields": apply_cleaner(si_extract["fields"])}
+    bl_doc = {**bl_extract, "fields": apply_cleaner(bl_extract["fields"])}
 
     # 3. Deterministic comparison (JJ's Engine)
     report = compare(payload.email_id, si_doc, bl_doc)

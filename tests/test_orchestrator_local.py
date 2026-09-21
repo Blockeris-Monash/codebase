@@ -1,65 +1,107 @@
-"""Test the orchestrator pipeline with both Cached and Live Qwen AI modes."""
-import sys
+"""The orchestrator endpoint, over real attachments, on the cached path.
+
+Was a print-only script under `if __name__ == "__main__"`, so pytest
+collected nothing from it and the endpoint went unguarded. The three cases
+and their expected verdicts are the ones the script documented.
+"""
+from __future__ import annotations
+
+import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
+import pytest
 from fastapi.testclient import TestClient
-from backend.app import app
-from backend.read.documents import read_document
+
+from backend.app import app, load_saved_extract
+from backend.read.documents import document_title, read_document
+
+CACHED = "/extract-clean-compare?live=false"
+LIVE = "/extract-clean-compare?live=true"
+FIELD_COUNT = 7
 
 client = TestClient(app)
 
-def run_test(email_id: str, si_file: str, bl_file: str, live: bool = False):
-    mode = "🔴 LIVE QWEN AI" if live else "⚡ INSTANT CACHE"
-    print(f"\n{'=' * 65}")
-    print(f"Testing {email_id} [{mode}]")
-    print(f"{'=' * 65}")
 
-    attachments = ROOT / "data" / "attachments"
-    si_status, si_pairs = read_document(attachments / si_file)
-    bl_status, bl_pairs = read_document(attachments / bl_file)
+def compare_pair(attachments: Path, url: str,
+                 email_id: str, si_file: str, bl_file: str) -> dict:
+    """Read both attachments the way the reader stage does, then POST them.
 
-    payload = {
+    The title and the parse status travel with the pairs: the endpoint
+    cannot recover either from the pairs alone, and the comparator escalates
+    a document whose type or parse status it does not know.
+    """
+    si_path, bl_path = attachments / si_file, attachments / bl_file
+    si_status, si_pairs = read_document(si_path)
+    bl_status, bl_pairs = read_document(bl_path)
+
+    response = client.post(url, json={
         "email_id": email_id,
         "si_pairs": si_pairs,
-        "bl_pairs": bl_pairs
-    }
+        "bl_pairs": bl_pairs,
+        "si_title": document_title(si_path),
+        "bl_title": document_title(bl_path),
+        "si_parse_status": si_status,
+        "bl_parse_status": bl_status,
+    })
 
-    # Pass live query parameter: ?live=true or ?live=false
-    response = client.post(f"/extract-clean-compare?live={str(live).lower()}", json=payload)
+    assert response.status_code == 200, response.text
 
-    if response.status_code != 200:
-        print(f"❌ HTTP Error {response.status_code}: {response.text}")
-        return
+    return response.json()
 
-    report = response.json()
-    print(f"Result: {report['match_status']} (Discrepancies: {report['discrepancies_count']})")
-    print(f"{'-' * 65}")
-    for row in report["rows"]:
-        icon = "✅" if row["verdict"] == "Match" else "❌"
-        print(f"  {icon} [{row['verdict']:<8}] {row['field']:<18} | SI: {row['si_norm']} | BL: {row['bl_norm']}")
-        if row.get("notes"):
-            print(f"     └── Note: {row['notes']}")
 
-if __name__ == "__main__":
-    # 1. Test Instant Cached Mode (using Milk's pre-extracted results)
-    print("--- 1. TESTING CACHED HYBRID PATH ---")
-    run_test("email_025", "email_025_SI.txt", "email_025_BL.txt", live=False)
+def test_cached_pair_reports_both_seeded_defects(attachments: Path) -> None:
+    report = compare_pair(attachments, CACHED,
+                          "email_025", "email_025_SI.txt", "email_025_BL.txt")
 
-    # 2. Test Live Qwen AI Path (Calls Milk's Qwen API on Render)
-    print("\n--- 2. TESTING LIVE QWEN AI PATH ---")
-    print("(Note: If Render was sleeping, this first call might take 30-40s...)")
-    run_test("email_025", "email_025_SI.txt", "email_025_BL.txt", live=True)
+    assert report["status"] == "MISMATCH"
+    assert report["review_reason"] is None
+    assert report["defect_fields"] == ["port_of_discharge", "container_count"]
 
-# test with live= false
-# if __name__ == "__main__":
-#     # Test 1: email_025 (Expected: Mismatch on port_of_discharge & container_count)
-#     run_test("email_025", "email_025_SI.txt", "email_025_BL.txt", live=False)
 
-#     # Test 2: email_064 (Expected: Clean match)
-#     run_test("email_064", "email_064_SI.txt", "email_064_BL.txt", live=False)
+def test_cached_clean_pair_is_ok(attachments: Path) -> None:
+    report = compare_pair(attachments, CACHED,
+                          "email_064", "email_064_SI.txt", "email_064_BL.txt")
 
-#     # Test 3: Mixed format (Excel SI vs Word BL)
-#     run_test("email_055", "email_055_SI.xlsx", "email_055_BL.docx", live=False)
+    assert report["status"] == "OK"
+    assert report["defect_fields"] == []
+
+
+def test_excel_si_against_word_bl_is_ok(attachments: Path) -> None:
+    """Different formats on the two sides still align field for field."""
+    report = compare_pair(attachments, CACHED,
+                          "email_055", "email_055_SI.xlsx", "email_055_BL.docx")
+
+    assert report["status"] == "OK"
+    assert report["defect_fields"] == []
+
+
+def test_every_field_is_reported(attachments: Path) -> None:
+    """All seven rows come back even when they all match, because the review
+    screen shows the comparison, not just the defects."""
+    report = compare_pair(attachments, CACHED,
+                          "email_064", "email_064_SI.txt", "email_064_BL.txt")
+
+    assert len(report["rows"]) == FIELD_COUNT
+    assert all(row["verdict"] == "match" for row in report["rows"])
+
+
+def test_cache_carries_the_parse_metadata() -> None:
+    """Regression guard. The loader used to return `fields` alone, so every
+    document reached the comparator with no parse_status and no detected
+    type, and all 520 emails came back NEEDS_REVIEW/unreadable."""
+    extract = load_saved_extract("email_025", "SI")
+
+    assert extract is not None
+    assert extract["parse_status"] == "ok"
+    assert extract["detected_doc_type"] == "SI"
+    assert "fields" in extract
+
+
+@pytest.mark.skipif(not os.environ.get("QWEN_API_KEY"), reason="no QWEN_API_KEY")
+def test_live_model_path_reaches_the_same_verdict(attachments: Path) -> None:
+    """Same pair, cache bypassed. Slow, and it spends quota."""
+    report = compare_pair(attachments, LIVE,
+                          "email_025", "email_025_SI.txt", "email_025_BL.txt")
+
+    assert report["status"] == "MISMATCH"
+    assert report["defect_fields"] == ["port_of_discharge", "container_count"]
