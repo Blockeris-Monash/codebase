@@ -44,6 +44,8 @@ TRIES = 4
 
 class ClassificationFailed(RuntimeError):
     """The model never returned a usable classification."""
+
+
 # ==========================================
 # 1. Input/Output Contracts
 # ==========================================
