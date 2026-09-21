@@ -18,6 +18,8 @@ from pydantic import BaseModel
 # Import Milk's Extractor and Model
 from backend.classify import ClassificationFailed, ClassificationResult, EmailInput, classify_email
 from backend.extract.ai import AiExtractor
+from backend.extract.fallback import with_fallback
+from backend.extract.gemini import gemini_model
 from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
@@ -88,7 +90,9 @@ class PairedInput(BaseModel):
 # 2. Stage 3 Extraction: Hybrid (Pre-computed Cache + Live Qwen AI)
 # =====================================================================
 
-extractor = AiExtractor(qwen_model)
+# Qwen first. If it fails or stalls, Gemini answers (with_fallback). One provider being down
+# should not take the live check down, so two tries are enough with a second model behind.
+extractor = AiExtractor(with_fallback(qwen_model, gemini_model), tries=2)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     """The whole cached DocumentExtract, metadata included.
