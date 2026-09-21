@@ -1,25 +1,25 @@
 {
-  "email_id": "email_064",
-  "declared_role": "SI",
-  "source_path": "attachments/email_064_SI.txt",
+  "email_id": "email_348",
+  "declared_role": "BL",
+  "source_path": "attachments/email_348_BL.txt",
   "format": "txt",
-  "detected_doc_type": "SI",
+  "detected_doc_type": "BL",
   "parse_status": "ok",
   "fields": {
     "shipper": {
       "present": true,
-      "label_seen": "SHIPPER",
+      "label_seen": "Shipper (Principal or Seller)",
       "raw": "APRIL FINE PAPER TRADING"
     },
     "consignee": {
       "present": true,
-      "label_seen": "CONSIGNEE",
+      "label_seen": "Consignee (Non-Negotiable)",
       "raw": "ORIENT LINKS CO (LLC)"
     },
     "notify_party": {
       "present": true,
-      "label_seen": "Notify Party/Intermediate Consignee",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "label_seen": "Notify",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
     },
     "port_of_loading": {
       "present": true,
@@ -28,18 +28,18 @@
     },
     "port_of_discharge": {
       "present": true,
-      "label_seen": "Port of Discharge",
-      "raw": "CONAKRY, GUINEA (GNCKY)"
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "JEBEL ALI, UAE (AEJEA)"
     },
     "container_count": {
       "present": true,
-      "label_seen": "No. of Containers",
-      "raw": "5 x 20'GP"
+      "label_seen": "No. of Containers or Packages",
+      "raw": "15 x 20'FCL"
     },
     "gross_weight_kg": {
       "present": true,
       "label_seen": "Gross Weight毛重(KGS)",
-      "raw": "103,800 KG"
+      "raw": "334,845 KG"
     }
   }
 }

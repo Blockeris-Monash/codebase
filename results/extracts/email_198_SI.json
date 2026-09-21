@@ -1,25 +1,25 @@
 {
-  "email_id": "email_064",
+  "email_id": "email_198",
   "declared_role": "SI",
-  "source_path": "attachments/email_064_SI.txt",
+  "source_path": "attachments/email_198_SI.txt",
   "format": "txt",
   "detected_doc_type": "SI",
   "parse_status": "ok",
   "fields": {
     "shipper": {
       "present": true,
-      "label_seen": "SHIPPER",
-      "raw": "APRIL FINE PAPER TRADING"
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
     },
     "consignee": {
       "present": true,
-      "label_seen": "CONSIGNEE",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "label_seen": "To the Order of",
+      "raw": "UAB NOVAKOPA"
     },
     "notify_party": {
       "present": true,
       "label_seen": "Notify Party/Intermediate Consignee",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "raw": "UAB NOVAKOPA"
     },
     "port_of_loading": {
       "present": true,
@@ -28,18 +28,18 @@
     },
     "port_of_discharge": {
       "present": true,
-      "label_seen": "Port of Discharge",
-      "raw": "CONAKRY, GUINEA (GNCKY)"
+      "label_seen": "Port of Discharge (POD)",
+      "raw": "APAPA, NIGERIA (NGAPP)"
     },
     "container_count": {
       "present": true,
-      "label_seen": "No. of Containers",
-      "raw": "5 x 20'GP"
+      "label_seen": "Container Count",
+      "raw": "5 x 20'FCL"
     },
     "gross_weight_kg": {
       "present": true,
-      "label_seen": "Gross Weight毛重(KGS)",
-      "raw": "103,800 KG"
+      "label_seen": "Gross Weight (KG)",
+      "raw": "105,675 KG"
     }
   }
 }

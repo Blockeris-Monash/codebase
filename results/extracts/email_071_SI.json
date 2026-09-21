@@ -1,45 +1,45 @@
 {
-  "email_id": "email_064",
+  "email_id": "email_071",
   "declared_role": "SI",
-  "source_path": "attachments/email_064_SI.txt",
+  "source_path": "attachments/email_071_SI.txt",
   "format": "txt",
   "detected_doc_type": "SI",
   "parse_status": "ok",
   "fields": {
     "shipper": {
       "present": true,
-      "label_seen": "SHIPPER",
-      "raw": "APRIL FINE PAPER TRADING"
+      "label_seen": "Shipper",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
     },
     "consignee": {
       "present": true,
-      "label_seen": "CONSIGNEE",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "label_seen": "Consignee",
+      "raw": "HABRAS INTERNATIONAL LIMITED"
     },
     "notify_party": {
       "present": true,
       "label_seen": "Notify Party/Intermediate Consignee",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "raw": "HABRAS INTERNATIONAL LIMITED"
     },
     "port_of_loading": {
       "present": true,
-      "label_seen": "Port of Loading",
-      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA (CNSHA)"
+      "label_seen": "PORT OF LOADING",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
     },
     "port_of_discharge": {
       "present": true,
-      "label_seen": "Port of Discharge",
-      "raw": "CONAKRY, GUINEA (GNCKY)"
+      "label_seen": "Discharge Port",
+      "raw": "YANGON, MYANMAR (MMRGN)"
     },
     "container_count": {
       "present": true,
       "label_seen": "No. of Containers",
-      "raw": "5 x 20'GP"
+      "raw": "6 x 40'HC"
     },
     "gross_weight_kg": {
       "present": true,
-      "label_seen": "Gross Weight毛重(KGS)",
-      "raw": "103,800 KG"
+      "label_seen": "GROSS WEIGHT",
+      "raw": "132,006 KG"
     }
   }
 }

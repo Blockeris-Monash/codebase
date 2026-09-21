@@ -1,0 +1,45 @@
+{
+  "email_id": "email_511",
+  "declared_role": "BL",
+  "source_path": "attachments/email_511_BL.pdf",
+  "format": "pdf",
+  "detected_doc_type": null,
+  "parse_status": "unreadable",
+  "fields": {
+    "shipper": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "consignee": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "notify_party": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_loading": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_discharge": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "container_count": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "gross_weight_kg": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    }
+  }
+}

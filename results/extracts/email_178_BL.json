@@ -1,45 +1,45 @@
 {
-  "email_id": "email_064",
-  "declared_role": "SI",
-  "source_path": "attachments/email_064_SI.txt",
+  "email_id": "email_178",
+  "declared_role": "BL",
+  "source_path": "attachments/email_178_BL.txt",
   "format": "txt",
-  "detected_doc_type": "SI",
+  "detected_doc_type": "BL",
   "parse_status": "ok",
   "fields": {
     "shipper": {
       "present": true,
       "label_seen": "SHIPPER",
-      "raw": "APRIL FINE PAPER TRADING"
+      "raw": "APRIL FAR EAST (M) SDN BHD"
     },
     "consignee": {
       "present": true,
-      "label_seen": "CONSIGNEE",
+      "label_seen": "Consignee",
       "raw": "ORIENT LINKS CO (LLC)"
     },
     "notify_party": {
       "present": true,
-      "label_seen": "Notify Party/Intermediate Consignee",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "label_seen": "Notify Party",
+      "raw": "3S PAPER PRODUCTS SDN BHD"
     },
     "port_of_loading": {
       "present": true,
-      "label_seen": "Port of Loading",
-      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA (CNSHA)"
+      "label_seen": "Port of Loading (POL)",
+      "raw": "PORT KLANG (WESTPORT), MALAYSIA (MYPKG)"
     },
     "port_of_discharge": {
       "present": true,
-      "label_seen": "Port of Discharge",
-      "raw": "CONAKRY, GUINEA (GNCKY)"
+      "label_seen": "POD",
+      "raw": "CALLAO, PERU (PECLL)"
     },
     "container_count": {
       "present": true,
       "label_seen": "No. of Containers",
-      "raw": "5 x 20'GP"
+      "raw": "7 x 20'GP"
     },
     "gross_weight_kg": {
       "present": true,
       "label_seen": "Gross Weight毛重(KGS)",
-      "raw": "103,800 KG"
+      "raw": "132,516 KG"
     }
   }
 }

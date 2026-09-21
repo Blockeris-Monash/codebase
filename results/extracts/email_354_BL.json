@@ -1,0 +1,45 @@
+{
+  "email_id": "email_354",
+  "declared_role": "BL",
+  "source_path": "attachments/email_354_BL.docx",
+  "format": "docx",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (发货人)",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (收货人)",
+      "raw": "HABRAS INTERNATIONAL LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY (通知人)",
+      "raw": "NAGAPPA EXPORTS"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL (装货港)",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge (POD) (卸货港)",
+      "raw": "VALPARAISO, CHILE"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers or Packages (箱数)",
+      "raw": "1 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Wt (kgs) (毛重 KGS)",
+      "raw": "22,603"
+    }
+  }
+}
