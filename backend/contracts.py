@@ -142,7 +142,7 @@ class SubmissionEntry(TypedDict):
 
 
 class Scenario(TypedDict):
-    """One entry of tools/Scenarios.json — which email a fixture uses and why."""
+    """One entry of cli/Scenarios.json — which email a fixture uses and why."""
     name: str
     email_id: str
     category: str

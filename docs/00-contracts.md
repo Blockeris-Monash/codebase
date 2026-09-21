@@ -6,7 +6,7 @@ against each other's code.
 Each contract is a **JSON Schema file** in `contracts/` — that is the
 authoritative definition. This document explains them; the schema enforces
 them. A worked example of each lives in `fixtures/`, generated from real
-emails by `tools/make_fixtures.py`.
+emails by `-m cli.make_fixtures`.
 
 ```
 contracts/01-EmailRecord.schema.json
@@ -21,14 +21,14 @@ stage it is and who hands it to whom. Refer to them by plain name — the
 tooling ignores the prefix:
 
 ```bash
-python3 tools/validate_contracts.py out.json DocumentExtract
+python3 -m cli.validate_contracts out.json DocumentExtract
 ```
 
 Check anything against them before you hand it downstream:
 
 ```bash
-python3 tools/validate_contracts.py                      # every fixture
-python3 tools/validate_contracts.py out.json ComparisonResult   # your output
+python3 -m cli.validate_contracts                      # every fixture
+python3 -m cli.validate_contracts out.json ComparisonResult   # your output
 ```
 
 Exits non-zero on a violation, so it drops into CI or a pre-commit hook. No
@@ -212,8 +212,8 @@ Each file carries every stage artefact for that email, so any stage can be
 built and tested in isolation. Regenerate and re-check with:
 
 ```bash
-python3 tools/make_fixtures.py --data ../ --out fixtures
-python3 tools/validate_contracts.py
+python3 -m cli.make_fixtures --data ../ --out fixtures
+python3 -m cli.validate_contracts
 ```
 
 The fixtures are validated against the schemas, so the two cannot drift

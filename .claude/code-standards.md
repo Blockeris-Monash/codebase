@@ -2,7 +2,7 @@
 
 Read alongside the house guidelines. A rule listed here is not a finding.
 
-## `tools/validate_contracts.py` — four parameters on the walk functions
+## `cli/validate_contracts.py` — four parameters on the walk functions
 
 House limit is three. The eight `check_*` functions and `validate` take
 `(value, schema, path, errors)`.
@@ -15,12 +15,12 @@ that clarity wins over a rule when the two conflict.
 Revisit if the walk grows a fifth parameter — at that point the context object
 earns its keep.
 
-## `tools/validate_contracts.py` — `Any` in the signatures
+## `cli/validate_contracts.py` — `Any` in the signatures
 
 The module validates untrusted JSON of unknown shape; that is its entire
 purpose. `JsonValue = Any` is aliased at the top and used only for the value
 under inspection, which is the parse-boundary exemption the Python reference
-allows. Every other module uses the `TypedDict`s in `tools/contract_types.py`.
+allows. Every other module uses the `TypedDict`s in `backend/contracts.py`.
 
 ## `loader.py` — vendored unchanged
 
