@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blockeris Document Check</title>
+<title>Ship Happens</title>
 <style>
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
@@ -288,7 +288,7 @@ function render(){
   const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← List</button>${detail(byId[S.sel])}` : `<div class="empty">Pick an email to see it here.</div>`;
   const help = S.help ? `<div class="ov" data-a="helpclose"><div class="dlg" role="dialog" aria-label="How to use" data-a="stay"><h2>How to use this page</h2><ol>${HELP.map(t=>`<li>${t}</li>`).join("")}</ol><button class="btn" data-a="helpclose">Got it</button></div></div>` : "";
   document.getElementById("app").innerHTML =
-    `<div class="top"><span class="logo">BLOCKERIS</span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost" data-a="help">How to use</button><button class="ghost" data-a="theme" aria-label="Switch light or dark">Light / Dark</button></div>
+    `<div class="top"><span class="logo">SHIP HAPPENS</span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost" data-a="help">How to use</button><button class="ghost" data-a="theme" aria-label="Switch light or dark">Light / Dark</button></div>
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
      <div class="bar"><label class="mute small" for="foldersel">Show</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>Other folders</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${folder(k).n} (${count(k)})</option>`).join("")}</select><span class="grow"></span>
        <div class="pager small num">${from}–${to} of ${total}<button data-a="newer" ${S.page===0?"disabled":""}>Newer</button><button data-a="older" ${to>=total?"disabled":""}>Older</button></div></div>
