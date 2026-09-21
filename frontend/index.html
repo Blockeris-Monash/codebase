@@ -126,8 +126,10 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .kpi.k-CHECKED b{color:var(--mute)}.kpi.k-MISMATCH b{color:var(--bad)}.kpi.k-NEEDS_REVIEW b{color:var(--rev)}.kpi.k-OK b{color:var(--ok)}
 .bar{display:flex;gap:8px;align-items:center;padding:16px 16px 0;flex-wrap:wrap}
 .bar select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 8px}
-.pager{display:flex;align-items:center;gap:8px}
-.pager button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:4px 12px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;bottom:0;padding:8px 10px 8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--card);color:var(--mute)}
+.pbtns{display:flex;gap:6px}
+.pager button{display:grid;place-items:center;width:38px;height:32px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);border-radius:8px;padding:0}
+.pager button .ico{margin:0;width:18px;height:18px}
 .pager button:disabled{opacity:.4;cursor:default}
 /* split view */
 .split{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;padding:18px 16px 40px}
@@ -388,6 +390,8 @@ const ICON = {
   NEXT: ICO('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>'),
   SUN: ICO('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'),
   MOON: ICO('<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>'),
+  LEFT: ICO('<path d="M15 5l-7 7 7 7"/>'),
+  RIGHT: ICO('<path d="M9 5l7 7-7 7"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
 const badge = e=>e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${LABEL[e.status]}</span>`:`<span class="badge b-none">${OTHER[e.category]||esc(e.category)}</span>`;
@@ -572,6 +576,7 @@ function render(){
   const keep = S.reset ? null : {pane:(q(".pane")||{}).scrollTop, list:(q(".list")||{}).scrollTop, y:window.scrollY};
   S.reset = false;
   const list = items(), total = list.length, from = total?S.page*PAGE+1:0, to = Math.min(total,(S.page+1)*PAGE);
+  const pagerHTML = `<div class="pager small num"><span>${from}\u2013${to} of ${total}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="Newer emails" title="Newer emails">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="Older emails" title="Older emails">${ICON.RIGHT}</button></span></div>`;
   const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${label}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
@@ -586,8 +591,8 @@ function render(){
     `<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost hb" data-a="help" aria-label="Help">${ICON.HELP}<span class="lbl">Help</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="What's next" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">What's next</span></button><span class="themesw" role="group" aria-label="Colour mode"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="Light mode">${ICON.SUN}<span class="lbl">Light Mode</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="Dark mode">${ICON.MOON}<span class="lbl">Dark Mode</span></button></span></div>${onNext ? nextPage() : `
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
      <div class="bar"><label class="mute small" for="foldersel">Show</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>Other folders</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${folder(k).n} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="Search mail" aria-label="Search mail" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
-       <div class="pager small num">${from}–${to} of ${total}<button data-a="newer" ${S.page===0?"disabled":""}>Newer</button><button data-a="older" ${to>=total?"disabled":""}>Older</button></div></div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>Nothing here</b><span>No emails match${S.q.trim()?` \u201c${esc(S.q.trim())}\u201d`:""} in this folder.</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">Clear search</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">Show all mail</button>`:""}</div>`}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="Drag to resize"></div><div class="pane">${pane}</div></div>`}${help}`;
+       </div>
+     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>Nothing here</b><span>No emails match${S.q.trim()?` \u201c${esc(S.q.trim())}\u201d`:""} in this folder.</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">Clear search</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">Show all mail</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="Drag to resize"></div><div class="pane">${pane}</div></div>`}${help}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
