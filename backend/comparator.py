@@ -7,8 +7,17 @@ from __future__ import annotations
 
 import json
 import re
+import sys
+from pathlib import Path as _Path
 from typing import Any, Dict, List, Literal, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
+
+sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "tools"))
+from normalise import normalise  # noqa: E402
+
+# Distinguishes "no norm key at all" from "norm supplied as None".
+_MISSING = object()
 
 # The 7 canonical fields required by the contract
 CANONICAL_FIELDS = [
@@ -149,7 +158,20 @@ def compare(
             evidence=f"Missing attachment: {missing_doc} document was not provided.",
         )
 
-    # Pre-check 2: Wrong document type
+    # Pre-check 2: Unreadable. This comes before the document-type check
+    # because a file that would not open has no title to read, so its type
+    # is unknown rather than wrong. Emails 511-515 are exactly this case.
+    if si_doc.get("parse_status") != "ok" or bl_doc.get("parse_status") != "ok":
+        return ComparisonResult(
+            email_id=email_id,
+            status="NEEDS_REVIEW",
+            review_reason="unreadable",
+            rows=[],
+            defect_fields=[],
+            evidence="Unreadable document: extraction stage could not parse document contents.",
+        )
+
+    # Pre-check 3: Wrong document type
     if si_doc.get("detected_doc_type") != "SI" or bl_doc.get("detected_doc_type") != "BL":
         return ComparisonResult(
             email_id=email_id,
@@ -160,16 +182,6 @@ def compare(
             evidence="Document type error: attached files could not be confirmed as SI and BL.",
         )
 
-    # Pre-check 3: Unreadable or parse failure
-    if si_doc.get("parse_status") != "ok" or bl_doc.get("parse_status") != "ok":
-        return ComparisonResult(
-            email_id=email_id,
-            status="NEEDS_REVIEW",
-            review_reason="unreadable",
-            rows=[],
-            defect_fields=[],
-            evidence="Unreadable document: extraction stage could not parse document contents.",
-        )
 
     # Build the 7 comparison rows
     rows: List[Row] = []
@@ -185,8 +197,16 @@ def compare(
 
         si_raw = si_item.get("raw")
         bl_raw = bl_item.get("raw")
-        si_norm = si_item.get("norm")
-        bl_norm = bl_item.get("norm")
+        # Contract 03 supplies `raw` only. Extraction leaves values exactly as
+        # written so the review screen can show source evidence; normalising
+        # is this stage's job. Fall back to a supplied `norm` if a caller
+        # happens to pre-normalise.
+        si_norm = si_item.get("norm", _MISSING)
+        bl_norm = bl_item.get("norm", _MISSING)
+        if si_norm is _MISSING:
+            si_norm = normalise(field_name, si_raw)
+        if bl_norm is _MISSING:
+            bl_norm = normalise(field_name, bl_raw)
 
         verdict = compare_single_field(field_name, si_norm, bl_norm)
 

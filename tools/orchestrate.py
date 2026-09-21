@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+import sys
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -20,7 +21,10 @@ from extract_ai import AiExtractor
 from qwen_model import qwen_model
 
 # Import JJ's Deterministic Comparator
-from comparator import ComparisonReport, compare_documents
+# One comparator, JJ's, in backend/. tools/comparator.py was an older
+# copy of the same file and shadowed it on sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+from comparator import ComparisonResult, compare  # noqa: E402
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -163,7 +167,7 @@ def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
 # 4. FastAPI Endpoint: Extract -> Clean -> Compare
 # =====================================================================
 
-@app.post("/extract-clean-compare", response_model=ComparisonReport)
+@app.post("/extract-clean-compare", response_model=ComparisonResult)
 async def run_pipeline(
     payload: PairedInput,
     live: bool = Query(
@@ -189,6 +193,6 @@ async def run_pipeline(
     bl_doc = {"email_id": payload.email_id, "fields": bl_cleaned}
 
     # 3. Deterministic comparison (JJ's Engine)
-    report = compare_documents(si_doc, bl_doc)
+    report = compare(payload.email_id, si_doc, bl_doc)
 
     return report
