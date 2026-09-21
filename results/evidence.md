@@ -20,14 +20,20 @@ Every number below is computed by `python3 -m cli.evidence` from files in this r
 - Reasons for review: missing_value 5, unreadable 5, missing_attachment 5, wrong_doc_type 5.
 - Categories: GENERAL 141, SI_REQUEST 135, BL_COMPARISON 129, INVOICE_QUERY 75, SPAM 40.
 
+## Impact
+- Of 129 SI vs BL checks, 63 (48.8%) needed no human action, and 66 were flagged with the reason and the field, so a person reads only those.
+- 46 emails had a real difference between the SI and the BL, 72 differing fields in total. Each is a difference a person would otherwise have to find by reading both documents.
+- Time spared (an ESTIMATE, not a measurement): at 2 minutes per manual check, about 2.1 hours; at 3 minutes per manual check, about 3.1 hours; at 5 minutes per manual check, about 5.2 hours for the 63 cleared emails. The minutes per check are an assumption, not data.
+
+## Speed (measured, live Qwen)
+- 10 emails checked live one at a time: median 24.7 s, mean 25.4 s, slowest 43.8 s per email.
+- The live answer matched the saved answer on 10 of 10.
+
 ## 4. Classifier (Qwen)
 - 520 emails classified: GENERAL 141, SI_REQUEST 135, BL_COMPARISON 129, INVOICE_QUERY 75, SPAM 40.
 - Confidence below 0.85 (worth a second look): 37.
 - Agrees with the plain keyword fallback on 393 of 520 (75.6%); the 127 others are where the AI adds value or errs.
 - Against 50 emails read and labelled by hand (not looking at the model's answer): 46 of 46 correct (100.0%). 4 left out: send-the-draft-BL emails with no attachment, which the team has not ruled on.
-
-## 5. Tests
-- 187 passed, 4 skipped, 2 warnings
 
 ## Estimate, not a measurement
 - Time saved is only an estimate: multiply the number of SI vs BL checks by the minutes a person takes to compare two documents by hand. State that assumption wherever the figure is used.

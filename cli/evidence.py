@@ -71,7 +71,21 @@ def pipeline_summary(results: list[dict]) -> dict:
         "defect_fields": dict(Counter(f for e in checked if e["status"] == "MISMATCH" for f in e["defect_fields"])),
         "auto_cleared_share": status["OK"] / len(checked) if checked else 0.0,
         "flagged": status["MISMATCH"] + status["NEEDS_REVIEW"],
+        "field_differences": sum(len(e["defect_fields"]) for e in checked if e["status"] == "MISMATCH"),
     }
+
+
+def impact_estimate(cleared: int, minutes_per_check: tuple) -> dict:
+    """Hours a person is spared when `cleared` checks need no human, for each assumed minutes per check."""
+    return {m: round(cleared * m / 60, 1) for m in minutes_per_check}
+
+
+def latency_summary(runs: list[dict]) -> dict:
+    seconds = sorted(r["seconds"] for r in runs)
+    middle = len(seconds) // 2
+    median = seconds[middle] if len(seconds) % 2 else (seconds[middle - 1] + seconds[middle]) / 2
+    return {"emails": len(runs), "median": median, "mean": round(sum(seconds) / len(seconds), 1),
+            "slowest": seconds[-1], "same_as_saved": sum(1 for r in runs if r["same"])}
 
 
 # ---------- 4. classifier ----------
@@ -90,6 +104,7 @@ def classifier_summary(classified: dict, emails: dict) -> dict:
             "disagreements": disagreements}
 
 
+MINUTES_PER_CHECK = (2, 3, 5)  # assumed minutes for a person to compare an SI with a draft BL by hand
 UNDECIDED = "AMBIGUOUS"  # a label the team has not ruled on yet, left out of the accuracy
 
 
@@ -151,6 +166,21 @@ def render(report: dict) -> str:
             f"- Fields that differ in the mismatches: {', '.join(f'{k} {v}' for k, v in sorted(pipe['defect_fields'].items(), key=lambda kv: -kv[1])) or 'none'}.",
             f"- Reasons for review: {', '.join(f'{k} {v}' for k, v in sorted(pipe['reasons'].items(), key=lambda kv: -kv[1])) or 'none'}.",
             f"- Categories: {', '.join(f'{k} {v}' for k, v in sorted(pipe['categories'].items(), key=lambda kv: -kv[1]))}.", ""]
+    cleared = pipe["status"].get("OK", 0)
+    out += ["## Impact",
+            f"- Of {pipe['comparisons']} SI vs BL checks, {cleared} ({pct(cleared, pipe['comparisons'])}) needed no human action, "
+            f"and {pipe['flagged']} were flagged with the reason and the field, so a person reads only those.",
+            f"- {pipe['status'].get('MISMATCH', 0)} emails had a real difference between the SI and the BL, {pipe['field_differences']} differing fields in total. "
+            "Each is a difference a person would otherwise have to find by reading both documents."]
+    hours = impact_estimate(cleared, MINUTES_PER_CHECK)
+    out += ["- Time spared (an ESTIMATE, not a measurement): "
+            + "; ".join(f"at {m} minutes per manual check, about {h} hours" for m, h in hours.items())
+            + f" for the {cleared} cleared emails. The minutes per check are an assumption, not data.", ""]
+    lat = report.get("latency")
+    if lat:
+        out += ["## Speed (measured, live Qwen)",
+                f"- {lat['emails']} emails checked live one at a time: median {lat['median']} s, mean {lat['mean']} s, slowest {lat['slowest']} s per email.",
+                f"- The live answer matched the saved answer on {lat['same_as_saved']} of {lat['emails']}.", ""]
     cls = report.get("classifier")
     if cls:
         out += ["## 4. Classifier (Qwen)",
@@ -185,6 +215,9 @@ def build_report(args: argparse.Namespace) -> dict:
         labels = Path(args.labels)
         if labels.exists():
             report["hand_labels"] = hand_label_accuracy(classified, json.loads(labels.read_text(encoding="utf-8")))
+    latency = Path(args.latency)
+    if latency.exists():
+        report["latency"] = json.loads(latency.read_text(encoding="utf-8"))
     if args.tests:
         report["tests"] = test_count()
     return report
@@ -197,6 +230,7 @@ def main() -> None:
     parser.add_argument("--classifications", default=str(ROOT / "results" / "classifications"))
     parser.add_argument("--results", default=str(ROOT / "frontend" / "results.js"))
     parser.add_argument("--labels", default=str(ROOT / "results" / "classifier_handlabels.json"))
+    parser.add_argument("--latency", default=str(ROOT / "results" / "latency.json"))
     parser.add_argument("--out", default=str(ROOT / "results" / "evidence.md"))
     parser.add_argument("--tests", action="store_true", help="also run the test suite and report the count")
     args = parser.parse_args()
