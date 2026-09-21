@@ -1,0 +1,7 @@
+{
+  "email_id": "email_033",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'SI NEEDED' and the body provides full Shipping Instruction details for 5RMY-69379, including POL, POD, shipper, consignee, notify party, cargo, and document requirements. No draft BL is attached, so the primary intent is submitting/creating a new SI rather than comparing a draft BL."
+}

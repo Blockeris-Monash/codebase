@@ -24,14 +24,34 @@ from backend.extract.qwen import qwen_model
 from backend.compare.comparator import ComparisonResult, compare
 from backend.contracts import DocumentRoleType, ParseStatusType
 from backend.read.labels import detect_doc_type
+from backend.read.documents import document_title, read_document
+
 
 load_dotenv()
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Enable CORS so Han's Vercel frontend can talk to Render
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins (or you can specify Han's Vercel domain later)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+def health_check():
+    """Lightweight endpoint for UptimeRobot and cloud health checkers."""
+    return {"status": "ok"}
+
+
 # Directory where Milk's pre-extracted results are stored
 ROOT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = ROOT_DIR / "data"
 EXTRACTS_DIR = ROOT_DIR / "results" / "extracts"
 
 FIELD_NAMES = [
@@ -122,6 +142,25 @@ async def extract_live(
     }
 
 
+def is_cache_current(cached: Dict[str, Any], title: Optional[str],
+                     parse_status: str) -> bool:
+    """Whether a saved extract describes the document the caller actually sent.
+
+    The cache is keyed on (email_id, role) alone, so on its own it cannot tell
+    "the same document again" from "a different document under the same id" -
+    and it used to win either way, silently discarding the pairs, the title and
+    the parse status the caller was asked to supply. A caller reporting a file
+    that would not open, or a title that resolves to another document type, is
+    describing something this record does not hold.
+    """
+    if parse_status != cached.get("parse_status"):
+        return False
+    if title is None:
+        return True
+
+    return detect_doc_type(title) == cached.get("detected_doc_type")
+
+
 async def extract_document(
     email_id: str,
     role: str,
@@ -131,7 +170,7 @@ async def extract_document(
 ) -> Dict[str, Any]:
     """Cache first, model second. Milk's saved results answer instantly."""
     cached = load_saved_extract(email_id, role)
-    if cached:
+    if cached and is_cache_current(cached, title, parse_status):
         return cached
 
     return await extract_live(email_id, role, pairs, title, parse_status)
@@ -240,3 +279,128 @@ async def classify(email: EmailInput) -> ClassificationResult:
         return await classify_email(email)
     except ClassificationFailed as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
+
+# =====================================================================
+# 5. Routing Helpers: Attachment Resolution
+# =====================================================================
+
+def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
+    """Finds the attachment file in data/attachments/ or local paths."""
+    p = Path(att_path_str)
+    if p.is_absolute() and p.exists():
+        return p
+    # Look inside data/attachments/<filename>
+    direct = DATA_DIR / "attachments" / p.name
+    if direct.exists():
+        return direct
+    # Look inside data/<relative_path>
+    relative = DATA_DIR / att_path_str
+    if relative.exists():
+        return relative
+    return None
+
+
+def read_paired_attachments(email: EmailInput) -> PairedInput:
+    """Locates SI and BL attachments, reads label/value pairs, and records parse status."""
+    si_path_str = next(
+        (a for a in email.attachments if f"_{DocumentRoleType.Si}." in a or a.upper().endswith("SI")),
+        None,
+    )
+    bl_path_str = next(
+        (a for a in email.attachments if f"_{DocumentRoleType.Bl}." in a or a.upper().endswith("BL")),
+        None,
+    )
+
+    si_file = resolve_attachment_path(si_path_str) if si_path_str else None
+    bl_file = resolve_attachment_path(bl_path_str) if bl_path_str else None
+
+    # Read SI
+    if si_file and si_file.exists():
+        si_status, si_pairs = read_document(si_file)
+        si_title = document_title(si_file)
+    else:
+        si_status, si_pairs, si_title = ParseStatusType.Missing, [], None
+
+    # Read BL
+    if bl_file and bl_file.exists():
+        bl_status, bl_pairs = read_document(bl_file)
+        bl_title = document_title(bl_file)
+    else:
+        bl_status, bl_pairs, bl_title = ParseStatusType.Missing, [], None
+
+    return PairedInput(
+        email_id=email.email_id,
+        si_pairs=si_pairs,
+        bl_pairs=bl_pairs,
+        si_title=si_title,
+        bl_title=bl_title,
+        si_parse_status=si_status,
+        bl_parse_status=bl_status,
+    )
+
+
+# =====================================================================
+# 6. Master Route: Classify -> Route (Compare or Pass-Through)
+# =====================================================================
+
+@app.post("/process-email")
+async def process_email(
+    email: EmailInput,
+    live: bool = Query(
+        False, description="Set to true to force live Qwen AI calls instead of cached extracts"
+    ),
+) -> Dict[str, Any]:
+    """1-Click End-to-End Entrypoint:
+    1. Classifies email category.
+    2. Routes BL_COMPARISON to document extraction and comparison.
+    3. Passes through non-comparison emails with null ComparisonResult.
+    """
+    # 1. Classify the email
+    classification = await classify(email)
+
+    # 2. Build standard EmailRecord structure
+    sender_domain = email.from_email.split("@")[-1] if "@" in email.from_email else ""
+    email_record = {
+        "email_id": email.email_id,
+        "from": email.from_email,
+        "sender_domain": sender_domain,
+        "subject": email.subject,
+        "body": email.body,
+        "attachments": email.attachments,
+    }
+
+    # 3. Non-comparison branch (SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM)
+    if classification.category != "BL_COMPARISON":
+        return {
+            "email_id": email.email_id,
+            "EmailRecord": email_record,
+            "ClassificationResult": classification.model_dump(),
+            "ComparisonResult": None,
+            "SubmissionEntry": {
+                "category": classification.category,
+                "status": "OK",
+                "review_reason": None,
+                "has_defect": False,
+                "defect_fields": [],
+            },
+        }
+
+    # 4. BL_COMPARISON branch: resolve attachments & run comparison pipeline
+    paired_input = read_paired_attachments(email)
+    comparison = await run_pipeline(paired_input, live=live)
+
+    comparison_dict = comparison.model_dump() if hasattr(comparison, "model_dump") else comparison
+
+    return {
+        "email_id": email.email_id,
+        "EmailRecord": email_record,
+        "ClassificationResult": classification.model_dump(),
+        "ComparisonResult": comparison_dict,
+        "SubmissionEntry": {
+            "category": classification.category,
+            "status": comparison_dict.get("status", "OK"),
+            "review_reason": comparison_dict.get("review_reason"),
+            "has_defect": bool(comparison_dict.get("defect_fields")),
+            "defect_fields": comparison_dict.get("defect_fields", []),
+        },
+    }

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_427",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email says 'Please find Shipping instruction' and provides full SI details (POL, POD, shipper, consignee, cargo, documents required), indicating submission of a new Shipping Instruction rather than a BL comparison."
+}

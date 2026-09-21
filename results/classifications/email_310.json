@@ -1,0 +1,7 @@
+{
+  "email_id": "email_310",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'SI NEEDED' and body says 'Please find Shipping instruction for 5RMY-68802' with full shipping instruction details (POL, POD, shipper, consignee, goods, documents). No draft BL is attached and the request is to provide the SI, not to compare a draft BL."
+}

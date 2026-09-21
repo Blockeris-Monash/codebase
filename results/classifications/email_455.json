@@ -1,0 +1,7 @@
+{
+  "email_id": "email_455",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email requests bank details, uses an urgent high-value business proposal, and comes from a suspicious external sender, indicating phishing/scam."
+}

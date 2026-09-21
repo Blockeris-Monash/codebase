@@ -19,9 +19,16 @@ import json
 import re
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 import backend.app as pipeline
 from backend.compare.comparator import compare
 from backend.read.documents import document_title, read_document
+
+# Loaded here rather than relied on second-hand: this worked only because
+# importing backend.app happens to call load_dotenv, which breaks the moment
+# that import goes away.
+load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
 BODY_LIMIT = 1500

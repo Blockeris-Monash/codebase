@@ -1,0 +1,7 @@
+{
+  "email_id": "email_452",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email states that a GR is missing for invoice 5250078581 and asks for it to be posted so billing can proceed, with the subject referencing Total Freight."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_276",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'SI NEEDED' and the body provides shipping instruction details (POL, POD, shipper, consignee, goods) while requesting a draft BL once available, with no draft BL attached for comparison."
+}

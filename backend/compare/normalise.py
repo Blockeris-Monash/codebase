@@ -16,7 +16,9 @@ NAME_FIELDS = frozenset({"shipper", "consignee", "notify_party"})
 PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
 NAME_SPLIT = r"\s*\|\s*|\s{2,}"
 LEADING_INTEGER = r"(\d+)"
-DECIMAL_WITH_SEPARATORS = r"([\d,]+(?:\.\d+)?)"
+# Must start with a digit: "([\d,]+...)" also matches a bare "," and then
+# float("") raises out of the comparator.
+DECIMAL_WITH_SEPARATORS = r"(\d[\d,]*(?:\.\d+)?)"
 
 
 def normalise_name(value: str) -> str:
@@ -31,9 +33,11 @@ def normalise_port(value: str) -> str:
     The first segment only: a port read from a PDF form can pick up the line
     beneath it, which is the vessel.
     """
-    first = re.split(NAME_SPLIT, value)[0]
+    # Upper-case first: LOCODE is an [A-Z]{5} pattern, so stripping before
+    # the fold leaves a lower-case "(sgsin)" in place.
+    first = re.split(NAME_SPLIT, value)[0].upper()
 
-    return LOCODE.sub("", first).upper().rstrip(",").strip()
+    return LOCODE.sub("", first).rstrip(",").strip()
 
 
 def normalise_count(value: str) -> str | None:

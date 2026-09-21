@@ -1,0 +1,7 @@
+{
+  "email_id": "email_011",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email is an operational update asking the team to action pending outstanding BL items, but it does not request a draft BL vs SI comparison, a new SI, or invoice information."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_039",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject and body request a Shipping Instruction for 5RUS-70076, provide POL/POD, shipper, consignee, notify party, and cargo details, and ask for a draft BL once available; no draft BL is attached, so it is not BL_COMPARISON."
+}

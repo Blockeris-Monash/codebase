@@ -1,0 +1,7 @@
+{
+  "email_id": "email_442",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email asks to 'send the draft BL ... for checking asap' but lists no attachments, so it is only requesting a draft BL rather than providing SI and draft BL for comparison. It is not an invoice query, SI request, or spam, so it falls under general operational correspondence."
+}
