@@ -37,6 +37,9 @@ COMPARE_ASK = re.compile(
     r"(check|verify|compare|confirm)\w*\b.{0,40}\bdraft\s+BL\b.{0,40}\b(against|with|vs\.?)\b.{0,20}\bSI\b",
     re.I | re.S,
 )
+# An email that asks someone to send the draft BL and has nothing attached. There is nothing to
+# compare yet, so the UI files it under its own folder instead of Needs review.
+DRAFT_REQUEST = re.compile(r"\b(send|provide)\b.{0,30}\bdraft\s+BL\b", re.I | re.S)
 SPAM = re.compile(r"bitcoin|exclusive offer|storage is|valued customer|increase your|approval required|prize|winner", re.I)
 INVOICE = re.compile(r"invoice|billing|charges|debit note|payment|\bsoa\b", re.I)
 SI_ASK = re.compile(r"\bSI\b|shipping instruction|draft\s+BL", re.I)
@@ -113,6 +116,8 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
         result = compared(email_id, docs)
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
+        if not attachments and DRAFT_REQUEST.search(record["body"]):
+            entry["awaiting"] = True
     return entry
 
 
