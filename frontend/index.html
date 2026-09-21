@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ship Happens</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8620c">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ship Happens">
 <style>
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
@@ -420,6 +427,19 @@ document.addEventListener("change", ev=>{
 });
 document.addEventListener("keydown", ev=>{ if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.reset=true; render(); return; } if(ev.key==="Escape"&&S.help){ S.help=false; render(); } });
 render();
+</script>
+<script>
+/* Installability: Chrome only offers "Install" when a worker with a fetch
+   handler is registered. iOS ignores this harmlessly. Guarded and
+   fire-and-forget, so an unsupported browser or a failed registration
+   changes nothing about the page. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function (err) {
+      console.warn("service worker not registered:", err);
+    });
+  });
+}
 </script>
 </body>
 </html>
