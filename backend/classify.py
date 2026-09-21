@@ -206,7 +206,7 @@ def qwen_classification_model(
     # Pass system instructions in top-level 'system' parameter matching Anthropic /v1/messages spec
     payload = {
         "model": model_name,
-        "max_tokens": 512,
+        "max_tokens": 4096,  # Qwen thinks before it answers and that counts here: 512 came back empty on 163 of 520 emails
         "temperature": 0,
         "system": CLASSIFICATION_PROMPT,
         "messages": [
