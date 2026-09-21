@@ -28,6 +28,28 @@ button,select{font:inherit;color:inherit}
 button{cursor:pointer}
 button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .top{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:44px;height:44px;flex:none;overflow:visible}
+.mark .ink{fill:var(--ink)}
+.mark .paper{fill:var(--accent-soft);stroke:var(--accent);stroke-width:.9;stroke-linejoin:round}
+.mark .win{fill:var(--panel)}
+.mark .ring{fill:none;stroke:var(--ink);stroke-width:2.4}
+.mark .line{fill:none;stroke:var(--accent);stroke-linecap:round}
+.mark .keel{fill:none;stroke:var(--panel);stroke-width:.9}
+.mark .ring{stroke-dasharray:100}
+.mark.go .ring,.brand:hover .mark .ring{animation:draw 1.1s ease-out 1}
+.mark.go .doc,.brand:hover .mark .doc{animation:slide .8s ease-out 1}
+.mark.go .ship,.brand:hover .mark .ship{animation:rise 1.2s cubic-bezier(.3,1.5,.5,1) 1}
+.mark.go .waves,.brand:hover .mark .waves{animation:roll 2.4s linear 1}
+.mark.go .trail,.brand:hover .mark .trail{animation:trail 1.3s ease-out .9s 1 both}
+.mark.go .fly,.brand:hover .mark .fly{animation:fly 1.3s ease-out .9s 1 both}
+@keyframes draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes slide{from{transform:translateX(-7px);opacity:0}to{transform:none;opacity:1}}
+@keyframes rise{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+@keyframes roll{to{transform:translateX(-40px)}}
+@keyframes trail{from{stroke-dashoffset:60;opacity:1}to{stroke-dashoffset:0;opacity:1}}
+@keyframes fly{from{transform:translate(-10px,12px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.mark *{animation:none!important}}
 .logo{font-weight:800;letter-spacing:.02em;color:var(--accent);font-size:18px}
 .grow{flex:1}
 .ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
@@ -275,6 +297,7 @@ async function recheck(id){
   }finally{ clearTimeout(timer); render(); }
 }
 
+let logoIntro = false;
 function render(){
   const q = sel=>document.querySelector(sel);
   const keep = S.reset ? null : {pane:(q(".pane")||{}).scrollTop, list:(q(".list")||{}).scrollTop, y:window.scrollY};
@@ -287,12 +310,15 @@ function render(){
   }).join("");
   const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← List</button>${detail(byId[S.sel])}` : `<div class="empty">Pick an email to see it here.</div>`;
   const help = S.help ? `<div class="ov" data-a="helpclose"><div class="dlg" role="dialog" aria-label="How to use" data-a="stay"><h2>How to use this page</h2><ol>${HELP.map(t=>`<li>${t}</li>`).join("")}</ol><button class="btn" data-a="helpclose">Got it</button></div></div>` : "";
+  const brand = q(".brand");
   document.getElementById("app").innerHTML =
-    `<div class="top"><span class="logo">SHIP HAPPENS</span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost" data-a="help">How to use</button><button class="ghost" data-a="theme" aria-label="Switch light or dark">Light / Dark</button></div>
+    `<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath></defs><g clip-path="url(#mk)"><g class="doc"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g><path class="line" stroke-width="2.6" d="M41 19c11-5 17 12 8 27"/><path class="line" stroke-width="1.6" opacity=".7" d="M43 27c6 2 6 10 1 15"/></g><path class="line trail" pathLength="60" stroke-width="2.2" d="M38 24c9 6 15 1 10-9"/><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(46 4) scale(.7) rotate(45 12 12)"><path class="ink" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">Shipping documents</span><span class="grow"></span><button class="ghost" data-a="help">How to use</button><button class="ghost" data-a="theme" aria-label="Switch light or dark">Light / Dark</button></div>
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
      <div class="bar"><label class="mute small" for="foldersel">Show</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>Other folders</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${folder(k).n} (${count(k)})</option>`).join("")}</select><span class="grow"></span>
        <div class="pager small num">${from}–${to} of ${total}<button data-a="newer" ${S.page===0?"disabled":""}>Newer</button><button data-a="older" ${to>=total?"disabled":""}>Older</button></div></div>
      <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="Drag to resize"></div><div class="pane">${pane}</div></div>${help}`;
+  if(brand&&q(".brand")) q(".brand").replaceWith(brand);
+  else if(!logoIntro){ logoIntro=true; const m=q(".mark"); if(m){ m.classList.add("go"); setTimeout(()=>m.classList.remove("go"),3200); } }
   if(keep){ const pane=q(".pane"), list=q(".list"); if(pane&&keep.pane) pane.scrollTop=keep.pane; if(list&&keep.list) list.scrollTop=keep.list; if(keep.y) window.scrollTo(0,keep.y); }
   if(S.scrollTo){ const el=q(S.scrollTo); if(el) el.scrollIntoView({block:"start"}); S.scrollTo=null; }
 }
