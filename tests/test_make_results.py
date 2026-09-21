@@ -63,3 +63,15 @@ def test_saved_classification_carries_its_confidence_and_reason(tmp_path):
 def test_fallback_has_no_confidence_or_reason():
     email = build("email_003")
     assert "class_confidence" not in email and "class_evidence" not in email
+
+
+def test_a_request_to_send_the_draft_bl_with_nothing_attached_is_flagged_as_awaiting():
+    email = build_email(DATA / "inbox" / "email_495.json", DATA, ROOT / "results" / "classifications")
+    assert email["category"] == "BL_COMPARISON"
+    assert email["awaiting"] is True
+
+
+def test_an_email_whose_attachments_were_dropped_is_not_flagged_as_awaiting():
+    email = build_email(DATA / "inbox" / "email_510.json", DATA, ROOT / "results" / "classifications")
+    assert email["review_reason"] == "missing_attachment"
+    assert "awaiting" not in email

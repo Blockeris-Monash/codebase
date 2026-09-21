@@ -325,16 +325,17 @@ const OTHER = {SI_REQUEST:T("SI request"), INVOICE_QUERY:T("Invoice"), GENERAL:T
 const FOLDERS = [
   {k:"all", n:T("All mail"), f:()=>true},
   {k:"MISMATCH", n:T("Mismatch"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
-  {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !S.marks[e.id]},
+  {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !e.awaiting && !S.marks[e.id]},
   {k:"OK", n:T("Match"), f:e=>e.status==="OK"},
   {k:"CHECKED", n:T("Checked"), f:e=>!!S.marks[e.id]},
   {k:"cmp", n:T("SI vs BL checks"), f:e=>e.category==="BL_COMPARISON"},
+  {k:"AWAIT", n:T("Draft BL requests"), f:e=>!!e.awaiting},
   {k:"SI_REQUEST", n:T("SI requests"), f:e=>e.category==="SI_REQUEST"},
   {k:"INVOICE_QUERY", n:T("Invoice queries"), f:e=>e.category==="INVOICE_QUERY"},
   {k:"GENERAL", n:T("General"), f:e=>e.category==="GENERAL"},
   {k:"SPAM", n:T("Spam"), f:e=>e.category==="SPAM"},
 ];
-const MENU = ["all","MISMATCH","NEEDS_REVIEW","cmp","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
+const MENU = ["all","MISMATCH","NEEDS_REVIEW","cmp","AWAIT","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
 const SUPPORT_EMAIL = (window.BLOCKERIS_SUPPORT_EMAIL || "").trim();
 const KINDS = {question:T("Question"), problem:T("Problem"), idea:T("Idea")};
 const ROADMAP = [
@@ -469,7 +470,7 @@ const ICON = {
   CHEV: ICO('<path d="M6 9l6 6 6-6"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
-const badge = e=>e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${t(LABEL[e.status])}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
+const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${t(LABEL[e.status])}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
 
 function rowsHTML(rows){
   return rows.map(r=>{
@@ -576,7 +577,9 @@ function detail(e){
   const view = live && live.result ? {...e, ...live.result} : e;
   const fresh = live && live.fresh ? "fresh" : "";
   let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}`;
-  if(view.status==="MISMATCH"){
+  if(e.awaiting){
+    h += `<div class="banner plain">${t("Draft BL requested")}<span>${t("The sender asked for the draft BL and nothing is attached, so there is nothing to compare yet.")}</span></div>`;
+  } else if(view.status==="MISMATCH"){
     const n = view.defect_fields.length;
     h += `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${t(n>1?T("{n} fields differ"):T("{n} field differs"),{n})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div>${table(view.rows)}`;
   } else if(view.status==="NEEDS_REVIEW"){
@@ -590,7 +593,7 @@ function detail(e){
   if(e.docs) h += docsHTML(e, view.rows||[]);
   h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
   const m = S.marks[e.id];
-  if(e.status==="MISMATCH"||e.status==="NEEDS_REVIEW"){
+  if(!e.awaiting && (e.status==="MISMATCH"||e.status==="NEEDS_REVIEW")){
     const d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
     if(m) h += `<div class="done"><span>${m==="ok"?t("Marked as checked"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
