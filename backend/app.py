@@ -18,6 +18,8 @@ from pydantic import BaseModel
 # Import Milk's Extractor and Model
 from backend.classify import ClassificationFailed, ClassificationResult, EmailInput, classify_email
 from backend.extract.ai import AiExtractor
+from backend.extract.fallback import with_fallback
+from backend.extract.gemini import api_key as gemini_key, gemini_model
 from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
@@ -89,7 +91,11 @@ class PairedInput(BaseModel):
 # 2. Stage 3 Extraction: Hybrid (Pre-computed Cache + Live Qwen AI)
 # =====================================================================
 
-extractor = AiExtractor(qwen_model)
+# Qwen first. If it fails or stalls, Gemini answers (with_fallback), but only when a Gemini key
+# is set: without one, Qwen is used exactly as before, however slow it is. With a second
+# provider behind, two tries are enough.
+extractor = AiExtractor(with_fallback(qwen_model, gemini_model, enabled=lambda: bool(gemini_key())),
+                        tries=2)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     """The whole cached DocumentExtract, metadata included.
@@ -262,8 +268,13 @@ async def run_pipeline(
     )
 
     # 2. Clean & normalize, keeping the metadata the comparator prechecks on
-    si_doc = {**si_extract, "fields": apply_cleaner(si_extract["fields"])}
-    bl_doc = {**bl_extract, "fields": apply_cleaner(bl_extract["fields"])}
+    # A document that was never found is None, not one that failed to parse.
+    # The comparator's first precheck is what turns that into
+    # missing_attachment rather than the misleading unreadable.
+    si_doc = None if payload.si_parse_status == ParseStatusType.Missing else {
+        **si_extract, "fields": apply_cleaner(si_extract["fields"])}
+    bl_doc = None if payload.bl_parse_status == ParseStatusType.Missing else {
+        **bl_extract, "fields": apply_cleaner(bl_extract["fields"])}
 
     # 3. Deterministic comparison (JJ's Engine)
     report = compare(payload.email_id, si_doc, bl_doc)
