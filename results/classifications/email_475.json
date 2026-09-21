@@ -1,0 +1,7 @@
+{
+  "email_id": "email_475",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The subject and body explicitly state 'Please find Shipping instruction for 5APH-09109' and provide full SI details (POL, POD, shipper, consignee, goods, documents). It asks for a draft BL once available but does not request comparison or verification of a draft BL against the SI."
+}

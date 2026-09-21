@@ -134,6 +134,7 @@ Categories:
 Attachments matter. The email lists the files attached to it.
 - BL_COMPARISON means the SI and the draft BL are there to be compared: they are attached, or the sender says they were dropped or are missing.
 - An email that only asks someone to SEND or provide a draft BL, with nothing attached, is NOT BL_COMPARISON.
+- An email that attaches the SI together with another document (a packing list, commercial invoice, certificate of origin or anything else) and asks for it to be checked or confirmed IS BL_COMPARISON. Do not judge the attached document yourself: a later stage checks the document type and flags a wrong one.
 
 For confidence_tier, you MUST select ONLY one of these four exact strings:
 - "1.0": Explicit, unambiguous intent matching operational definition.
@@ -204,7 +205,7 @@ def qwen_classification_model(
     # Pass system instructions in top-level 'system' parameter matching Anthropic /v1/messages spec
     payload = {
         "model": model_name,
-        "max_tokens": 512,
+        "max_tokens": 4096,  # Qwen thinks before it answers and that counts here: 512 came back empty on 163 of 520 emails
         "temperature": 0,
         "system": CLASSIFICATION_PROMPT,
         "messages": [

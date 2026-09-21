@@ -1,0 +1,7 @@
+{
+  "email_id": "email_172",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject begins with 'SI' and the body says 'Please find Shipping instruction for 5AKR-55543' while providing full shipping instruction details (POL, POD, shipper, consignee, goods). It asks for a draft BL later, but no draft BL is attached, so it is not BL_COMPARISON."
+}

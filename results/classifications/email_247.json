@@ -1,0 +1,7 @@
+{
+  "email_id": "email_247",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "The email asks for a draft BL to be sent for checking but has no attachments, so it does not meet the BL_COMPARISON requirement of having the SI and draft BL available for comparison. It is an operational shipping documentation request rather than an SI request, invoice query, or spam."
+}

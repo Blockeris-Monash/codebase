@@ -1,0 +1,7 @@
+{
+  "email_id": "email_467",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject includes 'SI' and body says 'Please find Shipping instruction for 5RUS-87688' with full SI details (POL, POD, shipper, consignee, goods, documents), while only requesting a draft BL later and no draft BL is attached."
+}

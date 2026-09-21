@@ -1,0 +1,7 @@
+{
+  "email_id": "email_254",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email uses urgent account-verification language, a suspicious external sender, and a prize/gift-card link, which are clear phishing/scam signals."
+}

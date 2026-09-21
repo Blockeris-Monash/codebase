@@ -1,0 +1,7 @@
+{
+  "email_id": "email_449",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email contains a suspicious sender domain, a Bitcoin investment promise of guaranteed returns, and a fake customs fee payment request with an external tracking link, all indicating phishing/scam spam."
+}

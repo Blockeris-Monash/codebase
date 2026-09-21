@@ -1,0 +1,7 @@
+{
+  "email_id": "email_293",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'REQUEST SI' and body provides full shipping instruction details (POL, POD, shipper, consignee, goods) for a new booking."
+}

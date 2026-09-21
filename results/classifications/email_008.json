@@ -1,0 +1,7 @@
+{
+  "email_id": "email_008",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject says 'SI NEEDED' and the body provides shipping instruction details for 5APH-26773, including POL, POD, shipper, consignee, notify party, and cargo details. It asks for a draft BL once available, but no draft BL is attached, so it is not BL_COMPARISON."
+}

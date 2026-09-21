@@ -1,0 +1,7 @@
+{
+  "email_id": "email_345",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email contains a promotional subject line and a suspicious request for bank details from an unverified sender, indicating phishing/scam activity."
+}
