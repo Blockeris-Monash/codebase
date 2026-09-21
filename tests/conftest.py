@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT / "tools"))
 sys.path.insert(0, str(REPO_ROOT))
 
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
@@ -59,6 +58,12 @@ REPORT_AREAS: list[tuple[str, str, str]] = [
     ("same_data_parses_under_either", "EDI 304", "star/tilde and pipe/newline both work"),
     ("delimiters_fall_back", "EDI 304", "malformed header falls back"),
     ("both_pairs_and_a_title", "Dispatch", "one entry supplies both halves"),
+    ("cached_pair_reports_both_seeded", "Orchestrator", "cached path finds both defects"),
+    ("cached_clean_pair_is_ok", "Orchestrator", "a clean pair stays OK"),
+    ("excel_si_against_word_bl", "Orchestrator", "xlsx SI vs docx BL align"),
+    ("every_field_is_reported", "Orchestrator", "all 7 rows returned, not just defects"),
+    ("cache_carries_the_parse_metadata", "Orchestrator", "cache keeps parse_status and doc type"),
+    ("live_model_path_reaches", "Orchestrator", "live model agrees with the cache"),
     ("no_title_rather_than_raising", "Dispatch", "title fails like read_document"),
     ("absent_file", "Failure modes", "missing file escalates"),
     ("unsupported_extension", "Failure modes", "unknown format escalates"),
@@ -85,6 +90,9 @@ REPORT_AREAS: list[tuple[str, str, str]] = [
     ("wrong_document_is_still", "Classification", "wrong doc type is still a comparison"),
     ("every_email_with_attachments", "Classification", "nothing with docs is miscategorised"),
     ("subject_line_alone", "Classification", "subject cannot separate intents"),
+    ("both_comparators_agree", "Cross-check", "two comparators, same verdict, 126 emails"),
+    ("escalation_reason_survives", "Cross-check", "same escalation reason on both paths"),
+    ("corpus_has_the_expected", "Cross-check", "126 comparison emails"),
     ("fixture_satisfies_every_contract", "Contracts", "fixtures match the schemas"),
     ("fixture_still_matches", "Contracts", "regression guard on every fixture"),
     ("every_scenario_has_a_fixture", "Contracts", "scenarios and files agree"),

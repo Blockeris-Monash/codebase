@@ -22,18 +22,50 @@ and filename: it contains the answer key.
 
 Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
 
+## Where the code lives
+
+Everything importable is under `backend/`, named after the pipeline stage it
+serves. Anything you run by hand is under `cli/`.
+
+```
+backend/
+├── contracts.py      the five contract types, one source of truth
+├── app.py            FastAPI service: /classify, /extract-clean-compare
+├── classify.py       stage 1 - email to category
+├── read/             stage 2 - file bytes to (label, value) pairs
+│   ├── documents.py    txt, docx, xlsx, pdf
+│   ├── edi.py          X12 304
+│   └── labels.py       label spellings the readers align on
+├── extract/          stage 3 - pairs to the seven fields
+│   ├── rules.py        deterministic, no API calls
+│   ├── ai.py           model-backed extractor
+│   ├── gemini.py  qwen.py  batch.py  sample.py
+└── compare/          stage 4 - SI against BL
+    ├── normalise.py    per-field normalisation
+    └── comparator.py   the verdict
+
+cli/    demo_read  demo_pipeline  smoke_test  validate_contracts  make_fixtures
+```
+
+Run a CLI as a module so imports resolve from the repo root:
+
+```bash
+python3 -m cli.demo_read                 # what each reader does to each format
+python3 -m cli.demo_pipeline email_004   # one email through all five stages
+```
+
 ## Quick start
 
 ```bash
 # 1. dataset reachable, both ways
-python3 tools/smoke_test.py
-python3 tools/smoke_test.py http://localhost:8081
+python3 -m cli.smoke_test
+python3 -m cli.smoke_test http://localhost:8081
 
 # 2. regenerate stage fixtures from real emails
-python3 tools/make_fixtures.py --out fixtures
+python3 -m cli.make_fixtures --out fixtures
 
 # 3. check everything still satisfies the contracts
-python3 tools/validate_contracts.py
+python3 -m cli.validate_contracts
 ```
 
 The scoring server runs on **8081**, not 8080 — 8080 is commonly taken. Start
@@ -64,25 +96,25 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 Write one record to a JSON file and name the contract it should satisfy:
 
 ```bash
-python3 tools/validate_contracts.py out.json ComparisonResult
+python3 -m cli.validate_contracts out.json ComparisonResult
 ```
 
-Fixtures are numbered by email id — `01-Ok.json` through `09-ReviewMissingVal.json`.
+Fixtures are numbered by email id — `01-Ok.json` through `11-SendDraftBlUnresolved.json`.
 
 Per stage:
 
 ```bash
-python3 tools/validate_contracts.py record.json     EmailRecord
-python3 tools/validate_contracts.py classified.json ClassificationResult
-python3 tools/validate_contracts.py extracted.json  DocumentExtract
-python3 tools/validate_contracts.py compared.json   ComparisonResult
-python3 tools/validate_contracts.py entry.json      SubmissionEntry
+python3 -m cli.validate_contracts record.json     EmailRecord
+python3 -m cli.validate_contracts classified.json ClassificationResult
+python3 -m cli.validate_contracts extracted.json  DocumentExtract
+python3 -m cli.validate_contracts compared.json   ComparisonResult
+python3 -m cli.validate_contracts entry.json      SubmissionEntry
 ```
 
 With no arguments it checks every fixture instead:
 
 ```bash
-python3 tools/validate_contracts.py
+python3 -m cli.validate_contracts
 ```
 
 A failure names the field and what was wrong:
@@ -101,7 +133,7 @@ Validating a whole submission before you POST it:
 
 ```python
 import json
-from tools.validate_contracts import load_contract, validate
+from cli.validate_contracts import load_contract, validate
 
 schema, errors = load_contract("SubmissionEntry"), []
 for email_id, entry in json.load(open("submission.json")).items():

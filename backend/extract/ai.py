@@ -1,9 +1,9 @@
-"""Stage 2 with an AI model: one attachment in, one DocumentExtract out.
+"""Stage 3 with an AI model: Lane A's label/value pairs in, the seven fields out.
 
-Same contract and same three-argument call as the rule-based
-make_fixtures.document_extract, so the two can be compared field by field.
-The reader turns any format into label/value pairs first; the model only ever
-sees that text, never a binary file.
+Lane A owns reading the file, the document type and parse_status. This module
+only decides which pair is which of the seven fields, so it can be used where
+the rule-based make_fixtures.fields_from_pairs is used today. The model only
+ever sees text, never a binary file.
 """
 from __future__ import annotations
 
@@ -11,12 +11,8 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 
-from contract_types import Attachment, DocumentExtract, ExtractedField, ParseStatusType
-from labels import detect_doc_type
-from make_fixtures import absent_fields
-from read_documents import document_title, read_document
+from backend.contracts import ExtractedField
 
 log = logging.getLogger(__name__)
 
@@ -68,29 +64,12 @@ class AiExtractor:
 
         return None
 
-    def document_extract(self, data_dir: str, email_id: str,
-                         meta: Attachment) -> DocumentExtract:
-        base: DocumentExtract = {
-            "email_id": email_id,
-            "declared_role": meta["declared_role"],
-            "source_path": meta["path"],
-            "format": meta["format"],
-            "detected_doc_type": None,
-            "parse_status": ParseStatusType.NotAttempted,
-            "fields": absent_fields(),
-        }
-        path = Path(data_dir) / meta["path"]
-        status, pairs = read_document(path)
-        if status != ParseStatusType.Ok:
-            return {**base, "parse_status": status}
-
-        doc_type = detect_doc_type(document_title(path) or "")
+    def extract_fields(self, email_id: str,
+                       pairs: LabelledPairs) -> dict[str, ExtractedField] | None:
+        """The seven fields for one document, or None if the model never answered."""
         text = pairs_as_text(pairs)
         fields = self.ask_model(email_id, text)
         if fields is None:
-            return {**base, "detected_doc_type": doc_type,
-                    "parse_status": ParseStatusType.Unreadable}
+            return None
 
-        return {**base, "detected_doc_type": doc_type,
-                "parse_status": ParseStatusType.Ok,
-                "fields": keep_only_values_in_text(email_id, fields, text)}
+        return keep_only_values_in_text(email_id, fields, text)
