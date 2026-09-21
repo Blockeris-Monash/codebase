@@ -70,3 +70,38 @@ def test_the_extractor_gets_its_fields_from_the_second_model_when_the_first_is_d
     fields = extractor.extract_fields("email_001", pairs)
 
     assert fields is not None and fields["shipper"]["raw"] == "ACME TRADING"
+
+
+def test_without_a_second_model_configured_the_first_is_used_exactly_as_before() -> None:
+    """No Gemini key: a slow but working Qwen call must still be waited for, not cut off."""
+    calls: list[str] = []
+
+    def slow_but_working(text: str) -> dict[str, ExtractedField]:
+        time.sleep(0.4)
+        return answer("first")
+
+    def second(text: str) -> dict[str, ExtractedField]:
+        calls.append(text)
+        return answer("second")
+
+    model = with_fallback(slow_but_working, second, first_timeout=0.1, enabled=lambda: False)
+
+    assert model("doc")["shipper"]["raw"] == "first" and calls == []
+
+
+def test_without_a_second_model_configured_a_failure_is_the_first_models_own_error() -> None:
+    model = with_fallback(broken, lambda text: answer("second"), enabled=lambda: False)
+
+    with pytest.raises(RuntimeError, match="gateway unreachable"):
+        model("doc")
+
+
+def test_whether_the_fallback_is_on_is_decided_at_every_call() -> None:
+    on = {"value": False}
+    model = with_fallback(broken, lambda text: answer("second"), enabled=lambda: on["value"])
+
+    with pytest.raises(RuntimeError):
+        model("doc")
+    on["value"] = True
+
+    assert model("doc")["shipper"]["raw"] == "second"

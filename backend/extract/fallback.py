@@ -4,13 +4,16 @@ with_fallback(first, second) is itself a ModelCall (text in, seven fields out), 
 anywhere a model does, for example AiExtractor(with_fallback(qwen_model, gemini_model)).
 
 The first model is tried once. If it raises, or gives no answer within first_timeout seconds,
-the second one answers. A hung first call is not waited for: it finishes on its own thread
+the second one answers. `enabled` is asked on every call: when it says no (for example there
+is no Gemini key), the first model is used exactly as if there were no fallback, with no
+timeout, so a slow but working call is still waited for. A hung first call is not waited for: it finishes on its own thread
 while the second model works, so a stalled gateway costs first_timeout seconds and not the
 gateway's own much longer retry chain.
 """
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as NoAnswerInTime
 
@@ -24,8 +27,12 @@ DEFAULT_FIRST_TIMEOUT_SECONDS = 60.0
 
 
 def with_fallback(first: ModelCall, second: ModelCall,
-                  first_timeout: float = DEFAULT_FIRST_TIMEOUT_SECONDS) -> ModelCall:
+                  first_timeout: float = DEFAULT_FIRST_TIMEOUT_SECONDS,
+                  enabled: Callable[[], bool] = lambda: True) -> ModelCall:
     def call(text: str):
+        if not enabled():
+            return first(text)
+
         pool = ThreadPoolExecutor(max_workers=1)
         try:
             return pool.submit(first, text).result(timeout=first_timeout)
