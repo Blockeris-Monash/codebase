@@ -1,0 +1,7 @@
+{
+  "email_id": "email_140",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email uses a suspicious external sender, a promotional subject line, and a phishing-style request to verify the account via an untrusted link to avoid mailbox deactivation."
+}

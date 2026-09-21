@@ -1,0 +1,7 @@
+{
+  "email_id": "email_368",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email explicitly says 'Please find Shipping instruction for 5AAT-00892' and provides full SI details (POL, POD, shipper, consignee, notify party, goods, documents required). It also asks for a draft BL later, but no draft BL is attached and no comparison is requested, so the primary intent is submitting a Shipping Instruction."
+}

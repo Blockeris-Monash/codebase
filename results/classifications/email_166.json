@@ -1,0 +1,7 @@
+{
+  "email_id": "email_166",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The subject and body explicitly reference a Shipping Instruction for 5RFR-88899 and provide SI details such as POL, POD, shipper, consignee, notify party, goods, and document requirements. It asks for a draft BL once available, but no draft BL is attached or provided for comparison, so it is not BL_COMPARISON."
+}

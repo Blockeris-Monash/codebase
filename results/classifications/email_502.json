@@ -1,0 +1,7 @@
+{
+  "email_id": "email_502",
+  "category": "BL_COMPARISON",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email asks to confirm the BL is in order and attaches an SI with another document (noted as a Packing List), which matches the BL_COMPARISON rule for SI plus another attached document with a check/confirm request."
+}

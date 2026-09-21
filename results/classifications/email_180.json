@@ -1,0 +1,7 @@
+{
+  "email_id": "email_180",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email is a promotional offer for logistics software with urgency language and no operational shipping request."
+}

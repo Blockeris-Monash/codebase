@@ -1,0 +1,7 @@
+{
+  "email_id": "email_240",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email provides full Shipping Instruction details (POL, POD, shipper, consignee, goods, documents) and asks for a draft BL once available, indicating a new SI submission rather than a BL comparison."
+}

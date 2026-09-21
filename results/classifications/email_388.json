@@ -1,0 +1,7 @@
+{
+  "email_id": "email_388",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email explicitly submits a new Shipping Instruction with full shipment details and requests a draft BL once available, with no draft BL attached for comparison."
+}

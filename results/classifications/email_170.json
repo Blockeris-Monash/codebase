@@ -1,0 +1,7 @@
+{
+  "email_id": "email_170",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email references a specific invoice number and asks for a missing GR to be posted so billing can proceed."
+}

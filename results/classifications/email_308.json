@@ -1,0 +1,7 @@
+{
+  "email_id": "email_308",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject says 'SI NEEDED' and body says 'Please find Shipping instruction' with full shipping instruction details, indicating a request to submit/create a new SI; it only asks for a draft BL later, not a BL comparison."
+}

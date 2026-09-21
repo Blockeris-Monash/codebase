@@ -1,0 +1,7 @@
+{
+  "email_id": "email_480",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email asks Ooi to send a draft BL for checking, but no SI or draft BL is attached; per rules, a request to provide a draft BL with nothing attached is not BL_COMPARISON, so it is an operational request best classified as GENERAL."
+}

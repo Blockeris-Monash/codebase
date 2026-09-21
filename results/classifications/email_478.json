@@ -1,0 +1,7 @@
+{
+  "email_id": "email_478",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email provides full Shipping Instruction details (POL, POD, shipper, consignee, goods, documents) and asks for a draft BL once available, but no draft BL is attached, so it is not BL_COMPARISON."
+}

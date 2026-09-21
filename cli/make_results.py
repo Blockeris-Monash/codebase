@@ -94,6 +94,9 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
     if saved_class.exists():
         found = json.loads(saved_class.read_text(encoding="utf-8"))
         entry.update(category=found["category"], decided_by=found["decided_by"])
+        for saved, shown in (("confidence", "class_confidence"), ("evidence", "class_evidence")):
+            if found.get(saved) is not None:  # "evidence" is taken by the comparator, so these get their own names
+                entry[shown] = found[saved]
     else:
         entry.update(category=fallback_category(record["subject"], record["body"], len(attachments)),
                      decided_by="fallback")

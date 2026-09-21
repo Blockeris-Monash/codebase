@@ -1,0 +1,7 @@
+{
+  "email_id": "email_357",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject 'CUST SI' and body 'Please find Shipping instruction for 5ALT-98986' with full SI details indicate submitting a new Shipping Instruction; the request for a draft BL is secondary and no draft BL is attached."
+}
