@@ -1,7 +1,7 @@
 {
   "email_id": "email_330",
-  "category": "GENERAL",
+  "category": "SI_REQUEST",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "The body is a New Year greeting and office resumption notice, while the subject mentions submitting an SI, creating conflicting signals with no actual SI request or attachments."
+  "evidence": "Subject explicitly says 'Submit SI', but the body only contains a New Year greeting and office reopening notice, creating mixed signals."
 }

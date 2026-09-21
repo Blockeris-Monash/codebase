@@ -2,6 +2,6 @@
   "email_id": "email_088",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.65,
-  "evidence": "The email asks Hari to send a draft BL for checking, but no SI or draft BL is attached and it does not request a new SI, invoice, or contain spam signals, so it is best classified as a general operational shipping documentation request."
+  "confidence": 0.85,
+  "evidence": "The email asks Hari to send a draft BL for checking, but no SI or draft BL is attached, so it does not meet the BL_COMPARISON requirement. It is an operational shipping documentation request rather than an invoice, SI, or spam item."
 }

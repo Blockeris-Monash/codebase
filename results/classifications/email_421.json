@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "The email asks Elisa to send a draft BL for checking, but no SI or draft BL is attached, so it does not meet the BL_COMPARISON requirement. It is an operational documentation request rather than an SI request, invoice query, or spam."
+  "evidence": "The email asks someone to send a draft BL for checking, but no attachments are listed, so it does not meet the BL_COMPARISON requirement; it is an operational shipping documentation request."
 }

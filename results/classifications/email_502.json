@@ -1,7 +1,7 @@
 {
   "email_id": "email_502",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.5,
-  "evidence": "The email asks to confirm BL/docs, but only an SI and packing list are attached; the note says the second file is not a draft BL, so there is no draft BL to compare."
+  "confidence": 1.0,
+  "evidence": "The email asks to confirm the BL is in order and attaches an SI with another document (noted as a Packing List), which matches the BL_COMPARISON rule for SI plus another attached document with a check/confirm request."
 }

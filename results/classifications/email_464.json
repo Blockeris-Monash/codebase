@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "The body reports a daily berthing report and states the vessel berthed on schedule, which matches GENERAL, while the subject mentions submitting an SI, creating a secondary signal."
+  "evidence": "The body explicitly references a daily berthing report and states that vessel NAP 914 V.BS007 berthed on schedule, which matches GENERAL. The subject mentions submitting an SI, but the body does not request SI creation or submission, making the berthing update the primary signal."
 }

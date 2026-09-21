@@ -2,6 +2,6 @@
   "email_id": "email_190",
   "category": "GENERAL",
   "decided_by": "llm",
-  "confidence": 0.65,
-  "evidence": "The email asks Sathiyavani to send a draft BL for checking, but no SI or draft BL is attached and the request is only to provide the draft BL, so it does not meet the BL_COMPARISON definition."
+  "confidence": 0.5,
+  "evidence": "The email asks someone to send a draft BL for checking, but no SI or draft BL is attached, so it does not meet the BL_COMPARISON definition; it is an operational shipping documentation request."
 }

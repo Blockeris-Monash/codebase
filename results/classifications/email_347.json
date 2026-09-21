@@ -1,7 +1,7 @@
 {
   "email_id": "email_347",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "Subject explicitly says 'Submit SI & AED', indicating a request to submit a Shipping Instruction, but the body is an operational update ('Loading completed, documents to follow'), so intent is mixed."
+  "evidence": "The body is an operational update stating loading is completed and documents will follow, while the subject mentions submitting SI but the body does not explicitly request creation or submission of a Shipping Instruction."
 }

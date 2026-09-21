@@ -3,5 +3,5 @@
   "category": "BL_COMPARISON",
   "decided_by": "llm",
   "confidence": 1.0,
-  "evidence": "The email explicitly asks to verify that the draft BL matches the SI, and both the SI and draft BL are attached."
+  "evidence": "The email attaches both the shipping instruction and draft bill of lading and explicitly asks to verify that the BL matches the SI before release."
 }

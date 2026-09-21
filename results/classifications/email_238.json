@@ -2,6 +2,6 @@
   "email_id": "email_238",
   "category": "SI_REQUEST",
   "decided_by": "llm",
-  "confidence": 0.65,
-  "evidence": "Subject explicitly says 'Submit SI & AED' and body asks to action pending items/outstanding BLs, indicating a request to submit shipping instructions, but the BL reminder context makes it less unambiguous."
+  "confidence": 0.85,
+  "evidence": "Subject explicitly says 'Submit SI & AED' and the body asks the team to action outstanding BL items, indicating a request to submit pending Shipping Instructions rather than compare a draft BL."
 }

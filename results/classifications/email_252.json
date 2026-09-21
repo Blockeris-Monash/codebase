@@ -3,5 +3,5 @@
   "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "The body is an automated RPA notification stating a billing process completed successfully and no action is required, which is an operational update. The subject mentions submitting SI, but the body does not request SI creation or submission and no attachments are present."
+  "evidence": "The body is an automated RPA notification stating the billing process completed successfully and no action is required, which is an internal operational update. The subject mentions submitting an SI, but there is no actual request or attachments."
 }

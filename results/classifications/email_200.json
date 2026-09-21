@@ -1,7 +1,7 @@
 {
   "email_id": "email_200",
-  "category": "SI_REQUEST",
+  "category": "GENERAL",
   "decided_by": "llm",
   "confidence": 0.65,
-  "evidence": "Subject explicitly says 'Submit SI & AED', indicating a request to submit a Shipping Instruction, while the body mentions outstanding BL items to action, creating mixed but SI-primary signals."
+  "evidence": "Automated reminder to action outstanding BLs; no draft BL/SI attached and no invoice or BL comparison request."
 }

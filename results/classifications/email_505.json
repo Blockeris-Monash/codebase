@@ -1,7 +1,7 @@
 {
   "email_id": "email_505",
-  "category": "GENERAL",
+  "category": "BL_COMPARISON",
   "decided_by": "llm",
-  "confidence": 0.5,
-  "evidence": "The email asks to confirm the BL, but explicitly states the second attachment is a Certificate of Origin, not the draft BL, so no draft BL is available for comparison; it is an operational request rather than a BL/SI comparison."
+  "confidence": 0.85,
+  "evidence": "The email asks to confirm the BL is in order and attaches an SI with another document, which matches the BL_COMPARISON rule even if the second attachment is not a draft BL."
 }
