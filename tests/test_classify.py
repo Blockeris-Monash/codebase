@@ -31,3 +31,11 @@ def test_reads_the_category_from_the_reply() -> None:
     parsed = classify.qwen_classification_model("email", post=lambda url, headers, body: reply("SPAM"))
 
     assert parsed.category == "SPAM" and parsed.confidence_tier == "1.0"
+
+
+def test_the_prompt_sends_an_si_plus_another_document_to_comparison() -> None:
+    # Emails 502, 503, 505 attach an SI with a packing list or certificate of origin. They were
+    # filed as GENERAL, so the wrong document was never flagged. The compare stage catches it.
+    prompt = classify.CLASSIFICATION_PROMPT.lower()
+
+    assert "packing list" in prompt and "certificate of origin" in prompt and "is bl_comparison" in prompt
