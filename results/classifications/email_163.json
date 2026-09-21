@@ -1,0 +1,7 @@
+{
+  "email_id": "email_163",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject says 'CUST SI' and body states 'Please find Shipping instruction for 5AAT-10967' with full SI details (POL, POD, shipper, consignee, goods), requesting the carrier to process the shipping instruction and later provide a draft BL."
+}

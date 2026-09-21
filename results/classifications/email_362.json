@@ -1,0 +1,7 @@
+{
+  "email_id": "email_362",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email says 'Please find Shipping instruction for 5RUS-38820' and includes full SI details such as POL, POD, shipper, consignee, goods, and document requirements. It asks for a draft BL later, but no draft BL is attached, so it is not a BL comparison."
+}

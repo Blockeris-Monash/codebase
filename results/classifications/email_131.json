@@ -1,0 +1,7 @@
+{
+  "email_id": "email_131",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The email provides Shipping Instruction details for 5RFR-64842 and asks for a draft BL once available, but no draft BL is attached, so it is not a BL comparison."
+}

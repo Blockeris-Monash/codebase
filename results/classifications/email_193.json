@@ -1,0 +1,7 @@
+{
+  "email_id": "email_193",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email states 'Please find Shipping instruction for 5ALT-94905' and provides full SI details (POL, POD, shipper, consignee, goods, documents), indicating submission of a new Shipping Instruction. It only asks for a draft BL later and has no attachments, so it is not BL_COMPARISON."
+}

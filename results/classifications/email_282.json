@@ -1,0 +1,7 @@
+{
+  "email_id": "email_282",
+  "category": "GENERAL",
+  "decided_by": "llm",
+  "confidence": 0.65,
+  "evidence": "The email asks someone to send a draft BL for checking but has no attachments, so it does not meet the BL_COMPARISON requirement; it is a general operational documentation request."
+}

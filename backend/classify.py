@@ -1,49 +1,61 @@
+"""classify.py
+
+Classifies incoming shipping operations emails using Qwen via the team gateway.
+
+    python -m backend.classify    # classify the whole inbox -> results/classifications/
+
+Needs QWEN_API_KEY in the environment or .env (never in this file: the repo is public).
+"""
+from __future__ import annotations
+
+import asyncio
+import json
 import logging
 import os
+import re
 import sys
+import time
+import urllib.error
 from pathlib import Path
-from typing import Literal, List
-from pydantic import BaseModel, Field
+from typing import Any, Callable, Iterable, List, Literal
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, field_validator
 
-# Use JJ's official SDK approach
-from google import genai
-from google.genai import types
+from backend.extract.qwen import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MODEL,
+    USER_AGENT,
+    http_post,
+    json_in,
+)
 
 load_dotenv()
 log = logging.getLogger(__name__)
+
+Post = Callable[[str, dict, dict], dict]
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+DEFAULT_OUT_DIR = ROOT_DIR / "results" / "classifications"
+
+# Cloudflare 52x errors and rate limits are usually temporary on a shared gateway.
+RETRY_HTTP = {408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 527}
+TRIES = 4
 
 
 class ClassificationFailed(RuntimeError):
     """The model never returned a usable classification."""
 
-# Initialize async client
-_client: genai.Client | None = None
-
-
-def get_client() -> genai.Client:
-    """Built on first use, not at import. Constructing it at module level
-    means the whole app fails to import without a key - which breaks the
-    tests, a clean clone, and any build step that only needs to load the
-    module."""
-    global _client
-    if _client is None:
-        key = os.getenv("GOOGLE_API_KEY")
-        if not key:
-            raise ClassificationFailed("GOOGLE_API_KEY is not set")
-        _client = genai.Client(api_key=key)
-
-    return _client
 
 # ==========================================
 # 1. Input/Output Contracts
 # ==========================================
 class EmailInput(BaseModel):
     email_id: str
-    from_email: str = Field(..., alias="from") 
+    from_email: str = Field(..., alias="from")
     subject: str
     body: str
     attachments: List[str] = []
+
 
 class ClassificationResult(BaseModel):
     email_id: str
@@ -52,10 +64,11 @@ class ClassificationResult(BaseModel):
     confidence: float
     evidence: str
 
+
 # ==========================================
-# 2. JJ's Strict LLM Schema
+# 2. Strict LLM Schema with Fallback Mapping
 # ==========================================
-class GeminiClassificationSchema(BaseModel):
+class ClassificationSchema(BaseModel):
     category: Literal[
         "BL_COMPARISON",
         "SI_REQUEST",
@@ -63,73 +76,258 @@ class GeminiClassificationSchema(BaseModel):
         "GENERAL",
         "SPAM",
     ] = Field(..., description="The single operational category matching the email.")
-    
-    # JJ's fixed confidence tiers
+
     confidence_tier: Literal["1.0", "0.85", "0.65", "0.50"] = Field(
         ...,
-        description=(
-            "Select confidence level based on these criteria:\n"
-            "- '1.0': Explicit, unambiguous intent matching operational definition.\n"
-            "- '0.85': Clear intent with strong context, but informal phrasing.\n"
-            "- '0.65': Multiple topics/signals present; one is primary.\n"
-            "- '0.50': Vague or conflicting signals (best guess)."
-        ),
+        description="Select confidence level: '1.0', '0.85', '0.65', or '0.50'.",
     )
     evidence: str = Field(
         ...,
         description="Verbatim excerpt or concise phrase from the email justifying the category.",
     )
 
-# ==========================================
-# 3. Merged Async Route
-# ==========================================
-async def classify_email(email: EmailInput):
-    # JJ's prompt logic + Your FastAPI context
-    prompt = f"""
-    You are an AI shipping operations email triage classifier.
-    Classify this email into EXACTLY ONE category.
-    
-    Categories:
-    - BL_COMPARISON: Asking to check, verify, confirm, or compare draft Bill of Lading (BL) against Shipping Instruction (SI).
-    - SI_REQUEST: Requesting to create or submit a new Shipping Instruction.
-    - INVOICE_QUERY: Inquiries about ocean invoices, D&D / detention fees, freight billing.
-    - GENERAL: Internal operational updates, vessel berthing notices, daily schedules.
-    - SPAM: Phishing, scams, promotions, or external spam.
+    @field_validator("confidence_tier", mode="before")
+    @classmethod
+    def normalize_confidence(cls, value: Any) -> str:
+        val = str(value).strip().lower()
+        mapping = {
+            "high": "1.0",
+            "very high": "1.0",
+            "medium": "0.85",
+            "med": "0.85",
+            "moderate": "0.65",
+            "low": "0.50",
+            "very low": "0.50",
+            "1": "1.0",
+            "1.0": "1.0",
+            "0.85": "0.85",
+            "0.65": "0.65",
+            "0.5": "0.50",
+            "0.50": "0.50",
+        }
+        if val in mapping:
+            return mapping[val]
+        try:
+            num = float(val)
+            if num >= 0.9:
+                return "1.0"
+            if num >= 0.75:
+                return "0.85"
+            if num >= 0.6:
+                return "0.65"
+            return "0.50"
+        except ValueError:
+            return "0.85"
 
-    Email Content:
-    - Email ID: {email.email_id}
-    - From: {email.from_email}
-    - Subject: {email.subject}
-    - Body:
-    {email.body[:1500]} 
-    """
+
+# ==========================================
+# 3. Prompt & Helpers
+# ==========================================
+CLASSIFICATION_PROMPT = """You are an AI shipping operations email triage classifier.
+Classify this email into EXACTLY ONE category.
+
+Categories:
+- BL_COMPARISON: Asking to check, verify, confirm, or compare a draft Bill of Lading (BL) against a Shipping Instruction (SI).
+- SI_REQUEST: Requesting to create or submit a new Shipping Instruction.
+- INVOICE_QUERY: Inquiries about ocean invoices, D&D / detention fees, freight billing.
+- GENERAL: Internal operational updates, vessel berthing notices, daily schedules.
+- SPAM: Phishing, scams, promotions, or external spam.
+
+Attachments matter. The email lists the files attached to it.
+- BL_COMPARISON means the SI and the draft BL are there to be compared: they are attached, or the sender says they were dropped or are missing.
+- An email that only asks someone to SEND or provide a draft BL, with nothing attached, is NOT BL_COMPARISON.
+- An email that attaches the SI together with another document (a packing list, commercial invoice, certificate of origin or anything else) and asks for it to be checked or confirmed IS BL_COMPARISON. Do not judge the attached document yourself: a later stage checks the document type and flags a wrong one.
+
+For confidence_tier, you MUST select ONLY one of these four exact strings:
+- "1.0": Explicit, unambiguous intent matching operational definition.
+- "0.85": Clear intent with strong context, but informal phrasing.
+- "0.65": Multiple topics/signals present; one is primary.
+- "0.50": Vague or conflicting signals (best guess).
+
+Return ONLY a single valid JSON object with exactly these keys: "category", "confidence_tier", "evidence".
+Do not wrap in markdown backticks or commentary.
+"""
+
+
+def extract_json_text(text: str) -> str:
+    """Extracts raw JSON string even if wrapped in markdown code blocks."""
+    cleaned = text.strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return cleaned
+
+
+def attachment_line(attachments: list[str]) -> str:
+    if not attachments:
+        return "none"
+    return f"{len(attachments)} ({', '.join(Path(a).name for a in attachments)})"
+
+
+# ==========================================
+# 4. Qwen Transport and Execution
+# ==========================================
+def post_with_retry(url: str, headers: dict, body: dict) -> dict:
+    """Call the gateway, retrying temporary errors with 1s, 2s, 4s backoff."""
+    for attempt in range(1, TRIES + 1):
+        try:
+            return http_post(url, headers, body)
+        except urllib.error.HTTPError as err:
+            if err.code not in RETRY_HTTP or attempt == TRIES:
+                raise
+            why = f"HTTP {err.code}"
+        except (urllib.error.URLError, TimeoutError) as err:
+            if attempt == TRIES:
+                raise
+            why = str(err) or type(err).__name__
+        log.warning("Qwen call failed (%s), retry %d/%d", why, attempt, TRIES - 1)
+        time.sleep(2 ** (attempt - 1))
+    raise RuntimeError("unreachable")
+
+
+def qwen_classification_model(
+    prompt: str, post: Post = post_with_retry
+) -> ClassificationSchema:
+    # No hardcoded fallback: the key lives in .env / the environment only.
+    key = os.environ.get("QWEN_API_KEY")
+    if not key:
+        raise RuntimeError("QWEN_API_KEY is not set in environment")
+
+    # Same default host as backend/extract/qwen.py, so both stages hit one gateway.
+    base_url = os.environ.get("QWEN_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+    model_name = os.environ.get("QWEN_MODEL") or DEFAULT_MODEL
+
+    headers = {
+        "content-type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": key,
+        "user-agent": USER_AGENT,
+    }
+
+    # Pass system instructions in top-level 'system' parameter matching Anthropic /v1/messages spec
+    payload = {
+        "model": model_name,
+        "max_tokens": 4096,  # Qwen thinks before it answers and that counts here: 512 came back empty on 163 of 520 emails
+        "temperature": 0,
+        "system": CLASSIFICATION_PROMPT,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+    }
+
+    log.info("Qwen request to %s (model %s)", base_url, model_name)
+    try:
+        reply = post(f"{base_url}/v1/messages", headers, payload)
+    except Exception as err:
+        log.error("HTTP request to Qwen proxy (%s) failed: %s", base_url, err)
+        raise
+
+    content_blocks = reply.get("content", [])
+    raw_text = "".join(
+        block.get("text", "")
+        for block in content_blocks
+        if isinstance(block, dict) and (block.get("type") == "text" or "text" in block)
+    )
+
+    if not raw_text:
+        raise ClassificationFailed("Empty response returned by Qwen model.")
 
     try:
-        # Use the SDK's async method (generate_content_async)
-        response = await get_client().aio.models.generate_content(
-            model="gemini-3.5-flash-lite", # Or gemini-3.6-flash depending on your latency needs
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=GeminiClassificationSchema,
-                temperature=0.0, 
-            ),
-        )
-        
-        # Parse SDK response using JJ's schema
-        parsed = GeminiClassificationSchema.model_validate_json(response.text)
-        
-        # Apply your post-processing safety nets
+        json_str = json_in(raw_text)
+    except Exception:
+        json_str = extract_json_text(raw_text)
+
+    return ClassificationSchema.model_validate_json(json_str)
+
+
+async def classify_email(email: EmailInput) -> ClassificationResult:
+    prompt = (
+        f"Email Content:\n"
+        f"- Email ID: {email.email_id}\n"
+        f"- From: {email.from_email}\n"
+        f"- Subject: {email.subject}\n"
+        f"- Attachments: {attachment_line(email.attachments)}\n"
+        f"- Body:\n{email.body[:1500]}"
+    )
+
+    try:
+        parsed = await asyncio.to_thread(qwen_classification_model, prompt)
         return ClassificationResult(
-            email_id=email.email_id, # Hardcoded from input
+            email_id=email.email_id,
             category=parsed.category,
-            decided_by="llm",        # Hardcoded from input
+            decided_by="llm",
             confidence=float(parsed.confidence_tier),
-            evidence=parsed.evidence
+            evidence=parsed.evidence,
         )
-        
     except Exception as error:
-        # The caller decides how to surface this; classify.py stays transport
-        # agnostic now that the route lives in app.py.
         log.exception("classification failed for %s", email.email_id)
         raise ClassificationFailed(str(error)) from error
+
+
+def is_saved(path: Path) -> bool:
+    """A finished result on disk. A truncated file from a killed run doesn't count."""
+    try:
+        json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+async def classify_many(
+    emails: Iterable[EmailInput],
+    out_dir: Path | str = DEFAULT_OUT_DIR,
+    concurrency: int = 4,
+) -> list[tuple[str, str]]:
+    """Classify every email, saving each result as soon as it finishes.
+
+    - Emails that already have a saved file are skipped, so re-running resumes.
+    - At most `concurrency` requests are in flight, to avoid overloading the gateway.
+    - One failure doesn't stop the batch; failures are returned as (email_id, reason).
+    """
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    gate = asyncio.Semaphore(concurrency)
+    failed: list[tuple[str, str]] = []
+
+    async def one(email: EmailInput) -> None:
+        path = out / f"{email.email_id}.json"
+        if is_saved(path):
+            return
+        async with gate:
+            try:
+                result = await classify_email(email)
+            except ClassificationFailed as err:
+                failed.append((email.email_id, str(err)))
+                return
+        # Write then rename, so a crash never leaves a half-written file behind.
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+        os.replace(tmp, path)
+
+    await asyncio.gather(*(one(e) for e in emails))
+    return failed
+
+
+# ==========================================
+# 5. Batch run
+# ==========================================
+def load_emails() -> list[EmailInput]:
+    """Every inbox record from DATA_DIR (a folder or the local server)."""
+    from loader import Inbox
+
+    inbox = Inbox(os.environ.get("DATA_DIR") or str(ROOT_DIR / "data"))
+    return [EmailInput(**record) for record in inbox.emails()]
+
+
+def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    emails = load_emails()
+    failed = asyncio.run(classify_many(emails))
+    print(f"saved {len(emails) - len(failed)} of {len(emails)} to {DEFAULT_OUT_DIR}")
+    for email_id, reason in failed:
+        print(f"  failed: {email_id}: {reason}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

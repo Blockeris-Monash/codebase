@@ -1,0 +1,7 @@
+{
+  "email_id": "email_315",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email contains promotional language, a suspicious prize claim, and a request to pay shipping via an external link, indicating spam/phishing."
+}

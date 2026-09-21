@@ -1,0 +1,7 @@
+{
+  "email_id": "email_489",
+  "category": "SPAM",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email contains a prize claim, survey request, suspicious link, and payment request, which are typical phishing/scam indicators."
+}

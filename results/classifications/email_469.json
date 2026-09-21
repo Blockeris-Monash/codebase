@@ -1,0 +1,7 @@
+{
+  "email_id": "email_469",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "The email explicitly says 'Please find Shipping instruction for 5RAE-21450' and provides full SI details (POL, POD, shipper, consignee, goods, documents required). No draft BL is attached and it does not ask to compare a draft BL against the SI."
+}

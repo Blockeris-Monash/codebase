@@ -17,7 +17,6 @@ import unicodedata
 from pathlib import Path
 
 from backend.contracts import FIELD_NAMES, ParseStatusType, StatusType
-from backend.read.labels import canonical_field
 from cli.make_fixtures import build, classify_from_body
 from backend.read.documents import document_title, read_document
 
@@ -79,7 +78,7 @@ def show_classification(email: dict[str, object]) -> str | None:
     category, evidence = classify_from_body(email)
     stage(1, "classify", f"\u2192  {category or 'no rule matched'}")
     print(f"     because the {evidence}")
-    print(f"     only BL_COMPARISON continues past here")
+    print("     only BL_COMPARISON continues past here")
 
     return category
 

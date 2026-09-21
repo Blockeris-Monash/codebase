@@ -1,0 +1,7 @@
+{
+  "email_id": "email_260",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "Subject says 'REQUEST SI' and body says 'Please find Shipping instruction for 5RMY-80715' with full SI details, indicating a new shipping instruction submission/request. No draft BL is attached, so it is not BL_COMPARISON."
+}

@@ -1,0 +1,7 @@
+{
+  "email_id": "email_138",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject begins with 'SI' and body says 'Please find Shipping instruction for 5RUS-80996' with full shipping instruction details (POL, POD, shipper, consignee, goods). No draft BL is attached, and the request to 'revert with draft BL once available' is not a BL comparison."
+}

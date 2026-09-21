@@ -48,3 +48,18 @@ def test_fallback_categories():
     assert fallback_category("REQUEST SI", "please send the SI", 0) == "SI_REQUEST"
     assert fallback_category("Daily berthing report", "", 0) == "GENERAL"
     assert fallback_category("anything", "", 2) == "BL_COMPARISON"
+
+
+def test_saved_classification_carries_its_confidence_and_reason(tmp_path):
+    (tmp_path / "email_064.json").write_text(
+        '{"email_id": "email_064", "category": "BL_COMPARISON", "decided_by": "llm",'
+        ' "confidence": 0.9, "evidence": "Asks to check the SI against the draft BL."}', encoding="utf-8")
+    email = build_email(DATA / "inbox" / "email_064.json", DATA, tmp_path)
+    assert email["decided_by"] == "llm"
+    assert email["class_confidence"] == 0.9
+    assert email["class_evidence"] == "Asks to check the SI against the draft BL."
+
+
+def test_fallback_has_no_confidence_or_reason():
+    email = build("email_003")
+    assert "class_confidence" not in email and "class_evidence" not in email

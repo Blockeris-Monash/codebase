@@ -8,7 +8,6 @@ a shared mistake would have to be made twice, the same way.
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest

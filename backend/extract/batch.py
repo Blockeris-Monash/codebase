@@ -13,10 +13,18 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from backend.contracts import DocumentExtract, FIELD_NAMES, ParseStatusType
 from backend.extract.ai import AiExtractor
 from backend.read.labels import detect_doc_type
 from backend.read.documents import document_title, read_document
+
+# The model clients read their key straight from the environment, so a run
+# started from a shell that has not exported it fails with "QWEN_API_KEY is
+# not set" even when .env holds a good one. app.py and classify.py already do
+# this; batch was the one entry point that needed a key and did not load it.
+load_dotenv()
 
 ATTACHMENT_NAME = re.compile(r"^(?P<email_id>email_\d+)_(?P<role>SI|BL)\.(?P<format>\w+)$")
 

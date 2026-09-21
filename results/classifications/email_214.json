@@ -1,0 +1,7 @@
+{
+  "email_id": "email_214",
+  "category": "SI_REQUEST",
+  "decided_by": "llm",
+  "confidence": 0.85,
+  "evidence": "The subject and body provide Shipping Instruction details for 5APH-44714 and request a draft BL once available, but no draft BL is attached, so it is not BL_COMPARISON."
+}

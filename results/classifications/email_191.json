@@ -1,0 +1,7 @@
+{
+  "email_id": "email_191",
+  "category": "INVOICE_QUERY",
+  "decided_by": "llm",
+  "confidence": 1.0,
+  "evidence": "Subject and body explicitly request cancellation of invoice 5250072762 and reversal of PGI, which is invoice/billing related."
+}
