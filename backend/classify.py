@@ -16,25 +16,12 @@ log = logging.getLogger(__name__)
 
 class ClassificationFailed(RuntimeError):
     """The model never returned a usable classification."""
-
-# Initialize async client
-_client: genai.Client | None = None
-
-
 def get_client() -> genai.Client:
-    """Built on first use, not at import. Constructing it at module level
-    means the whole app fails to import without a key - which breaks the
-    tests, a clean clone, and any build step that only needs to load the
-    module."""
-    global _client
-    if _client is None:
-        key = os.getenv("GOOGLE_API_KEY")
-        if not key:
-            raise ClassificationFailed("GOOGLE_API_KEY is not set")
-        _client = genai.Client(api_key=key)
-
-    return _client
-
+    """Builds a client on demand for the active event loop."""
+    key = os.getenv("GOOGLE_API_KEY")
+    if not key:
+        raise ClassificationFailed("GOOGLE_API_KEY is not set")
+    return genai.Client(api_key=key)
 # ==========================================
 # 1. Input/Output Contracts
 # ==========================================
