@@ -1,25 +1,25 @@
 {
-  "email_id": "email_064",
-  "declared_role": "SI",
-  "source_path": "attachments/email_064_SI.txt",
+  "email_id": "email_453",
+  "declared_role": "BL",
+  "source_path": "attachments/email_453_BL.txt",
   "format": "txt",
-  "detected_doc_type": "SI",
+  "detected_doc_type": "BL",
   "parse_status": "ok",
   "fields": {
     "shipper": {
       "present": true,
-      "label_seen": "SHIPPER",
-      "raw": "APRIL FINE PAPER TRADING"
+      "label_seen": "Shipper",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
     },
     "consignee": {
       "present": true,
       "label_seen": "CONSIGNEE",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
     },
     "notify_party": {
       "present": true,
-      "label_seen": "Notify Party/Intermediate Consignee",
-      "raw": "ORIENT LINKS CO (LLC)"
+      "label_seen": "Notify",
+      "raw": "BALL & DOGGETT AUSTRALIA PTY LTD"
     },
     "port_of_loading": {
       "present": true,
@@ -28,18 +28,18 @@
     },
     "port_of_discharge": {
       "present": true,
-      "label_seen": "Port of Discharge",
+      "label_seen": "PORT OF DISCHARGE",
       "raw": "CONAKRY, GUINEA (GNCKY)"
     },
     "container_count": {
       "present": true,
-      "label_seen": "No. of Containers",
+      "label_seen": "Container Count",
       "raw": "5 x 20'GP"
     },
     "gross_weight_kg": {
       "present": true,
-      "label_seen": "Gross Weight毛重(KGS)",
-      "raw": "103,800 KG"
+      "label_seen": "GROSS WEIGHT",
+      "raw": "102,720 KG"
     }
   }
 }

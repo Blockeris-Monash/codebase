@@ -1,0 +1,45 @@
+{
+  "email_id": "email_503",
+  "declared_role": "SI",
+  "source_path": "attachments/email_503_SI.txt",
+  "format": "txt",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee (Non-Negotiable)",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Load Port",
+      "raw": "NHAVA SHEVA, INDIA (INNSA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "HOCHIMINH CITY, VIETNAM (VNSGN)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "1 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight毛重(KGS)",
+      "raw": "21,772 KG"
+    }
+  }
+}

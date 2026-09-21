@@ -1,0 +1,45 @@
+{
+  "email_id": "email_129",
+  "declared_role": "BL",
+  "source_path": "attachments/email_129_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "SAFQA LIMITED"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "SAFQA LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading (POL)",
+      "raw": "BUATAN, INDONESIA (INNSA)"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "PORT OF DISCHARGE",
+      "raw": "TUTICORIN, INDIA (ILASH)"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers",
+      "raw": "6 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "GROSS WEIGHT",
+      "raw": "124,188 KG"
+    }
+  }
+}

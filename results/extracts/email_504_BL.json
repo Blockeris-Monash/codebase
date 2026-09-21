@@ -1,0 +1,45 @@
+{
+  "email_id": "email_504",
+  "declared_role": "BL",
+  "source_path": "attachments/email_504_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "PACKING LIST",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "ASIA PACIFIC PAPERBOARD TRADING PTE LTD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "PACIFIC OFFICE (M) SDN BHD"
+    },
+    "notify_party": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_loading": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_discharge": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "container_count": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "gross_weight_kg": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    }
+  }
+}

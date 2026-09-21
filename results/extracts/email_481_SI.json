@@ -1,0 +1,45 @@
+{
+  "email_id": "email_481",
+  "declared_role": "SI",
+  "source_path": "attachments/email_481_SI.xlsx",
+  "format": "xlsx",
+  "detected_doc_type": "SI",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper (Principal or Seller)",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "To the Order of",
+      "raw": "AL GURG STATIONERY LLC"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "NOTIFY PARTY",
+      "raw": "SAFQA LIMITED"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "RUGAO/NANTONG/SHANGHAI, CHINA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "VALPARAISO, CHILE"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Container Count",
+      "raw": "4 x 20'FCL"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "GROSS WEIGHT",
+      "raw": "91436"
+    }
+  }
+}

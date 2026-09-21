@@ -1,0 +1,45 @@
+{
+  "email_id": "email_407",
+  "declared_role": "BL",
+  "source_path": "attachments/email_407_BL.pdf",
+  "format": "pdf",
+  "detected_doc_type": "BL",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper/Exporter",
+      "raw": "APRIL FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "CONSIGNEE",
+      "raw": "NAGAPPA EXPORTS"
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify Party",
+      "raw": "NAGAPPA EXPORTS"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "POL",
+      "raw": "NHAVA SHEVA, INDIA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Discharge Port",
+      "raw": "YANGON, MYANMAR"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "No. of Containers or Packages",
+      "raw": "12 x 20'GP"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "TOTAL Gross Wt (kgs)",
+      "raw": "285,720 KG"
+    }
+  }
+}

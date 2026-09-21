@@ -1,0 +1,45 @@
+{
+  "email_id": "email_503",
+  "declared_role": "BL",
+  "source_path": "attachments/email_503_BL.txt",
+  "format": "txt",
+  "detected_doc_type": "CERTIFICATE OF ORIGIN",
+  "parse_status": "ok",
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Exporter",
+      "raw": "APRIL FAR EAST (M) SDN BHD"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "INTERNATIONAL FOREST PRODUCTS LLC"
+    },
+    "notify_party": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_loading": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "port_of_discharge": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "container_count": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    },
+    "gross_weight_kg": {
+      "present": false,
+      "label_seen": null,
+      "raw": null
+    }
+  }
+}
