@@ -218,7 +218,10 @@ function draftFor(e){
           body:`Hi,\n\nThank you for your email. ${ask}\n\nThank you.\nBest regards,\n`};
 }
 
-function canRecheck(e){ return API_BASE && e.docs && e.docs.SI && e.docs.BL && e.docs.SI.pairs.length && e.docs.BL.pairs.length; }
+/* /process-email resolves the attachments from the id on its own, so a pair
+   this page could not read is still worth re-checking - those are the very
+   emails a reviewer wants a second opinion on. */
+function canRecheck(e){ return API_BASE && e.category==="BL_COMPARISON"; }
 
 function detail(e){
   const live = S.live[e.id];
@@ -251,7 +254,7 @@ function detail(e){
     else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">Mark as checked</button><button class="btn alt" data-a="draft" data-id="${e.id}">Reply to sender</button></div>`;
   }
   if(canRecheck(e)){
-    h += `<div class="live">${live&&live.busy?`<span class="mute">Checking with the AI. The first check can take up to a minute.</span>`:`<button class="ghost" data-a="recheck" data-id="${e.id}">Check again with AI</button>`}`;
+    h += `<div class="live">${live&&live.busy?`<span class="mute">Checking with the AI. The first check can take up to two minutes while the service wakes up.</span>`:`<button class="ghost" data-a="recheck" data-id="${e.id}">Check again with AI</button>`}`;
     if(live&&live.note) h += ` <span class="${live.error?"":"mute"}">${esc(live.note)}</span>`;
     h += `</div>`;
   }
@@ -261,13 +264,17 @@ function detail(e){
 async function recheck(id){
   const e = byId[id];
   S.live[id] = {busy:true}; render();
-  const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 90000);
+  /* Render sleeps a free service after 15 idle minutes and the first request
+     wakes it, so the first check of a session pays a cold start on top of the
+     pipeline. */
+  const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 120000);
   try{
-    const res = await fetch(API_BASE+"/extract-clean-compare?live=true", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal, body:JSON.stringify({
-      email_id:id, si_pairs:e.docs.SI.pairs, bl_pairs:e.docs.BL.pairs, si_title:e.docs.SI.title, bl_title:e.docs.BL.title,
-      si_parse_status:e.docs.SI.parse_status, bl_parse_status:e.docs.BL.parse_status})});
+    const res = await fetch(API_BASE+"/process-email", {method:"POST", headers:{"Content-Type":"application/json"}, signal:ctrl.signal,
+      body:JSON.stringify({email_id:id, from:e.from, subject:e.subject, body:e.body})});
     if(!res.ok) throw new Error("HTTP "+res.status);
-    const result = await res.json();
+    /* One call runs all five stages; the page only redraws the verdict. */
+    const result = (await res.json()).ComparisonResult;
+    if(!result) throw new Error("no ComparisonResult");
     const same = result.status===e.status && JSON.stringify(result.defect_fields)===JSON.stringify(e.defect_fields);
     S.live[id] = {result, note: same?"Live AI check done. Same result as the saved one.":"Live AI check done. It differs from the saved result, so please look closely."};
   }catch(err){
