@@ -52,3 +52,21 @@ def test_hand_label_accuracy_leaves_out_undecided_cases() -> None:
     accuracy = ev.hand_label_accuracy(classified, labels)
 
     assert accuracy == {"labelled": 1, "correct": 1, "ambiguous": 1, "wrong": []}
+
+
+def test_impact_estimate_is_hours_saved_for_each_assumed_minutes_per_check() -> None:
+    assert ev.impact_estimate(60, (2, 3, 5)) == {2: 2.0, 3: 3.0, 5: 5.0}
+
+
+def test_pipeline_summary_counts_every_field_that_differs() -> None:
+    results = [result("MISMATCH", defects=["shipper", "port_of_loading"]), result("MISMATCH", defects=["shipper"])]
+
+    assert ev.pipeline_summary(results)["field_differences"] == 3
+
+
+def test_latency_summary_reports_typical_and_worst_time_and_agreement_with_saved() -> None:
+    runs = [{"seconds": 10.0, "same": True}, {"seconds": 20.0, "same": True}, {"seconds": 60.0, "same": False}]
+
+    summary = ev.latency_summary(runs)
+
+    assert summary == {"emails": 3, "median": 20.0, "mean": 30.0, "slowest": 60.0, "same_as_saved": 2}
