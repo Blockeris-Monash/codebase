@@ -42,18 +42,21 @@ Three outcomes:
 
 ## Setup
 
-This repository is public, so nothing here needs a GitHub account.
+This repository is public, so neither way needs a GitHub account. Take whichever
+suits you.
 
-Either download the ZIP — the green **Code** button on
-<https://github.com/Blockeris-Monash/codebase> → **Download ZIP** → unzip, open
-the folder in your IDE — or clone it over HTTPS:
+**Download the ZIP.** On <https://github.com/Blockeris-Monash/codebase>, the
+green **Code** button → **Download ZIP**. Unzip it and open the folder in your
+IDE. Nothing in the project needs git.
+
+**Or clone it.**
 
 ```bash
 git clone https://github.com/Blockeris-Monash/codebase.git
 cd codebase
 ```
 
-Then, in the project folder:
+Then, in the project folder either way:
 
 ```bash
 python3 -m venv .venv
