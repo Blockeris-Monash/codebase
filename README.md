@@ -7,7 +7,8 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
 [How it works](#how-it-works) · [The dataset](#the-dataset-is-in-the-repo) ·
 [Where the code lives](#where-the-code-lives) · [Evidence](#evidence) ·
 [The five contracts](#the-five-contracts) · [Who built what](#who-built-what) ·
-[Roadmap](#roadmap) · [Documents](#documents) ·
+[Roadmap](#roadmap) · [Working on this](#working-on-this) ·
+[Documents](#documents) ·
 [The seven fields](#the-seven-compared-fields)
 
 ## Start here
@@ -393,6 +394,8 @@ stage's output against its contract — is in
   the classifier decides between them
 - [`docs/05-company-profile.md`](docs/05-company-profile.md) — who the client is
   and why these seven fields are the ones worth checking
+- [`docs/06-disagreement-log.md`](docs/06-disagreement-log.md) — the one place our
+  output differs from the organisers' reference, and why we did not conform
 - `results/evidence.md` — every validation number, rebuilt by
   `python -m cli.evidence`
 
