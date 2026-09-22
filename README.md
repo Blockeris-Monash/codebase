@@ -131,9 +131,16 @@ says what it proved:
 | **Contracts** | every fixture against its schema, plus a regression guard on each |
 | **End to end** | eight emails, eight outcomes, and a person gets the reason |
 
-That is a selection; the run prints all seventeen areas. Five further tests need
-a model key and skip without one — they are the only ones that reach the
-network.
+That is a selection; the run prints all seventeen areas.
+
+Five further tests reach a model over the network and are **skipped unless you
+ask for them by name** — `SHIP_HAPPENS_LIVE=1` plus the matching key. A key on
+its own is not enough, deliberately: a Gemini or Qwen key left in the
+environment from another project used to unskip them, fire live calls and fail,
+which says nothing about this repository. `QWEN_BASE_URL` also defaults to a
+proxy only our team can reach, so someone else's key would fail against
+infrastructure they have no access to. They are our liveness check, not
+evidence for a reader.
 
 ### 4 · Run it
 

@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 
 import pytest
+
+from tests.live_gate import needs_live
 from fastapi.testclient import TestClient
 
 from backend.app import app, load_saved_extract
@@ -97,7 +99,7 @@ def test_cache_carries_the_parse_metadata() -> None:
     assert "fields" in extract
 
 
-@pytest.mark.skipif(not os.environ.get("QWEN_API_KEY"), reason="no QWEN_API_KEY")
+@needs_live("QWEN_API_KEY")
 def test_live_model_path_reaches_the_same_verdict(attachments: Path) -> None:
     """Same pair, cache bypassed. Slow, and it spends quota."""
     report = compare_pair(attachments, LIVE,

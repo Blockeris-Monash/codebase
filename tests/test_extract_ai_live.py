@@ -5,12 +5,12 @@ import os
 
 import pytest
 
+from tests.live_gate import needs_live
+
 from backend.extract.ai import AiExtractor
 from backend.extract.gemini import gemini_model
 
-pytestmark = pytest.mark.skipif(
-    not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")),
-    reason="no GOOGLE_API_KEY")
+pytestmark = needs_live("GOOGLE_API_KEY", "GEMINI_API_KEY")
 
 # Pairs as Lane A's reader returns them for email_055_SI.xlsx.
 PAIRS = [

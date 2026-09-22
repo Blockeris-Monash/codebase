@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.live_gate import needs_live
+
 # Add project root to sys.path so 'backend' is found
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -20,8 +22,7 @@ def load_inbox_email(email_id: str) -> dict:
     return json.loads(inbox_file.read_text(encoding="utf-8"))
 
 
-@pytest.mark.skipif(not os.environ.get("QWEN_API_KEY"),
-                    reason="POST /process-email calls the live classifier, which needs QWEN_API_KEY")
+@needs_live("QWEN_API_KEY")
 def test_router():
     print(f"\n{'=' * 70}")
     print("RUNNING ROUTER END-TO-END TESTS (POST /process-email)")
