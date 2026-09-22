@@ -48,11 +48,88 @@ The earlier fix was `d96b6c0` "Add Checked category and keep scroll position in
 the review UI", which added the `keep` snapshot and restore.
 
 ## Reproduction
-(not yet reproduced here - no working browser in this environment; chromium is
-missing `libnspr4`. Needs the failing control and the viewport width.)
+Desktop window, 821px wide or more. Open a folder with more than a screenful of
+emails, scroll the left-hand list down, click a row near the bottom. The detail
+opens correctly in the pane; the list beside it snaps to the top and the row
+just clicked is no longer visible.
+
+The same move with the keyboard - select an email, then Left/Right arrow - does
+*not* do it. That asymmetry is the tell.
+
+(Not browser-verified here: chromium in this environment is missing `libnspr4`.
+The cause below is established by reading every path that can reset a scroll
+container, and it is the only one that produces `scrollTop = 0` rather than a
+clamp.)
 
 ## Root cause
-(unknown)
+
+`S.reset` is one flag standing for two different scroll containers.
+
+`render()` rebuilds everything with a single `innerHTML` write (`:676`), so
+both `.list` and `.pane` are new elements at `scrollTop = 0` every time.
+`keep` (`:662`, restored `:687`) exists to put the offsets back, and
+`S.reset` suppresses it.
+
+Suppressing it is right for the pane: `open`, `first` and `back` change which
+email is shown, so the pane must start at the top of the new document.
+
+It is wrong for the list. At >= 821px the list is a separate, still-visible
+scroll container, and selecting an email does not change its contents - the
+same rows in the same order. Skipping the restore throws away a position that
+was still valid, and the rebuilt `.list` comes back at 0.
+
+So: **selecting an email sets `S.reset`, which suppresses the restore for both
+containers, and the rebuilt list therefore returns at `scrollTop = 0` even
+though its contents did not change.**
+
+That explains every part of the symptom:
+
+- *all the way up*, not a partial jump - it is a fresh element at 0, not a
+  clamp against a shorter document.
+- *only on click* - `goTo()` (`:775`) sets `S.reset` **and** `S.keyNav`, and
+  `:691` then does `q(".item.on").scrollIntoView({block:"nearest"})`, which
+  pulls the selected row back into view. The click path at `:746` sets
+  `S.reset` alone, so nothing puts it back.
+- *survived the previous fix* - `d96b6c0` added the `keep` snapshot, which is
+  skipped in exactly the case that fails.
+- *not reported on a phone* - at <= 820px `.split.hasSel .list{display:none}`
+  (`:278`), so the list is not on screen to jump.
+
+`back` (`:751`) has the same defect and no `.item.on` to scroll to, so
+returning to the list also loses the reader's place.
 
 ## Fix
-(none yet)
+
+Split the flag by container, because the two groups of actions genuinely differ:
+
+- actions that change *what is in the list* - `folder`, `newer`, `older`,
+  `clearq`, `allmail`, the search box, the folder select - should send the list
+  to the top. Correct today.
+- actions that change *only which email is selected* - `open`, `first`, `back`,
+  `goTo` - leave the list contents alone, so its offset should be kept, while
+  the pane starts at the top.
+
+Concretely: replace `S.reset` with `S.resetList` and `S.resetPane`; have `keep`
+skip the list restore only on the first group and the pane restore only on the
+second. Keep `S.keyNav` on `open` as well, so a click leaves the selected row
+visible exactly as the arrow keys already do.
+
+Applied. `S.reset` is now `S.resetList` and `S.resetPane`, set independently at
+all thirteen sites, and the snapshot skips each container on its own flag.
+`open` also sets `S.keyNav`, so a click leaves the selected row in view exactly
+as the arrow keys already did.
+
+One behaviour deliberately left alone: when a container is reset, nothing
+scrolls it to the top explicitly - the browser clamps, as before. Changing that
+would alter what a phone does when an email is opened, which is beyond this bug
+and is not testable here.
+
+Verified: `tests/test_review_ui_scroll.py` fails 12 of 12 against the file as it
+was and passes 12 of 12 against the fix; the suite is 236 passed. Not confirmed
+in a browser - chromium in this environment is missing `libnspr4` - so the
+five-second check still stands: wide window, scroll the list down, click a row
+near the bottom, and the list should stay put with the clicked row still
+visible.
+
+`frontend/index.html` is Milk's file. Flagging that here rather than in the
+commit, since the change is behavioural.
