@@ -32,6 +32,16 @@ dataset says which shipments are under a credit — is in
   button in the app calls this service. It runs on a free host, so the first
   request after a quiet spell can take about 100 seconds.
 
+![The review screen with a mismatch open: 46 mismatches in the inbox, and for
+the open email six of the seven fields agree while gross weight differs — 40,326
+KG on the shipping instruction against 41,326 KG on the draft bill of lading —
+with both source documents shown underneath.](docs/img/review-mismatch.png)
+
+One email, decided. Six fields agree, gross weight does not: 40,326 KG on the
+shipping instruction against 41,326 KG on the draft bill of lading. The field is
+named, and both source documents sit underneath so a person can confirm it in
+seconds rather than reading two PDFs.
+
 A private or incognito window gives a clean first look: the page remembers your
 language, your panel width and which emails you marked as checked, and it
 registers a service worker. Use an ordinary window if you want to try the phone
