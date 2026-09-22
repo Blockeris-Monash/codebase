@@ -14,7 +14,8 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
 
 ## Setup
 
-Python 3.12. No database. Nothing below needs an API key.
+Python 3.12. No database. The review app, the tests and the saved comparison
+path need no API key. Only the live model calls do, and each is marked below.
 
 ```bash
 git clone git@github.com:Blockeris-Monash/codebase.git
@@ -23,7 +24,7 @@ cd codebase
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-.venv/bin/python -m pytest -q          # 192 passed, 5 skipped (skips need a model key)
+.venv/bin/python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
 ```
 
 ### See the prototype
@@ -49,6 +50,15 @@ call Qwen, so they need `QWEN_API_KEY` (and `QWEN_BASE_URL` if you go through
 the team proxy). Copy `.env.example` to `.env` and fill it in. Ports 8010 and
 8099 are suggestions; anything free will do.
 
+`/extract-clean-compare` takes the label/value pairs, not a file: the body is
+`email_id`, `si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse
+statuses. For a worked end-to-end call that reads the documents and builds that
+body for you:
+
+```bash
+python3 -m cli.demo_pipeline email_004     # one email through all five stages
+```
+
 ## The dataset is in the repo
 
 `data/` holds the 520 emails and 250 attachments. The organisers confirmed
@@ -65,6 +75,14 @@ codebase/
 
 The organiser Docker kit stays out, and `.gitignore` blocks it by both path
 and filename: it contains the answer key.
+
+`loader.py` is the organisers' own loader, unmodified, so their access code
+runs against this repo as-is:
+
+```python
+from loader import Inbox
+inbox = Inbox("data")          # or Inbox("http://localhost:8081") for the kit
+```
 
 Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
 
@@ -115,7 +133,13 @@ python3 -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
 
 `cli.evidence` compares the saved AI extraction with the rules reader,
 summarises the pipeline results and the classifier, and reads the hand labels in
-`results/classifier_handlabels.json`. No organiser answer key is used anywhere.
+`results/classifier_handlabels.json`. It reads no organiser answer key: every
+number it prints comes from files in this repo.
+
+The classifier prompt itself is a different matter. It was corrected against the
+organisers' key (`5e76cff`), so the classification score is fitted rather than
+held out, and we say so. The mutation check, the rules-reader agreement and the
+hand labels never touch the key.
 
 ## Developer checks
 
