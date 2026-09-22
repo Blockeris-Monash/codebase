@@ -43,6 +43,7 @@ Three outcomes:
   or a missing attachment. No value is inferred.
 
 ## Setup
+
 **Download the ZIP.** On <https://github.com/Blockeris-Monash/codebase>, the
 green **Code** button → **Download ZIP**. Unzip it and open the folder in your
 IDE. Nothing in the project needs git.
@@ -54,29 +55,35 @@ git clone https://github.com/Blockeris-Monash/codebase.git
 cd codebase
 ```
 
-Then, in the project folder either way:
+Then, in the project folder either way.
+
+**macOS and Linux:**
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
+source .venv/bin/activate
 pip install -r requirements.txt
-python3 -m pytest -q               # 219 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+```
+
+**Windows (PowerShell):**
+
+```powershell
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
 ```
 
 Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database.
 
-On Windows: `py -m venv .venv`, then `.venv\Scripts\activate`, and use
-`python` or `py` wherever this file says `python3` — Windows ships no
-`python3`. Virtual-environment binaries live in `.venv\Scripts\`, not
-`.venv/bin/`.
-
-**Every `python3` command below assumes that activated environment.** Without
-it, anything importing the backend dies with `No module named 'dotenv'`:
-`cli.evidence`, `cli.mutation_check`, `cli.make_results` and `cli.latency`.
-The rest — `cli.smoke_test`, `cli.demo_read`, `cli.demo_pipeline`,
-`cli.make_fixtures`, `cli.validate_contracts` — are stdlib-only and run on any
-Python 3.12.
+**Every command below assumes that activated environment**, where `python` is
+this project's interpreter on all three platforms — so every block on this page
+is the same whichever you are on. Without activating, anything that imports the
+backend dies with `No module named 'dotenv'`: `cli.evidence`,
+`cli.mutation_check`, `cli.make_results` and `cli.latency`. The rest —
+`cli.smoke_test`, `cli.demo_read`, `cli.demo_pipeline`, `cli.make_fixtures`,
+`cli.validate_contracts` — are stdlib-only and run on any Python 3.12.
 
 The review app, the tests and the saved comparison path need no API key. Only
 the live model calls do, and each is marked below.
@@ -84,7 +91,7 @@ the live model calls do, and each is marked below.
 ### See the prototype
 
 ```bash
-cd frontend && python3 -m http.server 8099
+cd frontend && python -m http.server 8099
 ```
 
 Open <http://localhost:8099>. All 520 emails, every comparison already run.
@@ -94,7 +101,7 @@ no key and no network.
 ### Run the API
 
 ```bash
-python3 -m uvicorn backend.app:app --port 8010
+python -m uvicorn backend.app:app --port 8010
 ```
 
 <http://localhost:8010/docs>. `GET /health` and `POST /extract-clean-compare`
@@ -116,7 +123,7 @@ statuses. For a worked end-to-end call that reads the documents and builds that
 body for you:
 
 ```bash
-python3 -m cli.demo_pipeline email_004     # one email through all five stages
+python -m cli.demo_pipeline email_004     # one email through all five stages
 ```
 
 ## The dataset is in the repo
@@ -179,8 +186,8 @@ frontend/ index.html  results.js  config.js   the review UI, static
 Run a CLI as a module so imports resolve from the repo root:
 
 ```bash
-python3 -m cli.demo_read                 # what each reader does to each format
-python3 -m cli.demo_pipeline email_004   # one email through all five stages
+python -m cli.demo_read                 # what each reader does to each format
+python -m cli.demo_pipeline email_004   # one email through all five stages
 ```
 
 ## Evidence
@@ -188,9 +195,9 @@ python3 -m cli.demo_pipeline email_004   # one email through all five stages
 One command rebuilds every validation number from files in this repo:
 
 ```bash
-python3 -m cli.evidence            # writes results/evidence.md
-python3 -m cli.mutation_check      # break one BL field at a time, check the verdict
-python3 -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
+python -m cli.evidence            # writes results/evidence.md
+python -m cli.mutation_check      # break one BL field at a time, check the verdict
+python -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
 ```
 
 `cli.evidence` compares the saved AI extraction with the rules reader,
@@ -207,14 +214,14 @@ hand labels never touch the key.
 
 ```bash
 # 1. dataset reachable, both ways
-python3 -m cli.smoke_test
-python3 -m cli.smoke_test http://localhost:8081
+python -m cli.smoke_test
+python -m cli.smoke_test http://localhost:8081
 
 # 2. regenerate stage fixtures from real emails
-python3 -m cli.make_fixtures --out fixtures
+python -m cli.make_fixtures --out fixtures
 
 # 3. check everything still satisfies the contracts
-python3 -m cli.validate_contracts
+python -m cli.validate_contracts
 ```
 
 The scoring server runs on **8081**, not 8080 — 8080 is commonly taken. Start
@@ -224,7 +231,7 @@ it from the organiser kit with `docker compose up -d`.
 with its category, its verdict and both documents, rebuilt from `results/` by:
 
 ```bash
-python3 -m cli.make_results         # -> frontend/results.js
+python -m cli.make_results         # -> frontend/results.js
 ```
 
 If you hold the organisers' `ground_truth.json`, you can score this yourself
@@ -265,7 +272,7 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 Write one record to a JSON file and name the contract it should satisfy:
 
 ```bash
-python3 -m cli.validate_contracts out.json ComparisonResult
+python -m cli.validate_contracts out.json ComparisonResult
 ```
 
 Fixtures are numbered by scenario, not by email id — `01-Ok.json` through
@@ -275,17 +282,17 @@ Fixtures are numbered by scenario, not by email id — `01-Ok.json` through
 Per stage:
 
 ```bash
-python3 -m cli.validate_contracts record.json     EmailRecord
-python3 -m cli.validate_contracts classified.json ClassificationResult
-python3 -m cli.validate_contracts extracted.json  DocumentExtract
-python3 -m cli.validate_contracts compared.json   ComparisonResult
-python3 -m cli.validate_contracts entry.json      SubmissionEntry
+python -m cli.validate_contracts record.json     EmailRecord
+python -m cli.validate_contracts classified.json ClassificationResult
+python -m cli.validate_contracts extracted.json  DocumentExtract
+python -m cli.validate_contracts compared.json   ComparisonResult
+python -m cli.validate_contracts entry.json      SubmissionEntry
 ```
 
 With no arguments it checks every fixture instead:
 
 ```bash
-python3 -m cli.validate_contracts
+python -m cli.validate_contracts
 ```
 
 A failure names the field and what was wrong:
@@ -328,7 +335,7 @@ print(errors or "all 520 entries valid")
 - [`docs/05-company-profile.md`](docs/05-company-profile.md) — who the client is
   and why these seven fields are the ones worth checking
 - `results/evidence.md` — every validation number, rebuilt by
-  `python3 -m cli.evidence`
+  `python -m cli.evidence`
 
 ## The seven compared fields
 
