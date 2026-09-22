@@ -30,7 +30,7 @@ only loses defects.
 | shipper, consignee, notify_party | collapse whitespace, uppercase, exact compare. Name only — drop the address block |
 | port_of_loading, port_of_discharge | strip a trailing `(ABCDE)` locode, drop trailing comma, uppercase, exact |
 | container_count | parse the leading integer, ignore the type |
-| gross_weight_kg | strip thousands separators and `KG`, compare as a number, zero tolerance |
+| gross_weight_kg | strip thousands separators and `KG`, compare as a number, tolerance 0.1 kg |
 
 ## Why each rule, with evidence
 
@@ -90,11 +90,13 @@ risk only if judges test with their own data.
 
 So `6 x 40'HC` versus `6 x 20'GP` never occurs and needs no ruling.
 
-### Gross weight — exact, no tolerance
+### Gross weight — numeric, 0.1 kg tolerance
 
 - All 185 gross-weight lines use `KG`. No MT or LBS mixing anywhere.
-- Real deltas run 500–2,000 kg, and the formatting is identical on both sides,
-  so a tolerance buys nothing and risks masking a genuine defect.
+- Real deltas run 500–2,000 kg, so the 0.1 kg the comparator allows cannot
+  mask a genuine defect; it only absorbs float rounding. An earlier draft of
+  this file said "exact, no tolerance", which never matched
+  `comparator.py:110`. The code is the source of truth.
 - Excel writes a bare `341715` where text writes `341,715 KG`. This is the one
   place normalisation demonstrably earns its keep.
 - `NET WEIGHT: _______ MTS` sits adjacent in the SI as a decoy. Anchor the

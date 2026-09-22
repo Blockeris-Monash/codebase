@@ -100,6 +100,71 @@ numbers. That is months of work and almost none of it is parsing.
 Qualifier coverage beyond the seven fields. The 304 has hundreds of
 segments; we read the ones we compare.
 
+## Not in this dataset — checked by segment, not by extension
+
+The opening claim is worth being able to defend precisely. Probing the
+content of all 250 attachments rather than their file names:
+
+| probe | matches |
+|---|---|
+| X12 interchange, group or transaction header (`ISA*`, `GS*`, `ST*`) | 0 |
+| EDIFACT interchange or message header (`UNB+`, `UNH+`) | 0 |
+
+The corpus is 192 `.txt`, 28 `.pdf`, 22 `.xlsx`, 8 `.docx`. There is no EDI
+in it in any dialect. Volunteer that zero before anyone finds it: said
+first it reads as scope awareness, found first it reads as padding.
+
+## Is X12 the right dialect for this client?
+
+Probably not — and the reader survives that, as long as the claim is stated
+as architecture rather than as market knowledge.
+
+X12 is the North American standard. The shippers in this dataset are
+`APRIL Far East (M) Sdn Bhd` and `APRIL Fine Paper Trading (Middle East)
+FZE`, loading in Asia and the Middle East and discharging in Korea,
+Australia and Peru. On those lanes an instruction is more likely to reach
+the carrier as UN/EDIFACT, through a carrier portal, or over a carrier API.
+
+So the defensible sentence is *"a 304 is the transaction an ocean carrier
+takes a shipping instruction on, and reading it shows the extract stage is
+format-independent"*. The sentence to avoid is *"this is what Averis
+receives"* — we have not checked what Averis receives, and the answer is not
+in the dataset. Averis sits on the shipper's side of the exchange anyway;
+the party that sets the message format is the carrier.
+
+## The other intake channels
+
+Background for the roadmap and for questions, **not checked against a
+specification the way the 304 work above was.** Verify before any of it goes
+on a slide.
+
+**UN/EDIFACT `IFTMIN`** — the instruction message, EDIFACT's equivalent of a
+304, and the standard outside North America. Same shape of problem:
+segments, separators, qualifiers. It would be a second dialect inside
+`backend/read/edi.py` with its own qualifier table, and nothing downstream
+would change. This is the one to build first, if any.
+
+**Carrier portals — INTTRA, now part of E2open.** The shipper submits one
+instruction and the portal fans it out to several carriers. Intake here is
+not a parsing problem: it is an account, a connection, and whatever export
+the portal offers.
+
+**DCSA APIs.** The Digital Container Shipping Association, set up by the
+major container carriers, publishes standard APIs covering shipping
+instructions and bills of lading. The direction of travel rather than
+today's reality — and the easiest of the three to consume, because it is
+JSON against a published schema.
+
+Only the first of those three is more parsing. The other two replace the
+reader with an integration, which is the same "months of work, almost none
+of it parsing" point as AS2 and VANs above.
+
+### Wording for the roadmap slide
+
+> More intake channels. X12 304 reads today. Next: EDIFACT IFTMIN, the
+> standard outside North America; carrier portals such as INTTRA/E2open;
+> and the DCSA shipping-instruction API.
+
 ## Sources
 
 - C.H. Robinson, 4010 X12 304 carrier specification — the sample and the
