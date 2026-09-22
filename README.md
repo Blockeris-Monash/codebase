@@ -111,7 +111,29 @@ python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
 ```
 
 If the tests print 263 passed, you are done — that is the whole system checked
-offline.
+offline, with no key and no network.
+
+The suite prints its own grouped report rather than a wall of dots, so the run
+says what it proved:
+
+| | |
+|---|---|
+| **Formats** | txt, Word, Excel and PDF parse; 242 of 250 read; the other 8 escalate |
+| **EDI 304** | a different format reaching the same seven fields, delimiters read from the ISA rather than assumed, pounds converted, net weight not counted as gross |
+| **Label alignment** | each shape of variation, CJK stripped before lookup, the `NET WEIGHT` decoy not claimed |
+| **Comparison rules** | the locode decoy, counts, weights, suffixes; `N/A`, `TBA` and `____MT` have no value |
+| **Ordering** | a blank is checked before a mismatch, so formatting is never a discrepancy |
+| **Escalation wording** | the blank token is quoted rather than summarised, the wrong document names what it declares itself, a pasted address is truncated |
+| **Shipment reference** | both reference shapes and neither, and that `INTERNATIONAL` is not one |
+| **Classification** | the body decides, all five categories, and the evidence is true of the email |
+| **Failure modes** | a missing file, an unknown format, a corrupt zip and a near-empty document all escalate; 250 files, zero exceptions |
+| **Cross-check** | two independent comparators reaching the same verdict on 126 emails |
+| **Contracts** | every fixture against its schema, plus a regression guard on each |
+| **End to end** | eight emails, eight outcomes, and a person gets the reason |
+
+That is a selection; the run prints all seventeen areas. Five further tests need
+a model key and skip without one — they are the only ones that reach the
+network.
 
 ### 4 · Run it
 

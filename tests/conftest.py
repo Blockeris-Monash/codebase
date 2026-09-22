@@ -110,6 +110,22 @@ REPORT_AREAS: list[tuple[str, str, str]] = [
     ("every_scenario_has_a_fixture", "Contracts", "scenarios and files agree"),
     ("every_review_reason", "Contracts", "all 4 escalation reasons exercised"),
     ("submission_sample", "Contracts", "one entry per fixture"),
+    # Specific claims first: _area_for takes the first needle that matches, so the
+    # per-file catch-alls below have to come last or they would swallow everything.
+    ("token_a_blank_used", "Escalation wording", "the blank token is quoted, not summarised"),
+    ("empty_value_is_called_blank", "Escalation wording", "nothing is never quoted as \"\""),
+    ("side_that_was_blank", "Escalation wording", "the side that was blank is the side named"),
+    ("long_value_does_not_run", "Escalation wording", "a pasted address is truncated"),
+    ("quote_in_the_value", "Escalation wording", "quotes survive for the screen to escape"),
+    ("wrong_document_is_named", "Escalation wording", "the file names what it declares itself"),
+    ("unreadable_names_the_file", "Escalation wording", "the file that would not open is named"),
+    ("test_evidence.py", "Escalation wording", "edges: none, both sides, no status"),
+    ("english_word_is_not_a_shipment", "Shipment reference", "INTERNATIONAL is not a reference"),
+    ("reference_is_read_from_the_subject", "Shipment reference", "both shapes, and neither"),
+    ("subject_wins_over_the_body", "Shipment reference", "the row shows what the list shows"),
+    ("first_reference_wins", "Shipment reference", "repeatable, never \"any of them\""),
+    ("waiting_on_a_draft_bl_can_be_chased", "Shipment reference", "the chase list keeps its key"),
+    ("test_shipment_ref.py", "Shipment reference", "case, absence, and the entry it writes"),
 ]
 UNGROUPED = "Other"
 
