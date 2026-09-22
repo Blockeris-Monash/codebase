@@ -91,7 +91,7 @@ Then, in the project folder either way.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell):**
@@ -100,7 +100,7 @@ python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
 ```
 
 Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database.
