@@ -26,7 +26,8 @@ Everything below is the fastest path from "never seen this" to "it works".
 The app is a static page carrying its own results — all 520 emails, every
 comparison already run — so it opens with no backend, no key and no network.
 Only **Check again with AI** calls the API, which sits on a free host and can
-take about 100 seconds to wake. A private window gives the cleanest first look:
+take about 100 seconds to wake — and re-runs the model, so it depends on a
+gateway we do not control. Nothing else on the page needs it. A private window gives the cleanest first look:
 the page remembers your language, panel width and which emails you marked as
 checked. Use an ordinary window to try the phone home screen icon.
 
@@ -226,6 +227,34 @@ Three outcomes:
 - **Mismatch** — a field differs, and the report names which.
 - **Needs review** — a blank value, an unreadable file, the wrong document type
   or a missing attachment. No value is inferred.
+
+### What is live, and what is a prototype
+
+Worth saying plainly, because it changes how to read everything below.
+
+**The AI ran, and its output is committed.** Qwen classified all 520 emails and
+extracted the seven fields from all 250 attachments. Those results are in
+`results/classifications/` and `results/extracts/`, and they are what the review
+app shows. Every category, every field and every verdict you see began as a
+model reading a document.
+
+**The AI does not re-run when you open it.** This is a prototype: you are
+looking at saved model output, not a live call, and we are not going to ask a
+judge for an API key to prove otherwise. Everything *downstream* of the model
+does run live on your machine — the readers parse all 250 attachments, and the
+deterministic comparator recomputes every verdict from the extracts. That is the
+half that decides outcomes, and it is the half you can check.
+
+**You can verify the model's work without a model.** `python -m cli.evidence`
+compares the saved AI extraction against an independent rules reader that uses
+no AI at all: **1,690 of 1,694 fields agree, 0 conflicting values**. Two
+independent readers of the same 250 files reaching the same answers is the
+strongest thing we can offer offline, and it needs no key, no network and no
+trust in us.
+
+What you cannot check without a key is whether the model would produce those
+same extracts again today. We think that is the right trade for a prototype, and
+we would rather state it than let a reproducible score imply more than it does.
 
 An escalation names the cause, not the category. Not *"missing value in
 gross_weight_kg"* but **`Missing value: gross_weight_kg reads "TBA" on the
