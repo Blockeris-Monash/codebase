@@ -659,8 +659,14 @@ function render(){
   const isDark = rootTheme ? rootTheme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
   const onNext = location.hash==="#/next";
   const q = sel=>document.querySelector(sel);
-  const keep = S.reset ? null : {pane:(q(".pane")||{}).scrollTop, list:(q(".list")||{}).scrollTop, y:window.scrollY};
-  S.reset = false;
+  // The whole app is rebuilt by one innerHTML write below, so every scroll box comes back
+  // at 0. These put them back. The list and the pane reset independently: selecting an
+  // email must start the pane at the top, but it does not change the list, which on a wide
+  // screen is a separate box still on show and should stay where the reader left it.
+  const keep = {pane: S.resetPane ? null : (q(".pane")||{}).scrollTop,
+                list: S.resetList ? null : (q(".list")||{}).scrollTop,
+                y: (S.resetList || S.resetPane) ? null : window.scrollY};
+  S.resetList = false; S.resetPane = false;
   const list = items(), total = list.length, from = total?S.page*PAGE+1:0, to = Math.min(total,(S.page+1)*PAGE);
   const pagerHTML = `<div class="pager small num"><span>${t("{from}\u2013{to} of {total}",{from,to,total})}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="${t("Newer emails")}" title="${t("Newer emails")}">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="${t("Older emails")}" title="${t("Older emails")}">${ICON.RIGHT}</button></span></div>`;
   const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
@@ -684,7 +690,10 @@ function render(){
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
   if(brand&&q(".brand")) q(".brand").replaceWith(brand);
   else if(!logoIntro){ logoIntro=true; const m=q(".mark"); if(m){ m.classList.add("go"); setTimeout(()=>m.classList.remove("go"),4000); } }
-  if(keep){ const pane=q(".pane"), list=q(".list"); if(pane&&keep.pane) pane.scrollTop=keep.pane; if(list&&keep.list) list.scrollTop=keep.list; if(keep.y) window.scrollTo(0,keep.y); }
+  { const pane=q(".pane"), list=q(".list");
+    if(pane&&keep.pane) pane.scrollTop=keep.pane;
+    if(list&&keep.list) list.scrollTop=keep.list;
+    if(keep.y) window.scrollTo(0,keep.y); }
   if(S.fade){ S.fade=false; const dt=q(".detail"); if(dt) dt.classList.add("fadein"); }
   if(!S.counted){ S.counted=true; countUp(); }
   if(S.markScroll){ S.markScroll=false; document.querySelectorAll(".text .srcline").forEach(m=>{ const box=m.closest(".text"); box.scrollTop = Math.max(0, m.offsetTop - 40); }); }
@@ -741,14 +750,14 @@ document.addEventListener("click", ev=>{
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
-  else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.reset=true; }
-  else if(a==="newer"){ S.page--; S.reset=true; } else if(a==="older"){ S.page++; S.reset=true; }
-  else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.reset=true; }
+  else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
+  else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
+  else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
   else if(a==="hl"){ S.hl = S.hl===k ? null : k; if(S.hl){ S.docs=true; S.markScroll=true; } }
-  else if(a==="first"){ const f=items()[0]; if(f){ S.fade=true; S.hl=null; S.sel=f.id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.reset=true; } }
-  else if(a==="clearq"){ S.q=""; S.page=0; S.reset=true; }
-  else if(a==="allmail"){ S.f="all"; S.page=0; S.reset=true; }
-  else if(a==="back"){ S.sel=null; S.draft=null; S.reset=true; }
+  else if(a==="first"){ const f=items()[0]; if(f){ S.fade=true; S.hl=null; S.sel=f.id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; } }
+  else if(a==="clearq"){ S.q=""; S.page=0; S.resetList=true; }
+  else if(a==="allmail"){ S.f="all"; S.page=0; S.resetList=true; }
+  else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); }
@@ -761,19 +770,19 @@ document.addEventListener("click", ev=>{
   render();
 });
 document.addEventListener("input", ev=>{
-  if(ev.target.id==="q"){ S.q=ev.target.value; S.page=0; S.reset=true; if(matchMedia("(max-width:820px)").matches) S.sel=null; render(); return; }
+  if(ev.target.id==="q"){ S.q=ev.target.value; S.page=0; S.resetList=true; if(matchMedia("(max-width:820px)").matches){ S.sel=null; S.resetPane=true; } render(); return; }
   const fbf = ev.target.dataset.fb;
   if(fbf){ S.fb[fbf]=ev.target.value; S.fb.err=false; S.fb.copied=false; return; }   // no redraw while typing
   const f = ev.target.dataset.f;
   if(f && S.draft) S.draft[f] = ev.target.value;   // no redraw while typing, or the cursor would jump
 });
 document.addEventListener("change", ev=>{
-  if(ev.target.dataset.a==="foldersel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.reset=true; render(); }
+  if(ev.target.dataset.a==="foldersel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; render(); }
 
 });
 function goTo(e){
   const at = items().indexOf(e);
-  S.sel=e.id; S.page=Math.floor(at/PAGE); S.docs=true; S.body=false; S.how=false; S.draft=null; S.reset=true; S.keyNav=true; S.fade=true; S.hl=null;
+  S.sel=e.id; S.page=Math.floor(at/PAGE); S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; S.fade=true; S.hl=null;
   render();
 }
 /* Right opens the next email in the list, Left the previous one */
@@ -783,7 +792,7 @@ function stepKey(key){
   if(at>=0 && n) goTo(n);
 }
 document.addEventListener("keydown", ev=>{
-  if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.reset=true; render(); return; }
+  if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.resetList=true; render(); return; }
   if(ev.key==="Escape"&&(S.help||S.langDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && ev.target.classList.contains("src")){ ev.preventDefault(); ev.target.click(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
