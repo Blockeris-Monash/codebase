@@ -35,6 +35,10 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Test count: 231 to 263 without a model key.** The 1.0.0 figure above is left
+  as it was - it was true of that release and a changelog that edits its own
+  history is worth nothing.
+
 - **An escalation now names its cause instead of its category.** `Missing value
   detected in fields: gross_weight_kg` became `Missing value: gross_weight_kg
   reads "TBA" on the SI`, and `attached files could not be confirmed as SI and
