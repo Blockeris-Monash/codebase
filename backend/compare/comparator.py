@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.compare.evidence import describe_blanks, describe_unreadable, describe_wrong_doc
 from backend.compare.normalise import normalise
 
 # Distinguishes "no norm key at all" from "norm supplied as None".
@@ -165,7 +166,7 @@ def compare(
             review_reason="unreadable",
             rows=[],
             defect_fields=[],
-            evidence="Unreadable document: extraction stage could not parse document contents.",
+            evidence=describe_unreadable(si_doc.get("parse_status"), bl_doc.get("parse_status")),
         )
 
     # Pre-check 3: Wrong document type
@@ -176,7 +177,8 @@ def compare(
             review_reason="wrong_doc_type",
             rows=[],
             defect_fields=[],
-            evidence="Document type error: attached files could not be confirmed as SI and BL.",
+            evidence=describe_wrong_doc(si_doc.get("detected_doc_type"),
+                                        bl_doc.get("detected_doc_type")),
         )
 
 
@@ -184,6 +186,9 @@ def compare(
     rows: List[Row] = []
     defect_fields: List[FieldType] = []
     missing_fields: List[str] = []
+    # (field, si_raw, bl_raw, si_absent, bl_absent) - the token a blank used is the
+    # difference between chasing a value and rejecting a form, so it is kept.
+    blanks: List[tuple] = []
 
     si_fields = si_doc.get("fields", {})
     bl_fields = bl_doc.get("fields", {})
@@ -211,6 +216,9 @@ def compare(
             defect_fields.append(field_name)  # type: ignore
         elif verdict == "missing":
             missing_fields.append(field_name)
+            si_absent = si_norm is None or not str(si_norm).strip()
+            bl_absent = bl_norm is None or not str(bl_norm).strip()
+            blanks.append((field_name, si_raw, bl_raw, si_absent, bl_absent))
 
         rows.append(
             Row(
@@ -231,7 +239,7 @@ def compare(
             review_reason="missing_value",
             rows=rows,
             defect_fields=[],  # Schema specifies defect_fields empty unless status == MISMATCH
-            evidence=f"Missing value detected in fields: {', '.join(missing_fields)}.",
+            evidence=describe_blanks(blanks),
         )
 
     # Priority Rule 2: Hard discrepancies trigger MISMATCH

@@ -7,6 +7,57 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The shipment an email is about, on the row and in the search.** Their service
+  list includes *support the Commercial team on any shipping documentation query
+  raised by the end customer*, which is lookup by reference rather than triage —
+  a different job from the one the seven-field check does. Typing `5ALT-01226`
+  or `OOLU9284044566` now finds the email, and the reference shows on the row
+  without opening it. 394 of the 520 emails carry one, including 80 of the 91
+  waiting on a draft BL, which is the same key the chase list on the roadmap
+  would use.
+
+  Extracted in `cli/make_results.py` rather than in the page, because Python is
+  where this repository can test it. The pattern demands a run of four digits
+  after the four-letter prefix: without that, `[A-Z]{4}[A-Z0-9]{6,}` also matches
+  INTERNATIONAL, OUTSTANDING and INVESTMENT — thirteen English words in these
+  subjects alone, every one a false reference on a reviewer's screen.
+
+- **`docs/06-disagreement-log.md`.** The use case asks that a result differing
+  from the reference be checked against the source documents and the reason
+  recorded. Ours differs in exactly one place, 91 times: the reference marks 91
+  emails carrying no attachments at all as a comparison with status `OK`, which
+  its own schema defines as "compared cleanly, everything matches". Nothing was
+  compared. We escalate them instead, and the log states what that costs us —
+  escalation precision 0.180 on the diagnostic axis — rather than only what it
+  buys.
+
+### Changed
+
+- **An escalation now names its cause instead of its category.** `Missing value
+  detected in fields: gross_weight_kg` became `Missing value: gross_weight_kg
+  reads "TBA" on the SI`, and `attached files could not be confirmed as SI and
+  BL` became `the file sent as the BL declares itself "PACKING LIST"`.
+
+  The distinction is operational, not cosmetic: `TBA` means a value is coming and
+  someone should be chased, `_______` means a form went out unfilled and the
+  document goes back, and `N/A` means a person made a call. One bucket was three
+  replies. Both facts were already in hand when the escalation was built and were
+  being discarded — the raw token sits in the comparison loop, and
+  `detect_doc_type` returns the document's own declared title.
+
+  No contract change: `evidence` is already described in contract 4 as "one line
+  naming what happened", which is exactly this. Phrasing lives in one module,
+  `backend/compare/evidence.py`, because two stages produce contract 4 — the
+  reference implementation and the production comparator — and two sentences for
+  one fact is how they drift apart.
+
+  Consequences handled in the same change rather than left to be found:
+  `fixtures/` and `frontend/results.js` both carry evidence strings and are
+  regenerated here, so the screen and the API cannot disagree.
+
+
 ## [1.0.0] — 2026-09-22
 
 First complete version: the Averis x Monash Hackathon 2026 submission. Reads a
