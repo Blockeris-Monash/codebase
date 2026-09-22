@@ -8,9 +8,11 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
 - Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
   comparison already run. On a phone you can add it to the home screen as an
   icon that opens the same page.
-- Backend: <https://blockeris-backend.onrender.com> (`/health` returns `{"status": "ok"}`).
-  The **Check again with AI** button in the app calls it. It runs on a free
-  host, so the first request after a quiet spell can take about 100 seconds.
+- Backend: <https://blockeris-backend.onrender.com/docs> — every endpoint
+  listed, and runnable from the page. (`/health` returns `{"status": "ok"}`;
+  the bare root is not a page and answers 404.) The **Check again with AI**
+  button in the app calls this service. It runs on a free host, so the first
+  request after a quiet spell can take about 100 seconds.
 
 A private or incognito window gives a clean first look: the page remembers your
 language, your panel width and which emails you marked as checked, and it
@@ -118,13 +120,9 @@ codebase/
 The organiser Docker kit stays out, and `.gitignore` blocks it by both path
 and filename: it contains the answer key.
 
-`loader.py` is the organisers' own loader, unmodified, so their access code
-runs against this repo as-is:
-
-```python
-from loader import Inbox
-inbox = Inbox("data")          # or Inbox("http://localhost:8081") for the kit
-```
+`loader.py` at the root is the organisers' own loader, byte-for-byte
+unmodified, and `data/` keeps the bundle's layout — so the dataset is the one
+they shipped, reachable the documented way (`Inbox("data")`).
 
 Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
 
