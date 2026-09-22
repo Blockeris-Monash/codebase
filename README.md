@@ -65,7 +65,7 @@ python3 -m venv .venv
 
 Python 3.12. No database. The review app, the tests and the saved comparison
 path need no API key. Only the live model calls do, and each is marked below.
-On Windows the venv paths are `.venv\Scripts\python` and `.venv\Scripts\pip`.
+On Windows, use python or py instead of python3, and access virtual environment binaries via .\.venv\Scripts\ instead of .venv/bin/.
 
 ### See the prototype
 
