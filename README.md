@@ -197,6 +197,19 @@ Three outcomes:
 - **Needs review** — a blank value, an unreadable file, the wrong document type
   or a missing attachment. No value is inferred.
 
+An escalation names the cause, not the category. Not *"missing value in
+gross_weight_kg"* but **`Missing value: gross_weight_kg reads "TBA" on the
+SI`**; not *"could not be confirmed as SI and BL"* but **`the file sent as the
+BL declares itself "PACKING LIST"`**. The difference is what a reviewer does
+next: `TBA` means a value is coming and someone should be chased, `_______`
+means a form went out unfilled and the document goes back.
+
+Each email also carries the shipment it is about — an order reference like
+`5ALT-01226` or a carrier booking like `OOLU9284044566`, shown on the row and
+accepted by the search box. 394 of the 520 carry one. That answers a different
+question from triage: *Commercial is asking about this shipment, what happened
+to it?*
+
 ## The dataset is in the repo
 
 `data/` holds the 520 emails and 250 attachments. The organisers confirmed
@@ -343,19 +356,14 @@ A low-confidence read must land on `missing_value` rather than a forced verdict,
 so that a missing field still outranks a mismatch and an OCR guess never
 masquerades as a value read from the page.
 
-**3. Find a shipment by its reference.** Their service catalogue includes
-*support the Commercial team on any shipping documentation query raised by the
-end customer* — which is lookup across the 601 distinct shipment references in
-this inbox, a different job from triage. The search box already matches them as
-text; what is missing is showing the reference on each row and saying that the
-box accepts one. Closer to a labelling change than a feature, and it makes the
-chase list in item 1 more useful, since both are keyed on the same reference.
-
-**4. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
+**3. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
 once, so the inbox is live rather than a fixed dataset. Send the reply from the
 product; today the drafted reply is shown and the send is a demo. It is also the
 enabler under item 1 — it supplies the date of shipment that makes the deadline
 countable.
+
+*Finding a shipment by its reference was item 3 here and is now built; see
+**How it works** above.*
 
 **Later — reliability and intake.** A confidence score on the extraction, retried
 before escalating. More intake channels: the X12 304 reader already exists, and
