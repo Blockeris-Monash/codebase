@@ -38,9 +38,9 @@ def bundle(tmp_path: Path) -> Path:
     inbox.mkdir()
     attachments.mkdir()
     for email in (EMAIL, SECOND_EMAIL):
-        (inbox / f"{email['email_id']}.json").write_text(json.dumps(email))
-    (attachments / "email_001_SI.txt").write_text(SI_TEXT)
-    (tmp_path / "sample_submission.json").write_text(json.dumps(SAMPLE_SUBMISSION))
+        (inbox / f"{email['email_id']}.json").write_text(json.dumps(email), encoding="utf-8")
+    (attachments / "email_001_SI.txt").write_text(SI_TEXT, encoding="utf-8")
+    (tmp_path / "sample_submission.json").write_text(json.dumps(SAMPLE_SUBMISSION), encoding="utf-8")
 
     return tmp_path
 

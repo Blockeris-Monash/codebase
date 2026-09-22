@@ -27,10 +27,10 @@ class FakeExtractor:
 def attachments(tmp_path: Path) -> Path:
     folder = tmp_path / "attachments"
     folder.mkdir()
-    (folder / "email_001_SI.txt").write_text(SI_TEXT)
-    (folder / "email_001_BL.txt").write_text(SI_TEXT.replace("SHIPPING INSTRUCTION", "BILL OF LADING"))
-    (folder / "email_002_SI.txt").write_text("nothing readable here")
-    (folder / "notes.txt").write_text("not an SI or BL")
+    (folder / "email_001_SI.txt").write_text(SI_TEXT, encoding="utf-8")
+    (folder / "email_001_BL.txt").write_text(SI_TEXT.replace("SHIPPING INSTRUCTION", "BILL OF LADING"), encoding="utf-8")
+    (folder / "email_002_SI.txt").write_text("nothing readable here", encoding="utf-8")
+    (folder / "notes.txt").write_text("not an SI or BL", encoding="utf-8")
     return folder
 
 
@@ -64,7 +64,7 @@ def test_run_batch_writes_one_json_per_si_or_bl(attachments: Path, tmp_path: Pat
 
     assert sorted(p.name for p in out.glob("*.json")) == [
         "email_001_BL.json", "email_001_SI.json", "email_002_SI.json"]
-    assert json.loads((out / "email_001_SI.json").read_text())["parse_status"] == "ok"
+    assert json.loads((out / "email_001_SI.json").read_text(encoding="utf-8"))["parse_status"] == "ok"
     assert summary == {"done": 3, "skipped": 0, "failed": []}
 
 

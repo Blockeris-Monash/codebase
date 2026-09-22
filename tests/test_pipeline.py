@@ -29,7 +29,7 @@ EXPECTED_OUTCOMES = [
 
 
 def load_email(data_dir: Path, email_id: str) -> dict[str, object]:
-    return json.loads((data_dir / "inbox" / f"{email_id}.json").read_text())
+    return json.loads((data_dir / "inbox" / f"{email_id}.json").read_text(encoding="utf-8"))
 
 
 # --- the eight outcomes -------------------------------------------------
@@ -178,8 +178,8 @@ def test_every_email_with_attachments_is_a_comparison(data_dir: Path) -> None:
     """Attachments are not the gate - 3 comparisons have none - but nothing
     that carries documents belongs to another category."""
     wrong = [p.stem for p in sorted((data_dir / "inbox").glob("email_*.json"))
-             if json.loads(p.read_text())["attachments"]
-             and classify_from_body(json.loads(p.read_text()))[0] != "BL_COMPARISON"]
+             if json.loads(p.read_text(encoding="utf-8"))["attachments"]
+             and classify_from_body(json.loads(p.read_text(encoding="utf-8")))[0] != "BL_COMPARISON"]
 
     assert wrong == []
 
@@ -198,7 +198,7 @@ def test_the_subject_line_alone_cannot_separate_the_categories(data_dir: Path) -
 @pytest.mark.parametrize("path", sorted(FIXTURES.glob("[0-9][0-9]-*.json")),
                          ids=lambda p: p.stem)
 def test_fixture_satisfies_every_contract_it_carries(path: Path) -> None:
-    bundle = json.loads(path.read_text())
+    bundle = json.loads(path.read_text(encoding="utf-8"))
     errors: list[str] = []
     for key in ("EmailRecord", "ClassificationResult", "ComparisonResult", "SubmissionEntry"):
         if bundle.get(key) is not None:
@@ -213,7 +213,7 @@ def test_fixture_still_matches_what_the_pipeline_produces(data_dir: Path,
                                                           path: Path) -> None:
     """The regression guard. Change a rule and any fixture it moves fails
     here, instead of surfacing later as an unexplained score drop."""
-    bundle = json.loads(path.read_text())
+    bundle = json.loads(path.read_text(encoding="utf-8"))
     _, _, comparison = build(str(data_dir), load_email(data_dir, bundle["_why"]["email_id"]))
 
     assert comparison == (bundle["ComparisonResult"] or comparison)
@@ -230,7 +230,7 @@ def test_every_review_reason_has_a_worked_example() -> None:
     that branch."""
     reasons = set()
     for path in FIXTURES.glob("[0-9][0-9]-*.json"):
-        comparison = json.loads(path.read_text()).get("ComparisonResult")
+        comparison = json.loads(path.read_text(encoding="utf-8")).get("ComparisonResult")
         if comparison and comparison["review_reason"]:
             reasons.add(comparison["review_reason"])
 
@@ -238,6 +238,6 @@ def test_every_review_reason_has_a_worked_example() -> None:
 
 
 def test_submission_sample_has_one_entry_per_fixture() -> None:
-    submission = json.loads((FIXTURES / "SubmissionSample.json").read_text())
+    submission = json.loads((FIXTURES / "SubmissionSample.json").read_text(encoding="utf-8"))
 
     assert len(submission) == len(load_scenarios())
