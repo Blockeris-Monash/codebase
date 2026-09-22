@@ -5,7 +5,7 @@ Every number below is computed by `python3 -m cli.evidence` from files in this r
 ## 1. Extraction: AI against an independent rules reader
 - 242 documents, 1694 fields compared after normalising both sides.
 - Agree: 1690 (99.8%). Conflicting values: 0. AI only: 4. Rules only: 0.
-- Agreement does not prove both are right, so the hand check (see results/validation-summary.md) reads the source files.
+- Agreement does not prove both are right: it shows two independent readers of the same file reaching the same value.
 
 ## 2. Detection: injected defects
 - 63 emails that compare as OK; one field of the BL broken at a time.

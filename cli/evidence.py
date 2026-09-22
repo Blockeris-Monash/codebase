@@ -153,7 +153,7 @@ def render(report: dict) -> str:
             f"- Agree: {ext['tally'].get('agree', 0)} ({pct(ext['tally'].get('agree', 0), ext['fields'])}). "
             f"Conflicting values: {ext['tally'].get('differ', 0)}. "
             f"AI only: {ext['tally'].get('ai_only', 0)}. Rules only: {ext['tally'].get('rules_only', 0)}.",
-            "- Agreement does not prove both are right, so the hand check (see results/validation-summary.md) reads the source files.", ""]
+            "- Agreement does not prove both are right: it shows two independent readers of the same file reaching the same value.", ""]
     mut = report["mutation"]
     trials = sum(s["trials"] for s in mut["defects"].values())
     caught = sum(s["detected"] for s in mut["defects"].values())
