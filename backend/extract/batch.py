@@ -74,7 +74,7 @@ def run_batch(attachments_dir: Path, out_dir: Path, extractor: AiExtractor,
                 continue
 
             (out_dir / f"{path.stem}.json").write_text(
-                json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+                json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
             summary["done"] += 1
             log(f"[{number}/{len(todo)}] {path.name}: {result['parse_status']}")
 

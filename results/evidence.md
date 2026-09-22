@@ -27,6 +27,11 @@ Every number below is computed by `python3 -m cli.evidence` from files in this r
 - The 91 draft-BL requests with nothing attached are excluded from that share. They reach a person either way, so counting them as checks the pipeline failed to clear would misstate both numbers.
 - Time spared (an ESTIMATE, not a measurement): at 2 minutes per manual check, about 2.1 hours; at 3 minutes per manual check, about 3.1 hours; at 5 minutes per manual check, about 5.2 hours for the 63 cleared emails. The minutes per check are an assumption, not data.
 
+## Waiting on a document
+- 91 emails ask for a check and carry no draft BL to check. They are routed to comparison and escalated, not counted as comparisons.
+- 80 of those name a shipment reference, across 20 senders - enough to chase by hand today.
+- 394 of the 520 emails carry a shipment reference, and no two carry the same one (394 distinct), so a reference identifies one email.
+
 ## Speed (measured, live Qwen)
 - 10 emails checked live one at a time: median 24.7 s, mean 25.4 s, slowest 43.8 s per email.
 - The live answer matched the saved answer on 10 of 10.

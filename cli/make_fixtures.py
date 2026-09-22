@@ -181,7 +181,7 @@ def write_fixtures(data_dir: str, out: Path) -> dict[str, SubmissionEntry]:
         bundle, entry = build_bundle(data_dir, scenario)
         submission[scenario["email_id"]] = entry
         filename = numbered(index, scenario["name"])
-        (out / filename).write_text(json.dumps(bundle, indent=2) + "\n", encoding="utf-8")
+        (out / filename).write_text(json.dumps(bundle, indent=2) + "\n", encoding="utf-8", newline="\n")
         print(f"{filename:34} {scenario['email_id']}  "
               f"{entry['status']:12} {entry['defect_fields']}")
 
@@ -198,7 +198,7 @@ def main() -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     submission = write_fixtures(args.data, out)
-    (out / "SubmissionSample.json").write_text(json.dumps(submission, indent=2) + "\n", encoding="utf-8")
+    (out / "SubmissionSample.json").write_text(json.dumps(submission, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"\n{len(submission)} fixtures + SubmissionSample.json -> {out}/")
 
     return 0

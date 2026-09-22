@@ -41,7 +41,7 @@ for filename in sample_files:
     result = extract_attachment(path, extractor)
 
     if result:
-        out_file.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        out_file.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
         print(f"✅ Saved to {out_file}")
     else:
         print(f"❌ Failed to extract {filename}")

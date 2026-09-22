@@ -323,7 +323,9 @@ backend/
 cli/      demo_read  demo_pipeline  smoke_test  validate_contracts
           make_fixtures  make_results  evidence  mutation_check  latency
 frontend/ index.html  results.js  config.js   the review UI, static
-          manifest.json  sw.js  icons         home screen icon on a phone
+          i18n.js                             English, Malay, Chinese
+          manifest.json  sw.js  vercel.json   home screen icon on a phone
+          icon-192.png  icon-512.png  apple-touch-icon.png  favicon-32.png
 ```
 
 Run a CLI as a module so imports resolve from the repo root:
@@ -338,6 +340,7 @@ python -m cli.demo_pipeline email_004   # one email through all five stages
 One command rebuilds every validation number from files in this repo:
 
 ```bash
+# in the activated environment — these import the backend
 python -m cli.evidence            # writes results/evidence.md
 python -m cli.mutation_check      # break one BL field at a time, check the verdict
 python -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
@@ -390,8 +393,8 @@ What we would build next, in order. None of it is in this version.
 129 arrive with both documents and **91 are waiting on a draft Bill of Lading
 that has not been sent yet**. We already file those on their own rather than as
 review cases; the next step is to do something with them. A chase list: who owes
-which draft BL, against which shipment reference — 62 of the 91 already carry
-that reference in the subject line, across 20 senders — ordered by how long it
+which draft BL, against which shipment reference — 80 of the 91 already carry
+that reference, across 20 senders — ordered by how long it
 has been outstanding.
 
 That is a larger share of the work than the comparison itself, and it is not

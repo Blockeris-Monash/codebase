@@ -82,6 +82,26 @@ def pipeline_summary(results: list[dict]) -> dict:
     }
 
 
+def waiting_summary(results: list[dict]) -> dict:
+    """The emails asking for a check whose draft BL never arrived.
+
+    Every other figure on this page is rebuilt here; these were quoted in the
+    roadmap with no derivation, which is exactly the gap this file exists to
+    close. `shipment_ref` is imported rather than re-implemented so the count
+    cannot drift from what the review screen actually shows.
+    """
+    from cli.make_results import shipment_ref
+
+    waiting = [e for e in results if e.get("awaiting")]
+    refs = {r for e in results if (r := shipment_ref(e["subject"], e.get("body", "")))}
+    return {"waiting": len(waiting),
+            "with_reference": sum(1 for e in waiting
+                                  if shipment_ref(e["subject"], e.get("body", ""))),
+            "senders": len({e["from"] for e in waiting}),
+            "distinct_references": len(refs),
+            "carrying_a_reference": sum(1 for e in results if e.get("ref"))}
+
+
 def impact_estimate(cleared: int, minutes_per_check: tuple) -> dict:
     """Hours a person is spared when `cleared` checks need no human, for each assumed minutes per check."""
     return {m: round(cleared * m / 60, 1) for m in minutes_per_check}
@@ -188,6 +208,16 @@ def render(report: dict) -> str:
     out += ["- Time spared (an ESTIMATE, not a measurement): "
             + "; ".join(f"at {m} minutes per manual check, about {h} hours" for m, h in hours.items())
             + f" for the {cleared} cleared emails. The minutes per check are an assumption, not data.", ""]
+    wait = report.get("waiting")
+    if wait:
+        out += ["## Waiting on a document",
+                f"- {wait['waiting']} emails ask for a check and carry no draft BL to check. "
+                f"They are routed to comparison and escalated, not counted as comparisons.",
+                f"- {wait['with_reference']} of those name a shipment reference, across "
+                f"{wait['senders']} senders - enough to chase by hand today.",
+                f"- {wait['carrying_a_reference']} of the {report['pipeline']['emails']} emails carry a "
+                f"shipment reference, and no two carry the same one "
+                f"({wait['distinct_references']} distinct), so a reference identifies one email.", ""]
     lat = report.get("latency")
     if lat:
         out += ["## Speed (measured, live Qwen)",
@@ -218,7 +248,8 @@ def build_report(args: argparse.Namespace) -> dict:
     data = Path(args.data)
     report = {"extraction": extraction_agreement(Path(args.extracts), data),
               "mutation": mutation_check.run_check(),
-              "pipeline": pipeline_summary(load_results_js(Path(args.results)))}
+              "pipeline": pipeline_summary(results := load_results_js(Path(args.results))),
+              "waiting": waiting_summary(results)}
     saved = Path(args.classifications)
     if saved.exists() and any(saved.glob("email_*.json")):
         classified = load_json_dir(saved)
@@ -248,7 +279,7 @@ def main() -> None:
     args = parser.parse_args()
 
     text = render(build_report(args))
-    Path(args.out).write_text(text + "\n", encoding="utf-8")
+    Path(args.out).write_text(text + "\n", encoding="utf-8", newline="\n")
     print(text)
 
 

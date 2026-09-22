@@ -79,7 +79,6 @@ for name, px, rf, bleed in [
     ("icon-512.png",        512, 0.22, True),
     ("apple-touch-icon.png",180, 0.00, True),
     ("favicon-32.png",       32, 0.18, False),
-    ("logo-256.png",        256, 0.22, False),
 ]:
     im = tile(px, rf, bleed)
     if name == "apple-touch-icon.png":
