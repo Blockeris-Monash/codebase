@@ -3,8 +3,26 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
+A draft BL that contradicts its shipping instruction is not a typo. A
+documentary credit is paid against documents rather than goods, so a discrepant
+presentation can be refused by the bank under UCP 600 and payment stalls until
+it is corrected. Averis's own published service list includes *"handle and
+resolve LC discrepancy"*, and transport documents are the largest single source
+of those discrepancies. Today someone opens both files and compares seven
+fields by hand, email by email. Sourcing, and one honest limit — nothing in the
+dataset says which shipments are under a credit — is in
+[`docs/05-company-profile.md`](docs/05-company-profile.md).
+
+**Contents** — [Try it live](#try-it-live) · [How it works](#how-it-works) ·
+[Setup](#setup) · [The dataset](#the-dataset-is-in-the-repo) ·
+[Where the code lives](#where-the-code-lives) · [Evidence](#evidence) ·
+[The five contracts](#the-five-contracts) ·
+[Who built what](#who-built-what) ·
+[Documents](#documents) · [The seven fields](#the-seven-compared-fields)
+
 ## Try it live
 
+- Demo video: <https://drive.google.com/file/d/1Q_G2_Z5LWUpWRgUgYhbz7QX10cK3SfSD/view>
 - Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
   comparison already run. On a phone you can add it to the home screen as an
   icon that opens the same page.
@@ -13,6 +31,16 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
   the bare root is not a page and answers 404.) The **Check again with AI**
   button in the app calls this service. It runs on a free host, so the first
   request after a quiet spell can take about 100 seconds.
+
+![The review screen with a mismatch open: 46 mismatches in the inbox, and for
+the open email six of the seven fields agree while gross weight differs — 40,326
+KG on the shipping instruction against 41,326 KG on the draft bill of lading —
+with both source documents shown underneath.](docs/img/review-mismatch.png)
+
+One email, decided. Six fields agree, gross weight does not: 40,326 KG on the
+shipping instruction against 41,326 KG on the draft bill of lading. The field is
+named, and both source documents sit underneath so a person can confirm it in
+seconds rather than reading two PDFs.
 
 A private or incognito window gives a clean first look: the page remembers your
 language, your panel width and which emails you marked as checked, and it
@@ -63,7 +91,7 @@ Then, in the project folder either way.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell):**
@@ -72,7 +100,7 @@ python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
 ```
 
 Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database.
@@ -210,37 +238,7 @@ organisers' key (`5e76cff`), so the classification score is fitted rather than
 held out, and we say so. The mutation check, the rules-reader agreement and the
 hand labels never touch the key.
 
-## Developer checks
-
-```bash
-# 1. dataset reachable, both ways
-python -m cli.smoke_test
-python -m cli.smoke_test http://localhost:8081
-
-# 2. regenerate stage fixtures from real emails
-python -m cli.make_fixtures --out fixtures
-
-# 3. check everything still satisfies the contracts
-python -m cli.validate_contracts
-```
-
-The scoring server runs on **8081**, not 8080 — 8080 is commonly taken. Start
-it from the organiser kit with `docker compose up -d`.
-
-`frontend/results.js` is a build artefact, not hand-written. It is every email
-with its category, its verdict and both documents, rebuilt from `results/` by:
-
-```bash
-python -m cli.make_results         # -> frontend/results.js
-```
-
-If you hold the organisers' `ground_truth.json`, you can score this yourself
-with their `score_cli.py`; our saved results come out at 1.0000. The repository
-ships no `submission.json`, because it is a self-check rather than a
-deliverable — `cli.make_fixtures` writes a `SubmissionSample.json` showing the
-shape.
-
-## Build against the contracts, not against each other
+## The five contracts
 
 Five shapes pass between stages, defined as JSON Schema in `contracts/` and
 explained in [`docs/00-contracts.md`](docs/00-contracts.md). A worked example
@@ -259,6 +257,8 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 4 ComparisonResult   5 SubmissionEntry
 ```
 
+## Who built what
+
 | Area | Owner |
 |---|---|
 | Data contracts, the readers for every file format, the phone home screen icon | Elyesa Tee |
@@ -267,57 +267,11 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 | Report screen wired to the live backend, hosting, merges, submission | Tan Le Han |
 | AI extraction and saved results, the review interface, validation evidence | Athith Kounsana |
 
-## Check your output before handing it on
+## Working on this
 
-Write one record to a JSON file and name the contract it should satisfy:
-
-```bash
-python -m cli.validate_contracts out.json ComparisonResult
-```
-
-Fixtures are numbered by scenario, not by email id — `01-Ok.json` through
-`11-SendDraftBlUnresolved.json`. Each carries a real email: `01-Ok.json` is
-`email_064`, `02-Mismatch.json` is `email_025`.
-
-Per stage:
-
-```bash
-python -m cli.validate_contracts record.json     EmailRecord
-python -m cli.validate_contracts classified.json ClassificationResult
-python -m cli.validate_contracts extracted.json  DocumentExtract
-python -m cli.validate_contracts compared.json   ComparisonResult
-python -m cli.validate_contracts entry.json      SubmissionEntry
-```
-
-With no arguments it checks every fixture instead:
-
-```bash
-python -m cli.validate_contracts
-```
-
-A failure names the field and what was wrong:
-
-```
-FAIL - 3 violation(s):
-  SubmissionEntry.status: 'MISMATCHED' not one of ['OK', 'MISMATCH', 'NEEDS_REVIEW']
-  SubmissionEntry.has_defect: expected boolean, got str
-  SubmissionEntry.defect_fields[1]: 'vessel' not one of [...]
-```
-
-Exit code is 0 on pass and 1 on failure, so it drops into CI or a pre-commit
-hook. Stdlib only — no `pip install`, so every stage can run it.
-
-Validating a whole submission before you POST it:
-
-```python
-import json
-from cli.validate_contracts import load_contract, validate
-
-schema, errors = load_contract("SubmissionEntry"), []
-for email_id, entry in json.load(open("submission.json")).items():
-    validate(entry, schema, email_id, errors)
-print(errors or "all 520 entries valid")
-```
+Team process — the developer checks, regenerating fixtures and validating a
+stage's output against its contract — is in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Documents
 

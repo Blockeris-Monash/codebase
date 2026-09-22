@@ -3,8 +3,11 @@
 The organisers do not define where a real mismatch ends and a formatting
 difference begins. This file is that decision plus the evidence behind it.
 
-Every claim below was measured against `inbox/` and `attachments/` only. The
-answer key was never opened, so "defect" means our reading of the documents.
+Every claim below was measured against `inbox/` and `attachments/` only, and
+every rule in this file was decided without opening the answer key — so
+"defect" here means our reading of the documents. The classifier prompt is a
+separate matter: that *was* corrected against the organisers' key (`5e76cff`),
+which the README records. No rule on this page was.
 
 Measured on: 94 `.txt` pairs, 7 `.xlsx/.xlsx` pairs.
 Not yet validated: 8 `.xlsx/.docx` pairs, 13 `.pdf/.pdf` pairs.
