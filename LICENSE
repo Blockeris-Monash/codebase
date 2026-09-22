@@ -1,0 +1,16 @@
+Copyright (c) 2026 Team Blockeris
+Ho Jia Jun · Muhammad Hanif Rafli · Athith Kounsana · Tan Le Han · Elyesa Tee
+
+All rights reserved.
+
+This software is published for the Averis x Monash Hackathon 2026 so that it
+can be read, reviewed and judged. No permission is granted to use, copy,
+modify, merge, publish, distribute, sublicense or sell it, in whole or in part,
+for any other purpose. Viewing and forking within GitHub, as GitHub's Terms of
+Service provide for any public repository, is not affected.
+
+This notice covers the team's own work only. The dataset in `data/`, the sample
+submission and `loader.py` are the hackathon organisers' material, included
+with their confirmation on 19 September 2026 that the provided dataset may be
+committed to a public repository. They are theirs, not ours, and nothing here
+grants any right over them.
