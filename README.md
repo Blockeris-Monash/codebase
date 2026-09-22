@@ -3,8 +3,27 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
+A draft BL that contradicts its shipping instruction is not a typo. A
+documentary credit is paid against documents rather than goods, so a discrepant
+presentation can be refused by the bank under UCP 600 and payment stalls until
+it is corrected. Averis's own published service list includes *"handle and
+resolve LC discrepancy"*, and transport documents are the largest single source
+of those discrepancies. Today someone opens both files and compares seven
+fields by hand, email by email. Sourcing, and one honest limit — nothing in the
+dataset says which shipments are under a credit — is in
+[`docs/05-company-profile.md`](docs/05-company-profile.md).
+
+**Contents** — [Try it live](#try-it-live) · [How it works](#how-it-works) ·
+[Setup](#setup) · [The dataset](#the-dataset-is-in-the-repo) ·
+[Where the code lives](#where-the-code-lives) · [Evidence](#evidence) ·
+[Developer checks](#developer-checks) ·
+[Contracts](#build-against-the-contracts-not-against-each-other) ·
+[Validating output](#check-your-output-before-handing-it-on) ·
+[Documents](#documents) · [The seven fields](#the-seven-compared-fields)
+
 ## Try it live
 
+- Demo video: <https://drive.google.com/file/d/1Q_G2_Z5LWUpWRgUgYhbz7QX10cK3SfSD/view>
 - Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
   comparison already run. On a phone you can add it to the home screen as an
   icon that opens the same page.
