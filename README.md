@@ -59,6 +59,23 @@ removes the old cached copy. And a private or incognito window never offers to
 install, so use an ordinary tab for this even though a private one is the better
 first look at the page.
 
+**An installed copy can be out of date, and it will not say so.** The service
+worker fetches from the network first and only falls back to its cache, but an
+installed app that is resumed rather than relaunched never navigates, so it
+never asks. If what you see does not match the screenshot above — no shipment
+reference under the subject line, no **Draft BL requests** folder — force-close
+the app and reopen it. If it still differs, uninstall and clear the site data as
+above. The browser at
+<https://shiphappens-iota.vercel.app/> is always current; only an installed copy
+can lag.
+
+On Android the icon is baked into the wrapper Chrome generates at install time,
+so it does not change in place either — the same uninstall-and-reinstall is what
+picks up a new one. If Android warns that the app was *"built for an older
+version of Android"*, that wrapper is Chrome's, not ours: this repository ships
+no APK, and its `targetSdkVersion` is set by Google's minting service rather
+than by anything in `frontend/manifest.json`.
+
 ### 2 · Get the code
 
 Either **Download ZIP** from the green **Code** button on
