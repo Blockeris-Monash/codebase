@@ -3,34 +3,31 @@
 Reads a shipping inbox, classifies every email, and for document-comparison
 requests checks a draft Bill of Lading against its Shipping Instruction.
 
-A draft BL that contradicts its shipping instruction is not a typo. A
-documentary credit is paid against documents rather than goods, so a discrepant
-presentation can be refused by the bank under UCP 600 and payment stalls until
-it is corrected. Averis's own published service list includes *"handle and
-resolve LC discrepancy"*, and transport documents are the largest single source
-of those discrepancies. Today someone opens both files and compares seven
-fields by hand, email by email. Sourcing, and one honest limit — nothing in the
-dataset says which shipments are under a credit — is in
-[`docs/05-company-profile.md`](docs/05-company-profile.md).
-
-**Contents** — [Try it live](#try-it-live) · [How it works](#how-it-works) ·
-[Setup](#setup) · [The dataset](#the-dataset-is-in-the-repo) ·
+**Contents** — [Start here](#start-here) · [Why it matters](#why-it-matters) ·
+[How it works](#how-it-works) · [The dataset](#the-dataset-is-in-the-repo) ·
 [Where the code lives](#where-the-code-lives) · [Evidence](#evidence) ·
-[The five contracts](#the-five-contracts) ·
-[Who built what](#who-built-what) ·
-[Documents](#documents) · [The seven fields](#the-seven-compared-fields)
+[The five contracts](#the-five-contracts) · [Who built what](#who-built-what) ·
+[Roadmap](#roadmap) · [Documents](#documents) ·
+[The seven fields](#the-seven-compared-fields)
 
-## Try it live
+## Start here
 
-- Demo video: <https://drive.google.com/file/d/1Q_G2_Z5LWUpWRgUgYhbz7QX10cK3SfSD/view>
-- Review app: <https://shiphappens-iota.vercel.app/>. Static page with every
-  comparison already run. On a phone you can add it to the home screen as an
-  icon that opens the same page.
-- Backend: <https://blockeris-backend.onrender.com/docs> — every endpoint
-  listed, and runnable from the page. (`/health` returns `{"status": "ok"}`;
-  the bare root is not a page and answers 404.) The **Check again with AI**
-  button in the app calls this service. It runs on a free host, so the first
-  request after a quiet spell can take about 100 seconds.
+Everything below is the fastest path from "never seen this" to "it works".
+
+### 1 · Nothing to install
+
+| | |
+|---|---|
+| **Review app** | <https://shiphappens-iota.vercel.app/> |
+| **Demo video** | <https://drive.google.com/file/d/1Q_G2_Z5LWUpWRgUgYhbz7QX10cK3SfSD/view> |
+| **API** | <https://blockeris-backend.onrender.com/docs> |
+
+The app is a static page carrying its own results — all 520 emails, every
+comparison already run — so it opens with no backend, no key and no network.
+Only **Check again with AI** calls the API, which sits on a free host and can
+take about 100 seconds to wake. A private window gives the cleanest first look:
+the page remembers your language, panel width and which emails you marked as
+checked. Use an ordinary window to try the phone home screen icon.
 
 ![The review screen with a mismatch open: 46 mismatches in the inbox, and for
 the open email six of the seven fields agree while gross weight differs — 40,326
@@ -42,10 +39,103 @@ shipping instruction against 41,326 KG on the draft bill of lading. The field is
 named, and both source documents sit underneath so a person can confirm it in
 seconds rather than reading two PDFs.
 
-A private or incognito window gives a clean first look: the page remembers your
-language, your panel width and which emails you marked as checked, and it
-registers a service worker. Use an ordinary window if you want to try the phone
-home screen icon — a private window will not offer it.
+### 2 · Get the code
+
+Either **Download ZIP** from the green **Code** button on
+<https://github.com/Blockeris-Monash/codebase>, unzip it and open the folder —
+nothing in the project needs git — or:
+
+```bash
+git clone https://github.com/Blockeris-Monash/codebase.git
+cd codebase
+```
+
+### 3 · Set it up
+
+Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
+
+**macOS and Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
+```
+
+**Windows (PowerShell)**
+
+```powershell
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
+```
+
+If the tests print 231 passed, you are done — that is the whole system checked
+offline.
+
+### 4 · Run it
+
+Three things, each in the activated environment. **Keep it activated**: `python`
+is this project's interpreter on every platform, so every block on this page is
+the same whichever machine you are on.
+
+**The review app** — the screen in the picture above, all 520 emails:
+
+```bash
+cd frontend && python -m http.server 8099
+```
+
+Open <http://localhost:8099>. Static, so no backend and no key.
+
+**One email through all five stages**, printed as it goes:
+
+```bash
+python -m cli.demo_pipeline email_004
+```
+
+**The API**:
+
+```bash
+python -m uvicorn backend.app:app --port 8010
+```
+
+Open <http://localhost:8010/docs>. `GET /health` and
+`POST /extract-clean-compare` answer with no key, from the saved extracts in
+`results/extracts/`. Ports are suggestions; anything free will do.
+
+### If you want the live model path
+
+`POST /classify`, `POST /process-email`, `POST /translate` and
+`POST /extract-clean-compare?live=true` call Qwen, so they need `QWEN_API_KEY`
+(and `QWEN_BASE_URL` for the team proxy). Copy `.env.example` to `.env` and fill
+it in. `GOOGLE_API_KEY` is optional and enables only the Gemini backup
+extractor, which stands behind Qwen when it stalls.
+
+Without activating the environment, anything importing the backend fails with
+`No module named 'dotenv'` — `cli.evidence`, `cli.mutation_check`,
+`cli.make_results`, `cli.latency`. The rest are stdlib-only and run on any
+Python 3.12.
+
+`/extract-clean-compare` takes label/value pairs, not a file: `email_id`,
+`si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse statuses.
+`cli.demo_pipeline` above builds that body for you. `/translate` renders an
+email into English, Malay or Chinese; it has no caller in the review app, whose
+language switch uses a built-in table in `frontend/i18n.js`, so it is an
+endpoint rather than a feature of the page.
+
+## Why it matters
+
+A draft BL that contradicts its shipping instruction is not a typo. A
+documentary credit is paid against documents rather than goods, so a discrepant
+presentation can be refused by the bank under UCP 600 and payment stalls until
+it is corrected. Averis's own published service list includes *"handle and
+resolve LC discrepancy"*, and transport documents are the largest single source
+of those discrepancies. Today someone opens both files and compares seven
+fields by hand, email by email. Sourcing, and one honest limit — nothing in the
+dataset says which shipments are under a credit — is in
+[`docs/05-company-profile.md`](docs/05-company-profile.md).
 
 ## How it works
 
@@ -69,90 +159,6 @@ Three outcomes:
 - **Mismatch** — a field differs, and the report names which.
 - **Needs review** — a blank value, an unreadable file, the wrong document type
   or a missing attachment. No value is inferred.
-
-## Setup
-
-**Download the ZIP.** On <https://github.com/Blockeris-Monash/codebase>, the
-green **Code** button → **Download ZIP**. Unzip it and open the folder in your
-IDE. Nothing in the project needs git.
-
-**Or clone it.**
-
-```bash
-git clone https://github.com/Blockeris-Monash/codebase.git
-cd codebase
-```
-
-Then, in the project folder either way.
-
-**macOS and Linux:**
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
-```
-
-**Windows (PowerShell):**
-
-```powershell
-py -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
-```
-
-Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database.
-
-**Every command below assumes that activated environment**, where `python` is
-this project's interpreter on all three platforms — so every block on this page
-is the same whichever you are on. Without activating, anything that imports the
-backend dies with `No module named 'dotenv'`: `cli.evidence`,
-`cli.mutation_check`, `cli.make_results` and `cli.latency`. The rest —
-`cli.smoke_test`, `cli.demo_read`, `cli.demo_pipeline`, `cli.make_fixtures`,
-`cli.validate_contracts` — are stdlib-only and run on any Python 3.12.
-
-The review app, the tests and the saved comparison path need no API key. Only
-the live model calls do, and each is marked below.
-
-### See the prototype
-
-```bash
-cd frontend && python -m http.server 8099
-```
-
-Open <http://localhost:8099>. All 520 emails, every comparison already run.
-The page is static — it reads `frontend/results.js` — so it needs no backend,
-no key and no network.
-
-### Run the API
-
-```bash
-python -m uvicorn backend.app:app --port 8010
-```
-
-<http://localhost:8010/docs>. `GET /health` and `POST /extract-clean-compare`
-answer with no key, from the saved extracts in `results/extracts/`.
-`POST /classify`, `POST /process-email`, `POST /translate` and
-`POST /extract-clean-compare?live=true` call Qwen, so they need `QWEN_API_KEY`
-(and `QWEN_BASE_URL` if you go through the team proxy). `GOOGLE_API_KEY` is
-optional and enables only the Gemini backup extractor, which stands behind Qwen
-when Qwen stalls. Copy `.env.example` to `.env` and fill it in. Ports 8010 and
-8099 are suggestions; anything free will do.
-
-`/translate` renders an email and its documents into English, Malay or Chinese.
-It has no caller in the review app — the language switch uses a built-in table
-in `frontend/i18n.js` — so it is an endpoint, not a feature of the page.
-
-`/extract-clean-compare` takes the label/value pairs, not a file: the body is
-`email_id`, `si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse
-statuses. For a worked end-to-end call that reads the documents and builds that
-body for you:
-
-```bash
-python -m cli.demo_pipeline email_004     # one email through all five stages
-```
 
 ## The dataset is in the repo
 
@@ -266,6 +272,24 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 | Comparator engine — the Match, Mismatch and Needs review rules | Ho Jia Jun |
 | Report screen wired to the live backend, hosting, merges, submission | Tan Le Han |
 | AI extraction and saved results, the review interface, validation evidence | Athith Kounsana |
+
+## Roadmap
+
+What we would build next, in order. None of it is in this version.
+
+**Next — connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several
+at once, so the inbox is live rather than a fixed dataset. Send the reply from
+the product; today the drafted reply is shown and the send is a demo.
+
+**Then — fewer cases reaching a person.** A confidence score on the extraction,
+retried up to three times before escalating. Reading scanned PDFs, which is the
+6 of 250 attachments that currently escalate as unreadable.
+
+**Later — scale and intake.** More intake channels: the X12 304 reader already
+exists, and EDIFACT `IFTMIN` would be a second dialect in the same module rather
+than new logic, with carrier portals and the DCSA shipping-instruction API after
+that — see [`docs/03-edi-notes.md`](docs/03-edi-notes.md). A paid model tier for
+steady speed without daily limits. PDF and Excel export of a review.
 
 ## Working on this
 
