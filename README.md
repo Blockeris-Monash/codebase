@@ -43,10 +43,6 @@ Three outcomes:
   or a missing attachment. No value is inferred.
 
 ## Setup
-
-This repository is public, so neither way needs a GitHub account. Take whichever
-suits you.
-
 **Download the ZIP.** On <https://github.com/Blockeris-Monash/codebase>, the
 green **Code** button → **Download ZIP**. Unzip it and open the folder in your
 IDE. Nothing in the project needs git.
