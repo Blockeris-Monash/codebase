@@ -12,15 +12,24 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import random
+import sys
 import time
 from pathlib import Path
 from typing import Awaitable, Callable
 
+from dotenv import load_dotenv
+
 from cli.evidence import latency_summary, load_results_js
+
+# Loaded here rather than relied on second-hand: the key check below runs before
+# backend.app is imported, and importing that is what would otherwise call it.
+load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = 22
+KEY_NAME = "QWEN_API_KEY"
 
 
 def pick(results: list[dict], n: int) -> list[dict]:
@@ -59,6 +68,14 @@ def main() -> None:
     parser.add_argument("--results", default=str(ROOT / "frontend" / "results.js"))
     parser.add_argument("--out", default=str(ROOT / "results" / "latency.json"))
     args = parser.parse_args()
+
+    # Without a key every extraction fails, every email escalates to NEEDS_REVIEW, and the run
+    # would write a file reporting that the live path agrees with the saved one zero times.
+    # That is not a measurement, and results/latency.json is committed evidence.
+    if not os.environ.get(KEY_NAME):
+        sys.exit(f"{KEY_NAME} is not set. This command measures the live model path, so there is "
+                 f"nothing to measure without a key, and {args.out} would be overwritten with a "
+                 f"run in which every email failed. Copy .env.example to .env and fill it in.")
 
     from backend.app import run_pipeline
 

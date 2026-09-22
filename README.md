@@ -12,19 +12,62 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
   The **Check again with AI** button in the app calls it. It runs on a free
   host, so the first request after a quiet spell can take about 100 seconds.
 
+A private or incognito window gives a clean first look: the page remembers your
+language, your panel width and which emails you marked as checked, and it
+registers a service worker. Use an ordinary window if you want to try the phone
+home screen icon — a private window will not offer it.
+
+## How it works
+
+Five stages, with a JSON contract between each one.
+
+| | Stage | What it does |
+|---|---|---|
+| 1 | Classify | Qwen files each email as `BL_COMPARISON`, `SI_REQUEST`, `INVOICE_QUERY`, `GENERAL` or `SPAM` |
+| 2 | Read | text, Word, Excel, PDF and X12 EDI into `(label, value)` pairs |
+| 3 | Extract | Qwen pulls the seven compared fields out of those pairs |
+| 4 | Compare | plain Python rules give the verdict |
+| 5 | Review | the web app, where a person decides |
+
+The model extracts and the rules decide. A value the model returns must appear
+verbatim in the source document or the field is dropped, and a missing field
+escalates the pair rather than passing it.
+
+Three outcomes:
+
+- **Match** — all seven fields agree.
+- **Mismatch** — a field differs, and the report names which.
+- **Needs review** — a blank value, an unreadable file, the wrong document type
+  or a missing attachment. No value is inferred.
+
 ## Setup
 
-Python 3.12. No database. Nothing below needs an API key.
+This repository is public, so neither way needs a GitHub account. Take whichever
+suits you.
+
+**Download the ZIP.** On <https://github.com/Blockeris-Monash/codebase>, the
+green **Code** button → **Download ZIP**. Unzip it and open the folder in your
+IDE. Nothing in the project needs git.
+
+**Or clone it.**
 
 ```bash
-git clone git@github.com:Blockeris-Monash/codebase.git
+git clone https://github.com/Blockeris-Monash/codebase.git
 cd codebase
+```
 
+Then, in the project folder either way:
+
+```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-.venv/bin/python -m pytest -q          # 192 passed, 5 skipped (skips need a model key)
+.venv/bin/python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
 ```
+
+Python 3.12. No database. The review app, the tests and the saved comparison
+path need no API key. Only the live model calls do, and each is marked below.
+On Windows the venv paths are `.venv\Scripts\python` and `.venv\Scripts\pip`.
 
 ### See the prototype
 
@@ -49,6 +92,15 @@ call Qwen, so they need `QWEN_API_KEY` (and `QWEN_BASE_URL` if you go through
 the team proxy). Copy `.env.example` to `.env` and fill it in. Ports 8010 and
 8099 are suggestions; anything free will do.
 
+`/extract-clean-compare` takes the label/value pairs, not a file: the body is
+`email_id`, `si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse
+statuses. For a worked end-to-end call that reads the documents and builds that
+body for you:
+
+```bash
+python3 -m cli.demo_pipeline email_004     # one email through all five stages
+```
+
 ## The dataset is in the repo
 
 `data/` holds the 520 emails and 250 attachments. The organisers confirmed
@@ -65,6 +117,14 @@ codebase/
 
 The organiser Docker kit stays out, and `.gitignore` blocks it by both path
 and filename: it contains the answer key.
+
+`loader.py` is the organisers' own loader, unmodified, so their access code
+runs against this repo as-is:
+
+```python
+from loader import Inbox
+inbox = Inbox("data")          # or Inbox("http://localhost:8081") for the kit
+```
 
 Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
 
@@ -115,7 +175,13 @@ python3 -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
 
 `cli.evidence` compares the saved AI extraction with the rules reader,
 summarises the pipeline results and the classifier, and reads the hand labels in
-`results/classifier_handlabels.json`. No organiser answer key is used anywhere.
+`results/classifier_handlabels.json`. It reads no organiser answer key: every
+number it prints comes from files in this repo.
+
+The classifier prompt itself is a different matter. It was corrected against the
+organisers' key (`5e76cff`), so the classification score is fitted rather than
+held out, and we say so. The mutation check, the rules-reader agreement and the
+hand labels never touch the key.
 
 ## Developer checks
 
@@ -134,6 +200,19 @@ python3 -m cli.validate_contracts
 The scoring server runs on **8081**, not 8080 — 8080 is commonly taken. Start
 it from the organiser kit with `docker compose up -d`.
 
+`frontend/results.js` is a build artefact, not hand-written. It is every email
+with its category, its verdict and both documents, rebuilt from `results/` by:
+
+```bash
+python3 -m cli.make_results         # -> frontend/results.js
+```
+
+If you hold the organisers' `ground_truth.json`, you can score this yourself
+with their `score_cli.py`; our saved results come out at 1.0000. The repository
+ships no `submission.json`, because it is a self-check rather than a
+deliverable — `cli.make_fixtures` writes a `SubmissionSample.json` showing the
+shape.
+
 ## Build against the contracts, not against each other
 
 Five shapes pass between stages, defined as JSON Schema in `contracts/` and
@@ -148,11 +227,11 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 
 | Area | Owner |
 |---|---|
-| Pipeline glue, repo, submission, contracts | R1 |
-| Classification and field extraction | R2 |
-| Normalisation, comparison, self-eval | R3 |
-| Docker, cloud, public URL | R4 |
-| Report UI, review screen, video | R5 |
+| Data contracts, the readers for every file format, the phone home screen icon | Elyesa Tee |
+| Backend API, `/process-email`, pipeline orchestration, Render deployment | Hanif Rafli |
+| Comparator engine — the Match, Mismatch and Needs review rules | Ho Jia Jun |
+| Report screen wired to the live backend, hosting, merges, submission | Tan Le Han |
+| AI extraction and saved results, the review interface, validation evidence | Athith Kounsana |
 
 ## Check your output before handing it on
 
@@ -208,7 +287,19 @@ print(errors or "all 520 entries valid")
 
 - `contracts/0N-*.schema.json` — the five contracts, numbered in pipeline
   order and machine-checkable
-- [`docs/00-contracts.md`](docs/00-contracts.md) — what each one means and why
+- [`docs/00-contracts.md`](docs/00-contracts.md) — what each contract means and why
+- [`docs/01-comparison-rules.md`](docs/01-comparison-rules.md) — the rule for
+  each of the seven fields, with the evidence from the corpus behind it
+- [`docs/02-hand-trace.md`](docs/02-hand-trace.md) — one email followed through
+  all five stages by hand, to check the code against
+- [`docs/03-edi-notes.md`](docs/03-edi-notes.md) — the X12 304 reader, what EDI
+  changes about comparison, and the other intake channels
+- [`docs/04-classifier.md`](docs/04-classifier.md) — the five categories and how
+  the classifier decides between them
+- [`docs/05-company-profile.md`](docs/05-company-profile.md) — who the client is
+  and why these seven fields are the ones worth checking
+- `results/evidence.md` — every validation number, rebuilt by
+  `python3 -m cli.evidence`
 
 ## The seven compared fields
 

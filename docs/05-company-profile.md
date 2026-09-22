@@ -94,12 +94,19 @@ bill of lading does not match the credit's terms, the presentation is
 discrepant and the bank may refuse it under UCP 600. Payment stalls until the
 discrepancy is waived or corrected.
 
-Industry figures from the ICC:
+Industry figures, as reported by the ICC Academy (the International Chamber
+of Commerce's training arm) in its guidance on avoiding common LC
+discrepancies, linked below:
 
 - **60–75% of documentary credit presentations are refused on first
-  submission** (ICC Academy puts the range at 65–75%)
+  submission**; the ICC Academy's own range is 65–75%
 - **transport documents — the bill of lading — are the single largest source
   of discrepancies at 38%**, ahead of commercial invoices at 27%
+
+Cite it as *"ICC Academy, on common LC discrepancies"* wherever it is used.
+These are secondary figures taken from that page, not read out of the
+underlying ICC Banking Commission survey, so do not present them as our own
+measurement or attach a precision they do not carry.
 
 So the seven fields checked here sit in the document class that causes more
 letter-of-credit rejections than any other, for a team whose published remit

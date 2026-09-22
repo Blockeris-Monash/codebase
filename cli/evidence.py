@@ -59,12 +59,19 @@ def extraction_agreement(extracts_dir: Path, data_dir: Path) -> dict:
 # ---------- 3. pipeline results ----------
 
 def pipeline_summary(results: list[dict]) -> dict:
-    checked = [e for e in results if e.get("status")]
+    routed = [e for e in results if e.get("status")]
+    # An email asking for a draft BL that is not attached yet is routed to comparison and
+    # escalated, but there is nothing to compare. Counting those as checks would understate
+    # the share cleared without a person: they are reported on their own line instead.
+    awaiting = [e for e in routed if e.get("awaiting")]
+    checked = [e for e in routed if not e.get("awaiting")]
     status = Counter(e["status"] for e in checked)
     return {
         "emails": len(results),
         "with_attachments": sum(1 for e in results if e.get("n_attachments")),
         "categories": dict(Counter(e["category"] for e in results)),
+        "routed": len(routed),
+        "awaiting": len(awaiting),
         "comparisons": len(checked),
         "status": dict(status),
         "reasons": dict(Counter(e["review_reason"] for e in checked if e["status"] == "NEEDS_REVIEW")),
@@ -146,7 +153,7 @@ def render(report: dict) -> str:
             f"- Agree: {ext['tally'].get('agree', 0)} ({pct(ext['tally'].get('agree', 0), ext['fields'])}). "
             f"Conflicting values: {ext['tally'].get('differ', 0)}. "
             f"AI only: {ext['tally'].get('ai_only', 0)}. Rules only: {ext['tally'].get('rules_only', 0)}.",
-            "- Agreement does not prove both are right, so the hand check (see results/validation-summary.md) reads the source files.", ""]
+            "- Agreement does not prove both are right: it shows two independent readers of the same file reaching the same value.", ""]
     mut = report["mutation"]
     trials = sum(s["trials"] for s in mut["defects"].values())
     caught = sum(s["detected"] for s in mut["defects"].values())
@@ -158,20 +165,25 @@ def render(report: dict) -> str:
             f"- Harmless edits (case, padding, missing UN/LOCODE) that wrongly raised a flag: {alarms} of {harmless}.", ""]
     pipe = report["pipeline"]
     out += ["## 3. What the review UI shows",
-            f"- {pipe['emails']} emails, {pipe['with_attachments']} with attachments, {pipe['comparisons']} compared SI against BL.",
+            f"- {pipe['emails']} emails, {pipe['with_attachments']} with attachments, {pipe['routed']} routed to comparison, "
+            f"{pipe['comparisons']} of those with both documents present to compare.",
             f"- Match {pipe['status'].get('OK', 0)}, Mismatch {pipe['status'].get('MISMATCH', 0)}, "
             f"Needs review {pipe['status'].get('NEEDS_REVIEW', 0)}.",
             f"- Cleared with no human action: {pct(pipe['status'].get('OK', 0), pipe['comparisons'])}. "
             f"Flagged for a person: {pipe['flagged']}.",
             f"- Fields that differ in the mismatches: {', '.join(f'{k} {v}' for k, v in sorted(pipe['defect_fields'].items(), key=lambda kv: -kv[1])) or 'none'}.",
             f"- Reasons for review: {', '.join(f'{k} {v}' for k, v in sorted(pipe['reasons'].items(), key=lambda kv: -kv[1])) or 'none'}.",
-            f"- Categories: {', '.join(f'{k} {v}' for k, v in sorted(pipe['categories'].items(), key=lambda kv: -kv[1]))}.", ""]
+            f"- Categories: {', '.join(f'{k} {v}' for k, v in sorted(pipe['categories'].items(), key=lambda kv: -kv[1]))}.",
+            f"- A further {pipe['awaiting']} emails ask for a draft BL that is not attached yet. They are routed to "
+            "comparison and go to a person, but are not counted as checks above because there is nothing to compare.", ""]
     cleared = pipe["status"].get("OK", 0)
     out += ["## Impact",
             f"- Of {pipe['comparisons']} SI vs BL checks, {cleared} ({pct(cleared, pipe['comparisons'])}) needed no human action, "
             f"and {pipe['flagged']} were flagged with the reason and the field, so a person reads only those.",
             f"- {pipe['status'].get('MISMATCH', 0)} emails had a real difference between the SI and the BL, {pipe['field_differences']} differing fields in total. "
-            "Each is a difference a person would otherwise have to find by reading both documents."]
+            "Each is a difference a person would otherwise have to find by reading both documents.",
+            f"- The {pipe['awaiting']} draft-BL requests with nothing attached are excluded from that share. They reach a "
+            "person either way, so counting them as checks the pipeline failed to clear would misstate both numbers."]
     hours = impact_estimate(cleared, MINUTES_PER_CHECK)
     out += ["- Time spared (an ESTIMATE, not a measurement): "
             + "; ".join(f"at {m} minutes per manual check, about {h} hours" for m, h in hours.items())
