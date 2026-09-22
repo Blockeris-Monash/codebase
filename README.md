@@ -277,19 +277,55 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 
 What we would build next, in order. None of it is in this version.
 
-**Next — connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several
-at once, so the inbox is live rather than a fixed dataset. Send the reply from
-the product; today the drafted reply is shown and the send is a demo.
+**1. Act on the 91 we cannot compare.** Of the 220 emails routed to comparison,
+129 arrive with both documents and **91 are waiting on a draft Bill of Lading
+that has not been sent yet**. We already file those on their own rather than as
+review cases; the next step is to do something with them. A chase list: who owes
+which draft BL, against which shipment reference — 62 of the 91 already carry
+that reference in the subject line, across 20 senders — ordered by how long it
+has been outstanding.
 
-**Then — fewer cases reaching a person.** A confidence score on the extraction,
-retried up to three times before escalating. Reading scanned PDFs, which is the
-6 of 250 attachments that currently escalate as unreadable.
+That is a larger share of the work than the comparison itself, and it is not
+just a backlog. UCP 600 article 14(c) requires a presentation including an
+original transport document to be made no later than 21 calendar days after the
+date of shipment, and never after the credit expires. A draft BL that has not
+arrived is a clock running towards a refusal that no field comparison can catch,
+because there is no document to compare. To count that clock we need the date of
+shipment, which this dataset does not carry — a connected mailbox would supply
+it. Until then the list can be ordered by age in the inbox, which is the useful
+half.
 
-**Later — scale and intake.** More intake channels: the X12 304 reader already
-exists, and EDIFACT `IFTMIN` would be a second dialect in the same module rather
-than new logic, with carrier portals and the DCSA shipping-instruction API after
-that — see [`docs/03-edi-notes.md`](docs/03-edi-notes.md). A paid model tier for
-steady speed without daily limits. PDF and Excel export of a review.
+**2. Read the scanned documents.** Six of the eight unreadable attachments are
+image-only PDFs — the organisers rasterised them deliberately, watermark and
+all, to force the choice between reading them and escalating them. We escalate,
+honestly, but the use case names OCR and vision models as an advanced challenge
+and we did not attempt it. Those six currently yield no fields at all, so this is
+the one item here that would move a score.
+
+A low-confidence read must land on `missing_value` rather than a forced verdict,
+so that a missing field still outranks a mismatch and an OCR guess never
+masquerades as a value read from the page.
+
+**3. Find a shipment by its reference.** Their service catalogue includes
+*support the Commercial team on any shipping documentation query raised by the
+end customer* — which is lookup across the 601 distinct shipment references in
+this inbox, a different job from triage. The search box already matches them as
+text; what is missing is showing the reference on each row and saying that the
+box accepts one. Closer to a labelling change than a feature, and it makes the
+chase list in item 1 more useful, since both are keyed on the same reference.
+
+**4. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
+once, so the inbox is live rather than a fixed dataset. Send the reply from the
+product; today the drafted reply is shown and the send is a demo. It is also the
+enabler under item 1 — it supplies the date of shipment that makes the deadline
+countable.
+
+**Later — reliability and intake.** A confidence score on the extraction, retried
+before escalating. More intake channels: the X12 304 reader already exists, and
+EDIFACT `IFTMIN` would be a second dialect in the same module rather than new
+logic, with carrier portals and the DCSA shipping-instruction API after that —
+see [`docs/03-edi-notes.md`](docs/03-edi-notes.md). A paid model tier for steady
+speed without daily limits. PDF and Excel export of a review.
 
 ## Working on this
 
