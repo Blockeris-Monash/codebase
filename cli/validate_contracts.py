@@ -131,7 +131,7 @@ def load_contract(name: str) -> Schema:
     if not matches:
         available = ", ".join(sorted(contract_names()))
         raise SystemExit(f"no contract named {name!r}. Available: {available}")
-    return json.loads(matches[0].read_text())
+    return json.loads(matches[0].read_text(encoding="utf-8"))
 
 
 def contract_names() -> list[str]:
@@ -155,7 +155,7 @@ SUBMISSION_SAMPLE = "SubmissionSample.json"
 
 def check_bundle(path: Path) -> Errors:
     """Validate every stage artefact inside one fixture file."""
-    bundle = json.loads(path.read_text())
+    bundle = json.loads(path.read_text(encoding="utf-8"))
     errors = []
     for key, contract in BUNDLE_CONTRACTS.items():
         payload = bundle.get(key)
@@ -171,7 +171,7 @@ def check_bundle(path: Path) -> Errors:
 def check_submission(path: Path) -> Errors:
     schema = load_contract("SubmissionEntry")
     errors = []
-    for email_id, entry in json.loads(path.read_text()).items():
+    for email_id, entry in json.loads(path.read_text(encoding="utf-8")).items():
         validate(entry, schema, f"{path.name}:{email_id}", errors)
     return errors
 
@@ -191,7 +191,7 @@ def check_all_fixtures() -> Errors:
 
 def check_one(target: str, contract: str) -> Errors:
     schema = load_contract(contract)
-    return validate(json.loads(Path(target).read_text()), schema, contract, [])
+    return validate(json.loads(Path(target).read_text(encoding="utf-8")), schema, contract, [])
 
 
 def main() -> int:

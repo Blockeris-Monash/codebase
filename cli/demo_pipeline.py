@@ -137,7 +137,7 @@ def show_comparison(comparison: dict[str, object]) -> None:
 
 
 def show_verdict(comparison: dict[str, object], entry: dict[str, object]) -> None:
-    stage(5, "verdict", f"\u2192  {STATUS_LINE[str(comparison['status'])]}")
+    stage(4, "verdict", f"\u2192  {STATUS_LINE[str(comparison['status'])]}")
     print(f"     {comparison['evidence']}")
     print()
     print("     submission.json entry:")
@@ -158,7 +158,7 @@ def run(data_dir: str, email_id: str) -> int:
     if not path.exists():
         raise SystemExit(f"no such email: {path}")
 
-    email = json.loads(path.read_text())
+    email = json.loads(path.read_text(encoding="utf-8"))
     show_email(email)
     category = show_classification(email)
 

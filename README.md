@@ -58,19 +58,33 @@ Then, in the project folder either way:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-.venv/bin/python -m pytest -q          # 219 passed, 5 skipped (skips need a model key)
+pip install -r requirements.txt
+python3 -m pytest -q               # 219 passed, 5 skipped (skips need a model key)
 ```
 
-Python 3.12. No database. The review app, the tests and the saved comparison
-path need no API key. Only the live model calls do, and each is marked below.
-On Windows the venv paths are `.venv\Scripts\python` and `.venv\Scripts\pip`.
+Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database.
+
+On Windows: `py -m venv .venv`, then `.venv\Scripts\activate`, and use
+`python` or `py` wherever this file says `python3` — Windows ships no
+`python3`. Virtual-environment binaries live in `.venv\Scripts\`, not
+`.venv/bin/`.
+
+**Every `python3` command below assumes that activated environment.** Without
+it, anything importing the backend dies with `No module named 'dotenv'`:
+`cli.evidence`, `cli.mutation_check`, `cli.make_results` and `cli.latency`.
+The rest — `cli.smoke_test`, `cli.demo_read`, `cli.demo_pipeline`,
+`cli.make_fixtures`, `cli.validate_contracts` — are stdlib-only and run on any
+Python 3.12.
+
+The review app, the tests and the saved comparison path need no API key. Only
+the live model calls do, and each is marked below.
 
 ### See the prototype
 
 ```bash
-cd frontend && ../.venv/bin/python -m http.server 8099
+cd frontend && python3 -m http.server 8099
 ```
 
 Open <http://localhost:8099>. All 520 emails, every comparison already run.
@@ -80,15 +94,21 @@ no key and no network.
 ### Run the API
 
 ```bash
-.venv/bin/python -m uvicorn backend.app:app --port 8010
+python3 -m uvicorn backend.app:app --port 8010
 ```
 
 <http://localhost:8010/docs>. `GET /health` and `POST /extract-clean-compare`
 answer with no key, from the saved extracts in `results/extracts/`.
-`POST /classify`, `POST /process-email` and `POST /extract-clean-compare?live=true`
-call Qwen, so they need `QWEN_API_KEY` (and `QWEN_BASE_URL` if you go through
-the team proxy). Copy `.env.example` to `.env` and fill it in. Ports 8010 and
+`POST /classify`, `POST /process-email`, `POST /translate` and
+`POST /extract-clean-compare?live=true` call Qwen, so they need `QWEN_API_KEY`
+(and `QWEN_BASE_URL` if you go through the team proxy). `GOOGLE_API_KEY` is
+optional and enables only the Gemini backup extractor, which stands behind Qwen
+when Qwen stalls. Copy `.env.example` to `.env` and fill it in. Ports 8010 and
 8099 are suggestions; anything free will do.
+
+`/translate` renders an email and its documents into English, Malay or Chinese.
+It has no caller in the review app — the language switch uses a built-in table
+in `frontend/i18n.js` — so it is an endpoint, not a feature of the page.
 
 `/extract-clean-compare` takes the label/value pairs, not a file: the body is
 `email_id`, `si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse
@@ -120,7 +140,10 @@ and filename: it contains the answer key.
 unmodified, and `data/` keeps the bundle's layout — so the dataset is the one
 they shipped, reachable the documented way (`Inbox("data")`).
 
-Point the code somewhere else with `DATA_DIR`, or `--data` on any tool.
+`DATA_DIR` moves the classifier's inbox only (`backend/classify.py`) — a
+folder, or the kit's server URL. The tools that read documents take `--data`
+instead: `cli.demo_pipeline`, `cli.evidence`, `cli.make_fixtures` and
+`cli.make_results`. The rest read `data/` directly.
 
 ## Where the code lives
 
@@ -130,7 +153,9 @@ serves. Anything you run by hand is under `cli/`.
 ```
 backend/
 ├── contracts.py      the five contract types, one source of truth
-├── app.py            FastAPI service: /health, /classify, /extract-clean-compare, /process-email
+├── app.py            FastAPI service: /health, /classify, /extract-clean-compare,
+│                    /process-email, /translate
+├── translate.py      the /translate endpoint's model call
 ├── classify.py       stage 1 - email to category
 ├── read/             stage 2 - file bytes to (label, value) pairs
 │   ├── documents.py    txt, docx, xlsx, pdf
@@ -140,6 +165,7 @@ backend/
 │   ├── rules.py        deterministic, no API calls
 │   ├── ai.py           model-backed extractor
 │   ├── gemini.py  qwen.py  batch.py  sample.py
+│   └── fallback.py     Gemini behind Qwen when Qwen fails or stalls
 └── compare/          stage 4 - SI against BL
     ├── normalise.py    per-field normalisation
     └── comparator.py   the verdict
@@ -214,9 +240,16 @@ explained in [`docs/00-contracts.md`](docs/00-contracts.md). A worked example
 of each is in `fixtures/`. Any stage can be built and tested in isolation
 against a fixture — nobody waits on the stage upstream.
 
+The numbers below are the **contracts**, not the stages — each is the shape
+handed from one stage to the next, and `contracts/0N-*.schema.json` is numbered
+to match.
+
 ```
 Inbox ──1── Classify ──2── Extract ──3── Compare ──4── Report
                                                  └──5── submission.json
+
+1 EmailRecord   2 ClassificationResult   3 DocumentExtract
+4 ComparisonResult   5 SubmissionEntry
 ```
 
 | Area | Owner |
@@ -235,7 +268,9 @@ Write one record to a JSON file and name the contract it should satisfy:
 python3 -m cli.validate_contracts out.json ComparisonResult
 ```
 
-Fixtures are numbered by email id — `01-Ok.json` through `11-SendDraftBlUnresolved.json`.
+Fixtures are numbered by scenario, not by email id — `01-Ok.json` through
+`11-SendDraftBlUnresolved.json`. Each carries a real email: `01-Ok.json` is
+`email_064`, `02-Mismatch.json` is `email_025`.
 
 Per stage:
 

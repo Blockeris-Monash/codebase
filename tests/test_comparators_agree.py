@@ -20,9 +20,9 @@ COMPARISON_EMAILS = 126
 
 
 def comparison_emails(data_dir: Path) -> list[dict[str, object]]:
-    return [json.loads(p.read_text())
+    return [json.loads(p.read_text(encoding="utf-8"))
             for p in sorted((data_dir / "inbox").glob("email_*.json"))
-            if json.loads(p.read_text())["attachments"]]
+            if json.loads(p.read_text(encoding="utf-8"))["attachments"]]
 
 
 def both_verdicts(data_dir: Path, email: dict[str, object]) -> tuple[tuple, tuple]:
@@ -60,7 +60,7 @@ def test_escalation_reason_survives_both_paths(data_dir: Path, email_id: str,
                                                reason: str) -> None:
     """A document that will not open has no title, so its type is unknown
     rather than wrong - unreadable has to be checked before doc type."""
-    email = json.loads((data_dir / "inbox" / f"{email_id}.json").read_text())
+    email = json.loads((data_dir / "inbox" / f"{email_id}.json").read_text(encoding="utf-8"))
     theirs, ours = both_verdicts(data_dir, email)
 
     assert theirs[1] == reason

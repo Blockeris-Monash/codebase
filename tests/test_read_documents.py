@@ -9,6 +9,14 @@ from backend.contracts import FIELD_NAMES, ParseStatusType
 from backend.read.labels import canonical_field, detect_doc_type
 from backend.read.documents import READERS, document_title, read_document
 
+# 28 of the 250 attachments are PDFs, and read_document reports NotAttempted for
+# every one of them when pypdf is absent rather than pretending they are empty.
+# Without this guard that shows up as eight unrelated-looking assertion failures
+# a long way from the cause; `pip install -r requirements.txt` is the fix.
+needs_pypdf = pytest.mark.skipif(
+    __import__("importlib.util", fromlist=["util"]).find_spec("pypdf") is None,
+    reason="pypdf is not installed - run pip install -r requirements.txt")
+
 # Measured over the provided dataset. A change here means the data changed
 # or a reader regressed - both worth failing on.
 TOTAL_ATTACHMENTS = 250
@@ -85,7 +93,7 @@ def test_near_empty_document_reports_unreadable(tmp_path: Path) -> None:
     """Too few pairs to be a real document - treat as unreadable rather than
     handing an almost-empty record downstream."""
     sparse = tmp_path / "sparse.txt"
-    sparse.write_text("BILL OF LADING (DRAFT)\nShipper: ACME\n")
+    sparse.write_text("BILL OF LADING (DRAFT)\nShipper: ACME\n", encoding="utf-8")
 
     status, _ = read_document(sparse)
 
@@ -188,6 +196,7 @@ def test_document_type_comes_from_the_header(attachments: Path,
 UNREADABLE_ATTACHMENTS = 8      # 6 scanned image-only PDFs + 2 corrupt PDFs
 
 
+@needs_pypdf
 def test_every_attachment_reads_except_the_genuinely_unreadable(attachments: Path) -> None:
     """242 of 250 parse, across all four formats. The 8 that do not are 6
     scanned image-only PDFs needing OCR and 2 corrupt files."""
@@ -197,6 +206,7 @@ def test_every_attachment_reads_except_the_genuinely_unreadable(attachments: Pat
     assert len(readable) == TOTAL_ATTACHMENTS - UNREADABLE_ATTACHMENTS
 
 
+@needs_pypdf
 def test_a_document_we_cannot_parse_says_so(attachments: Path) -> None:
     """A scanned or corrupt PDF must report Unreadable. Returning the couple
     of accidental pairs it can find would make the pipeline claim the fields
@@ -206,6 +216,7 @@ def test_a_document_we_cannot_parse_says_so(attachments: Path) -> None:
     assert statuses == {ParseStatusType.Ok, ParseStatusType.Unreadable}
 
 
+@needs_pypdf
 @pytest.mark.parametrize("filename", ["email_059_SI.pdf", "email_059_BL.pdf",
                                       "email_160_SI.pdf"])
 def test_pdf_form_layout_yields_all_seven_fields(attachments: Path, filename: str) -> None:
@@ -236,7 +247,9 @@ def test_every_format_in_the_table_has_a_sample_to_test() -> None:
     assert set(READERS) == set(SAMPLE_PER_FORMAT) | TESTED_ELSEWHERE
 
 
-@pytest.mark.parametrize("fmt,filename", sorted(SAMPLE_PER_FORMAT.items()))
+@pytest.mark.parametrize("fmt,filename", [
+    pytest.param(fmt, name, marks=needs_pypdf if fmt == "pdf" else ())
+    for fmt, name in sorted(SAMPLE_PER_FORMAT.items())])
 def test_every_format_yields_both_pairs_and_a_title(attachments: Path, fmt: str,
                                                     filename: str) -> None:
     """Reading a document and reading its title used to be two separate
