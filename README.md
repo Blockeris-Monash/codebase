@@ -39,6 +39,26 @@ shipping instruction against 41,326 KG on the draft bill of lading. The field is
 named, and both source documents sit underneath so a person can confirm it in
 seconds rather than reading two PDFs.
 
+#### On a phone
+
+The review app installs to the home screen and opens without browser chrome. It
+carries its own results, so once installed it works with no signal at all.
+
+**Android — Chrome.** Open <https://shiphappens-iota.vercel.app/>. Chrome
+usually offers **Install** on its own; if it does not, use **⋮ → Add to Home
+screen → Install**.
+
+**iPhone or iPad — Safari.** Open the same link in **Safari**, then
+**Share → Add to Home Screen**. iOS never prompts by itself and offers this only
+from Safari, so a link opened inside another app's browser will not show it.
+
+Two things that look like failures and are not. Chrome hides **Install** when
+the app is *already installed* — uninstall the old copy first, and clear the
+site data with **⋮ → Settings → Site settings → Clear & reset**, which also
+removes the old cached copy. And a private or incognito window never offers to
+install, so use an ordinary tab for this even though a private one is the better
+first look at the page.
+
 ### 2 · Get the code
 
 Either **Download ZIP** from the green **Code** button on
