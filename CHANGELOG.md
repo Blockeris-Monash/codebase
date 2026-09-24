@@ -125,7 +125,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to PENDING without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 503 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
