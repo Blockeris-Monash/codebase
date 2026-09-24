@@ -286,6 +286,37 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The labels are read before the model is asked.** Every document paid for a
+  model call, including the hundreds whose label wording has been parsed since
+  the first day. `backend/extract/rules.py` already aligned the reader's
+  `(label, value)` pairs onto the seven fields deterministically — it was used in
+  tests and nowhere in the serving path.
+
+  Measured on the 250-file corpus: **237 documents give all seven fields by rule
+  at about 1 ms each**, and across the **124 comparison emails the verdict is
+  identical to the model's every time** — same status, same escalation reason,
+  same exact defect set. Extraction for a pair drops from **~7.1 s to ~2 ms**;
+  a live check is now the classification call and little else.
+
+  Raw strings only agree on 89.7% of 1,694 fields, and that difference is the
+  reason to look at verdicts rather than text: the model returns `ACME LTD` where
+  the reader returns `ACME LTD | 80 RAFFLES PLACE...`, and `normalise.py` strips
+  at the pipe. Same verdict, different string.
+
+  **It is deliberately all-or-nothing.** A partial answer is worse than none: the
+  comparator reads a missing field as something a person must look at, so six of
+  seven fields would turn "not read yet" into "this document does not state a
+  consignee". Anything short of all seven falls through to the model, as does any
+  document that did not open. The cache still wins over both, so the submitted
+  numbers are untouched — `cli.evidence` prints exactly what it did before, 630
+  of 630 defects caught and 1,690 of 1,694 fields agreeing.
+
+  The model has not been demoted; it has been pointed at the job it was brought
+  in for. A label table cannot read wording it has never seen, and that is
+  precisely when the model now runs. `SHIP_HAPPENS_RULES_FIRST=0` turns the whole
+  thing off in one environment variable, read per call so it takes a restart
+  rather than a redeploy.
+
 - **A signed-in account sees only its own mail, and "Check again with AI" is
   gone.** Signing in used to leave the demo data on screen with a Demo/My
   mailbox switch beside it, so it was never obvious whose mail was being looked
@@ -296,7 +327,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through the live pipeline. Its state, spinner, progress bar and glow went too,
   along with seven strings that no longer had anywhere to appear.
 
-- **Test count: 231 to 561 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 570 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
