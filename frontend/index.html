@@ -281,7 +281,8 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .hero .kicker{margin:0 0 12px;font-weight:700;font-size:2.25rem;line-height:1.1;color:var(--accent)}
 .hero h1{font-size:1.125rem;line-height:1.3;margin:0 0 10px}.hero .lead{font-size:1.0625rem;line-height:1.5;max-width:52ch;margin:0}
 .art{width:300px;height:auto;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-.art .hullc{fill:var(--ink)}.art .winc{fill:var(--accent)}.art .cb{opacity:.9}
+.art .hullc{fill:var(--ink)}.art .winc{fill:var(--accent)}
+.art .cargo .pg{fill:#fbf6ee;stroke:#8a7a6a;stroke-width:1}.art .cargo .fold{fill:#e8dccb;stroke:#8a7a6a;stroke-width:1}.art .cargo .ln{stroke:#b9a896;stroke-width:1.4;stroke-linecap:round}
 .art .c-bad{fill:var(--bad)}.art .c-ok{fill:var(--ok)}.art .c-rev{fill:var(--rev)}.art .c-acc{fill:var(--accent)}
 .art .sea1{fill:var(--accent-soft)}.art .sea2{fill:color-mix(in srgb,var(--accent) 35%,transparent)}
 .hx h2{font-size:1.125rem;margin:32px 0 12px}
@@ -419,6 +420,9 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .lp-sky .shoot{stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-dasharray:40 400;stroke-dashoffset:40;animation:lpshoot 9s ease-in 3s infinite}
 @keyframes lpshoot{0%{stroke-dashoffset:40;opacity:1}8%{stroke-dashoffset:-140;opacity:0}100%{stroke-dashoffset:-140;opacity:0}}
 .lp-sky .glint{stroke:#f6b57a;stroke-width:2;stroke-linecap:round;opacity:.45}
+.lp-sky .floater{animation:lpfloat 6s ease-in-out infinite alternate}
+.lp-sky .floater .pg{fill:#fbf6ee;opacity:.92}.lp-sky .floater .fold{fill:#e3d5c2}.lp-sky .floater .ln{stroke:#a8b6d6;stroke-width:1.6;stroke-linecap:round;fill:none}
+@keyframes lpfloat{from{transform:translateY(-2px)}to{transform:translateY(3px)}}
 .lp-sky .wv{fill:none;stroke:#8fa3d8;stroke-width:1.5;opacity:.35;animation:lpwv 9s linear infinite}.lp-sky .w2{animation-duration:13s;opacity:.25}
 @keyframes lpwv{to{transform:translateX(-360px)}}
 .hero2{position:relative;text-align:center;padding:44px 16px 170px;display:flex;flex-direction:column;align-items:center}
@@ -659,11 +663,13 @@ const TODAY = [
   T("Translates the page into English, Malay and Chinese")
 ];
 /* A container ship in the status colours, drawn in the logo's style. Decoration only. */
+/* The cargo is paperwork: stacks of documents, each with a folded corner, lines of text and a
+   check stamp in a status colour (the product checks documents, not containers). */
 const SHIP_ART = (()=>{
-  const box = (x,y,c)=>`<rect class="cb ${c}" x="${x}" y="${y}" width="36" height="20" rx="2"/><rect x="${x}" y="${y}" width="36" height="20" rx="2" fill="url(#corr)"/>`;
-  const low = [[40,"c-bad"],[78,"c-ok"],[116,"c-rev"],[154,"c-acc"]].map(([x,c])=>box(x,84,c)).join("");
-  const high = [[59,"c-ok"],[97,"c-acc"],[135,"c-bad"]].map(([x,c])=>box(x,62,c)).join("");
-  return `<svg class="art" viewBox="0 40 260 130" aria-hidden="true"><defs><pattern id="corr" width="6" height="20" patternUnits="userSpaceOnUse"><path d="M3 0v20" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/></pattern></defs><g class="shipg">${high}${low}<rect class="hullc" x="192" y="60" width="30" height="44" rx="3"/><rect class="winc" x="197" y="67" width="20" height="6" rx="1"/><rect class="winc" x="205" y="46" width="8" height="14" rx="1"/><path class="hullc" d="M24 104H236L216 138H44Z"/></g><path class="sea1" d="M0 142q16-8 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/><path class="sea2" d="M0 152q16-7 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/></svg>`;
+  const doc = (x,y,c)=>`<g class="cargo"><path class="pg" d="M${x} ${y}h28l8 8v12H${x}z"/><path class="fold" d="M${x+28} ${y}v8h8"/><path class="ln" d="M${x+4} ${y+6}h18M${x+4} ${y+11}h24M${x+4} ${y+16}h14"/><circle class="stamp ${c}" cx="${x+29}" cy="${y+15}" r="3.2"/></g>`;
+  const low = [[40,"c-bad"],[78,"c-ok"],[116,"c-rev"],[154,"c-acc"]].map(([x,c])=>doc(x,84,c)).join("");
+  const high = [[59,"c-ok"],[97,"c-acc"],[135,"c-bad"]].map(([x,c])=>doc(x,62,c)).join("");
+  return `<svg class="art" viewBox="0 40 260 130" aria-hidden="true"><g class="shipg">${high}${low}<rect class="hullc" x="192" y="60" width="30" height="44" rx="3"/><rect class="winc" x="197" y="67" width="20" height="6" rx="1"/><rect class="winc" x="205" y="46" width="8" height="14" rx="1"/><path class="hullc" d="M24 104H236L216 138H44Z"/></g><path class="sea1" d="M0 142q16-8 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/><path class="sea2" d="M0 152q16-7 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/></svg>`;
 })();
 
 /* Team Blockeris. A LinkedIn link shows only once its URL is filled in. */
@@ -739,6 +745,8 @@ const DECO = (()=>{
   const sheet = (cls,stamp)=>`<svg class="sheet ${cls}" viewBox="0 0 90 116"><path class="pg" d="M4 4h60l22 22v86H4z"/><path class="fold" d="M64 4v22h22"/>${[34,44,54,64,74,84].map((y,k)=>`<path class="ln" d="M14 ${y}h${k%3===2?40:62}"/>`).join("")}${stamp==="ok"?`<g class="stamp ok"><circle cx="62" cy="92" r="14"/><path d="M55 92l5 5 9-10"/></g>`:stamp==="bad"?`<g class="stamp bad"><circle cx="62" cy="92" r="14"/><path d="M56 86l12 12M68 86l-12 12"/></g>`:""}</svg>`;
   return `<div class="lp-deco" aria-hidden="true">${sheet("s1","ok")}${sheet("s2","")}${sheet("s3","bad")}${sheet("s4","")}${sheet("s5","ok")}</div>`;
 })();
+/* Loose documents afloat on the sea: [x, y, turn, scale]. Kept clear of the ship's lane. */
+const FLOATERS = [[90,352,-14,1],[300,372,9,.8],[520,344,-6,.7],[860,378,12,.9],[1010,350,-10,.75],[1290,366,7,1]];
 const SCENE = (()=>{
   let seed = 7; const rnd = ()=>(seed = (seed*16807) % 2147483647) / 2147483647;
   // stars keep clear of the middle, where the headline sits
@@ -758,6 +766,7 @@ const SCENE = (()=>{
     <path class="shoot" d="M1300 40l-120 60"/></g>
     <path fill="url(#seag)" d="M0 330C200 318 380 342 560 330S940 316 1120 330 1360 340 1440 332V420H0Z"/>
     <path class="glint" d="M640 350h160M690 368h60M600 388h110M760 382h90"/>
+    ${FLOATERS.map(([x,y,r,k],i)=>`<g class="floater" style="animation-delay:${(i*.7).toFixed(1)}s"><g transform="translate(${x} ${y}) rotate(${r}) scale(${k})"><path class="pg" d="M-13 -16h18l8 8v24h-26z"/><path class="fold" d="M5 -16v8h8"/><path class="ln" d="M-9 -9h12M-9 -3h17M-9 3h17M-9 9h10"/></g></g>`).join("")}
     <path class="wv w1" d="M0 352C120 344 240 360 360 352S600 344 720 352 960 360 1080 352 1320 344 1440 352 1680 360 1800 352"/>
     <path class="wv w2" d="M0 386C120 378 240 394 360 386S600 378 720 386 960 394 1080 386 1320 378 1440 386 1680 394 1800 386"/>
   </svg>`;
