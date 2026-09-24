@@ -143,3 +143,27 @@ def test_the_supabase_client_is_pinned_here_too() -> None:
     would change this page with nothing in the repository changing."""
     assert "@supabase/supabase-js@2.117.1/+esm" in ADMIN
     assert "supabase-js@2/+esm" not in ADMIN
+
+
+def test_the_page_script_runs_after_the_supabase_import() -> None:
+    """`type="module"` is deferred; a classic script runs during parsing. As a
+    classic script the page ran before `window.supabase` existed, so `sb()`
+    returned null, `currentUser()` reported nobody signed in, and a reviewer who
+    was already signed in on the inbox was asked to sign in again here."""
+    import_at = ADMIN.index('<script type="module">')
+    store_at = ADMIN.index('<script src="store.js">')
+    page_at = ADMIN.index("(function(){", store_at)
+    opener = ADMIN.rindex("<script", store_at, page_at)
+
+    assert import_at < store_at, "the supabase import must be declared first"
+    assert ADMIN[opener:page_at].startswith('<script type="module">'), (
+        "the page script must be a module, or it runs before window.supabase exists")
+
+
+def test_store_reads_the_client_lazily() -> None:
+    """store.js is a classic script, so it still runs before the import. That is
+    only safe while it touches `window.supabase` inside a function rather than
+    at load."""
+    head = STORE[:STORE.index("function sb(")]
+
+    assert "window.supabase" not in head, "store.js reads window.supabase at load time"
