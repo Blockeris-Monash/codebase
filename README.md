@@ -7,7 +7,8 @@ requests checks a draft Bill of Lading against its Shipping Instruction.
 [How it works](#how-it-works) · [The dataset](#the-dataset-is-in-the-repo) ·
 [Where the code lives](#where-the-code-lives) · [Evidence](#evidence) ·
 [The five contracts](#the-five-contracts) · [Who built what](#who-built-what) ·
-[Roadmap](#roadmap) · [Documents](#documents) ·
+[Roadmap](#roadmap) · [Working on this](#working-on-this) ·
+[Documents](#documents) ·
 [The seven fields](#the-seven-compared-fields)
 
 ## Start here
@@ -25,7 +26,8 @@ Everything below is the fastest path from "never seen this" to "it works".
 The app is a static page carrying its own results — all 520 emails, every
 comparison already run — so it opens with no backend, no key and no network.
 Only **Check again with AI** calls the API, which sits on a free host and can
-take about 100 seconds to wake. A private window gives the cleanest first look:
+take about 100 seconds to wake — and re-runs the model, so it depends on a
+gateway we do not control. Nothing else on the page needs it. A private window gives the cleanest first look:
 the page remembers your language, panel width and which emails you marked as
 checked. Use an ordinary window to try the phone home screen icon.
 
@@ -38,6 +40,43 @@ One email, decided. Six fields agree, gross weight does not: 40,326 KG on the
 shipping instruction against 41,326 KG on the draft bill of lading. The field is
 named, and both source documents sit underneath so a person can confirm it in
 seconds rather than reading two PDFs.
+
+#### On a phone
+
+The review app installs to the home screen and opens without browser chrome. It
+carries its own results, so once installed it works with no signal at all.
+
+**Android — Chrome.** Open <https://shiphappens-iota.vercel.app/>. Chrome
+usually offers **Install** on its own; if it does not, use **⋮ → Add to Home
+screen → Install**.
+
+**iPhone or iPad — Safari.** Open the same link in **Safari**, then
+**Share → Add to Home Screen**. iOS never prompts by itself and offers this only
+from Safari, so a link opened inside another app's browser will not show it.
+
+Two things that look like failures and are not. Chrome hides **Install** when
+the app is *already installed* — uninstall the old copy first, and clear the
+site data with **⋮ → Settings → Site settings → Clear & reset**, which also
+removes the old cached copy. And a private or incognito window never offers to
+install, so use an ordinary tab for this even though a private one is the better
+first look at the page.
+
+**An installed copy can be out of date, and it will not say so.** The service
+worker fetches from the network first and only falls back to its cache, but an
+installed app that is resumed rather than relaunched never navigates, so it
+never asks. If what you see does not match the screenshot above — no shipment
+reference under the subject line, no **Draft BL requests** folder — force-close
+the app and reopen it. If it still differs, uninstall and clear the site data as
+above. The browser at
+<https://shiphappens-iota.vercel.app/> is always current; only an installed copy
+can lag.
+
+On Android the icon is baked into the wrapper Chrome generates at install time,
+so it does not change in place either — the same uninstall-and-reinstall is what
+picks up a new one. If Android warns that the app was *"built for an older
+version of Android"*, that wrapper is Chrome's, not ours: this repository ships
+no APK, and its `targetSdkVersion` is set by Google's minting service rather
+than by anything in `frontend/manifest.json`.
 
 ### 2 · Get the code
 
@@ -60,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -69,11 +108,40 @@ python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 231 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
 ```
 
-If the tests print 231 passed, you are done — that is the whole system checked
-offline.
+If the tests print 263 passed, you are done — that is the whole system checked
+offline, with no key and no network.
+
+The suite prints its own grouped report rather than a wall of dots, so the run
+says what it proved:
+
+| | |
+|---|---|
+| **Formats** | txt, Word, Excel and PDF parse; 242 of 250 read; the other 8 escalate |
+| **EDI 304** | a different format reaching the same seven fields, delimiters read from the ISA rather than assumed, pounds converted, net weight not counted as gross |
+| **Label alignment** | each shape of variation, CJK stripped before lookup, the `NET WEIGHT` decoy not claimed |
+| **Comparison rules** | the locode decoy, counts, weights, suffixes; `N/A`, `TBA` and `____MT` have no value |
+| **Ordering** | a blank is checked before a mismatch, so formatting is never a discrepancy |
+| **Escalation wording** | the blank token is quoted rather than summarised, the wrong document names what it declares itself, a pasted address is truncated |
+| **Shipment reference** | both reference shapes and neither, and that `INTERNATIONAL` is not one |
+| **Classification** | the body decides, all five categories, and the evidence is true of the email |
+| **Failure modes** | a missing file, an unknown format, a corrupt zip and a near-empty document all escalate; 250 files, zero exceptions |
+| **Cross-check** | two independent comparators reaching the same verdict on 126 emails |
+| **Contracts** | every fixture against its schema, plus a regression guard on each |
+| **End to end** | eight emails, eight outcomes, and a person gets the reason |
+
+That is a selection; the run prints all seventeen areas.
+
+Five further tests reach a model over the network and are **skipped unless you
+ask for them by name** — `SHIP_HAPPENS_LIVE=1` plus the matching key. A key on
+its own is not enough, deliberately: a Gemini or Qwen key left in the
+environment from another project used to unskip them, fire live calls and fail,
+which says nothing about this repository. `QWEN_BASE_URL` also defaults to a
+proxy only our team can reach, so someone else's key would fail against
+infrastructure they have no access to. They are our liveness check, not
+evidence for a reader.
 
 ### 4 · Run it
 
@@ -160,6 +228,47 @@ Three outcomes:
 - **Needs review** — a blank value, an unreadable file, the wrong document type
   or a missing attachment. No value is inferred.
 
+### What is live, and what is a prototype
+
+Worth saying plainly, because it changes how to read everything below.
+
+**The AI ran, and its output is committed.** Qwen classified all 520 emails and
+extracted the seven fields from all 250 attachments. Those results are in
+`results/classifications/` and `results/extracts/`, and they are what the review
+app shows. Every category, every field and every verdict you see began as a
+model reading a document.
+
+**The AI does not re-run when you open it.** This is a prototype: you are
+looking at saved model output, not a live call, and we are not going to ask a
+judge for an API key to prove otherwise. Everything *downstream* of the model
+does run live on your machine — the readers parse all 250 attachments, and the
+deterministic comparator recomputes every verdict from the extracts. That is the
+half that decides outcomes, and it is the half you can check.
+
+**You can verify the model's work without a model.** `python -m cli.evidence`
+compares the saved AI extraction against an independent rules reader that uses
+no AI at all: **1,690 of 1,694 fields agree, 0 conflicting values**. Two
+independent readers of the same 250 files reaching the same answers is the
+strongest thing we can offer offline, and it needs no key, no network and no
+trust in us.
+
+What you cannot check without a key is whether the model would produce those
+same extracts again today. We think that is the right trade for a prototype, and
+we would rather state it than let a reproducible score imply more than it does.
+
+An escalation names the cause, not the category. Not *"missing value in
+gross_weight_kg"* but **`Missing value: gross_weight_kg reads "TBA" on the
+SI`**; not *"could not be confirmed as SI and BL"* but **`the file sent as the
+BL declares itself "PACKING LIST"`**. The difference is what a reviewer does
+next: `TBA` means a value is coming and someone should be chased, `_______`
+means a form went out unfilled and the document goes back.
+
+Each email also carries the shipment it is about — an order reference like
+`5ALT-01226` or a carrier booking like `OOLU9284044566`, shown on the row and
+accepted by the search box. 394 of the 520 carry one. That answers a different
+question from triage: *Commercial is asking about this shipment, what happened
+to it?*
+
 ## The dataset is in the repo
 
 `data/` holds the 520 emails and 250 attachments. The organisers confirmed
@@ -214,7 +323,9 @@ backend/
 cli/      demo_read  demo_pipeline  smoke_test  validate_contracts
           make_fixtures  make_results  evidence  mutation_check  latency
 frontend/ index.html  results.js  config.js   the review UI, static
-          manifest.json  sw.js  icons         home screen icon on a phone
+          i18n.js                             English, Malay, Chinese
+          manifest.json  sw.js  vercel.json   home screen icon on a phone
+          icon-192.png  icon-512.png  apple-touch-icon.png  favicon-32.png
 ```
 
 Run a CLI as a module so imports resolve from the repo root:
@@ -229,6 +340,7 @@ python -m cli.demo_pipeline email_004   # one email through all five stages
 One command rebuilds every validation number from files in this repo:
 
 ```bash
+# in the activated environment — these import the backend
 python -m cli.evidence            # writes results/evidence.md
 python -m cli.mutation_check      # break one BL field at a time, check the verdict
 python -m cli.latency --n 10      # time the live pipeline (needs QWEN_API_KEY)
@@ -281,8 +393,8 @@ What we would build next, in order. None of it is in this version.
 129 arrive with both documents and **91 are waiting on a draft Bill of Lading
 that has not been sent yet**. We already file those on their own rather than as
 review cases; the next step is to do something with them. A chase list: who owes
-which draft BL, against which shipment reference — 62 of the 91 already carry
-that reference in the subject line, across 20 senders — ordered by how long it
+which draft BL, against which shipment reference — 80 of the 91 already carry
+that reference, across 20 senders — ordered by how long it
 has been outstanding.
 
 That is a larger share of the work than the comparison itself, and it is not
@@ -306,19 +418,14 @@ A low-confidence read must land on `missing_value` rather than a forced verdict,
 so that a missing field still outranks a mismatch and an OCR guess never
 masquerades as a value read from the page.
 
-**3. Find a shipment by its reference.** Their service catalogue includes
-*support the Commercial team on any shipping documentation query raised by the
-end customer* — which is lookup across the 601 distinct shipment references in
-this inbox, a different job from triage. The search box already matches them as
-text; what is missing is showing the reference on each row and saying that the
-box accepts one. Closer to a labelling change than a feature, and it makes the
-chase list in item 1 more useful, since both are keyed on the same reference.
-
-**4. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
+**3. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
 once, so the inbox is live rather than a fixed dataset. Send the reply from the
 product; today the drafted reply is shown and the send is a demo. It is also the
 enabler under item 1 — it supplies the date of shipment that makes the deadline
 countable.
+
+*Finding a shipment by its reference was item 3 here and is now built; see
+**How it works** above.*
 
 **Later — reliability and intake.** A confidence score on the extraction, retried
 before escalating. More intake channels: the X12 304 reader already exists, and
@@ -348,6 +455,8 @@ stage's output against its contract — is in
   the classifier decides between them
 - [`docs/05-company-profile.md`](docs/05-company-profile.md) — who the client is
   and why these seven fields are the ones worth checking
+- [`docs/06-disagreement-log.md`](docs/06-disagreement-log.md) — the one place our
+  output differs from the organisers' reference, and why we did not conform
 - `results/evidence.md` — every validation number, rebuilt by
   `python -m cli.evidence`
 

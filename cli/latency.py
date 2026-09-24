@@ -84,7 +84,7 @@ def main() -> None:
     for run in runs:
         print(f"{run['email_id']}: {run['seconds']}s  saved {run['saved']}  live {run['live']}  {'same' if run['same'] else 'DIFFERENT'}")
     summary = {**latency_summary(runs), "runs": runs}
-    Path(args.out).write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    Path(args.out).write_text(json.dumps(summary, indent=1), encoding="utf-8", newline="\n")
     print({k: v for k, v in summary.items() if k != "runs"})
 
 

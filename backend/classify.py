@@ -302,7 +302,7 @@ async def classify_many(
                 return
         # Write then rename, so a crash never leaves a half-written file behind.
         tmp = path.with_suffix(".tmp")
-        tmp.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+        tmp.write_text(result.model_dump_json(indent=2), encoding="utf-8", newline="\n")
         os.replace(tmp, path)
 
     await asyncio.gather(*(one(e) for e in emails))

@@ -44,6 +44,28 @@ SPAM = re.compile(r"bitcoin|exclusive offer|storage is|valued customer|increase 
 INVOICE = re.compile(r"invoice|billing|charges|debit note|payment|\bsoa\b", re.I)
 SI_ASK = re.compile(r"\bSI\b|shipping instruction|draft\s+BL", re.I)
 
+# The shipment a message is about, so a reviewer can answer "Commercial is asking about
+# 5ALT-01226" without opening anything. Two shapes appear in this corpus and nothing else
+# does: an order reference (5ALT-01226) and a carrier booking reference (OOLU9284044566).
+#
+# The carrier half demands a run of four digits. Without it, "[A-Z]{4}[A-Z0-9]{6,}" also
+# matches INTERNATIONAL, OUTSTANDING and INVESTMENT - 13 English words in these subjects
+# alone, every one of them a false reference on a reviewer's screen.
+SHIPMENT_REF = re.compile(r"\b(?:\d[A-Z]{3}-\d{4,6}|[A-Z]{4}[A-Z0-9]*\d{4,}[A-Z0-9]*)\b")
+
+
+def shipment_ref(subject: str, body: str) -> str | None:
+    """The shipment this email is about, or None.
+
+    Subject before body, and first match within each, so the reference shown on a row is
+    the one already visible in the list rather than something found further down.
+    """
+    for text in (subject, body):
+        found = SHIPMENT_REF.search((text or "").upper())
+        if found:
+            return found.group(0)
+    return None
+
 
 def fallback_category(subject: str, body: str, n_attachments: int) -> str:
     if n_attachments >= 1 or COMPARE_ASK.search(body):
@@ -100,6 +122,10 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
     entry = {"id": email_id, "from": record["from"], "subject": record["subject"], "body": body,
              "n_attachments": len(attachments)}
 
+    ref = shipment_ref(record["subject"], record["body"])
+    if ref:  # absent rather than null, so the UI can test for it plainly
+        entry["ref"] = ref
+
     saved_class = classifications / f"{email_id}.json"
     if saved_class.exists():
         found = json.loads(saved_class.read_text(encoding="utf-8"))
@@ -136,7 +162,7 @@ def main() -> None:
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("const RESULTS = " + json.dumps(emails, ensure_ascii=False) + ";\n", encoding="utf-8")
+    out.write_text("const RESULTS = " + json.dumps(emails, ensure_ascii=False) + ";\n", encoding="utf-8", newline="\n")
 
     by_status = {}
     for e in emails:

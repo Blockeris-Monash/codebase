@@ -188,7 +188,7 @@
       }
     ],
     "defect_fields": [],
-    "evidence": "no comparable value on one side for: gross_weight_kg"
+    "evidence": "Missing value: gross_weight_kg reads \"N/A\" on the SI."
   },
   "SubmissionEntry": {
     "category": "BL_COMPARISON",

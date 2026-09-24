@@ -37,6 +37,14 @@ SHOWCASE = [
 ]
 
 
+# Windows gives a redirected or piped stdout the ANSI code page, and this
+# corpus prints CJK labels - 毛重(KGS) and the like - so `... > out.txt` raises
+# UnicodeEncodeError while the same command on screen is fine. Ask for UTF-8
+# where the stream allows it; nothing to do on a platform that already is.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+
 def display_width(text: str) -> int:
     return sum(2 if unicodedata.east_asian_width(c) in WIDE_CHARS else 1
                for c in text)

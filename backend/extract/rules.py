@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from backend.compare.evidence import describe_blanks
 from backend.contracts import (
     Attachment, ClassificationResult, ComparisonResult, DocumentExtract,
     DocumentRoleType, EmailRecord, ExtractedField, FIELD_NAMES,
@@ -105,8 +106,11 @@ def comparison_result(email_id: str, si: DocumentExtract,
     defects = [r["field"] for r in rows if r["verdict"] == VerdictType.Mismatch]
 
     if absent:
+        blanks = [(r["field"], r["si_raw"], r["bl_raw"],
+                   r["si_norm"] is None, r["bl_norm"] is None)
+                  for r in rows if r["verdict"] == VerdictType.Missing]
         return {**review_result(email_id, ReviewReasonType.MissingValue,
-                                f"no comparable value on one side for: {', '.join(absent)}"),
+                                describe_blanks(blanks)),
                 "rows": rows}
     if defects:
         return {"email_id": email_id, "status": StatusType.Mismatch,
