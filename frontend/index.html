@@ -506,9 +506,12 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .lp-sky .cloud path{fill:#fff;opacity:.9}.lp-sky .cloud{animation:lpcloud var(--d) linear infinite}
 @keyframes lpcloud{from{transform:translateX(var(--a))}to{transform:translateX(var(--b))}}
 .lp-sky .wv{animation-duration:7s}.lp-sky .w2{animation-duration:10s}
-.lp-sky .gull{fill:none;stroke:#2e4257;stroke-width:1.6;stroke-linecap:round;opacity:.7;animation:lpflap 1.3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+/* each wing swings from where it meets the body (its inner, lower corner), mirrored left and right */
+.lp-sky .gull path{fill:none;stroke:#2e4257;stroke-width:1.6;stroke-linecap:round;opacity:.7;transform-box:fill-box;animation:lpflapl 1.1s ease-in-out infinite;animation-delay:var(--fd)}
+.lp-sky .gull .lw{transform-origin:100% 100%}.lp-sky .gull .rw{transform-origin:0 100%;animation-name:lpflapr}
 .lp-sky .gullg{animation:lpglide var(--gd) ease-in-out infinite alternate}
-@keyframes lpflap{50%{transform:scaleY(.35)}}
+@keyframes lpflapl{0%,100%{transform:rotate(22deg)}50%{transform:rotate(-24deg)}}
+@keyframes lpflapr{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(24deg)}}
 @keyframes lpglide{from{transform:translate(-14px,4px)}to{transform:translate(18px,-6px)}}
 .lp-sky .glint{stroke:var(--glint)}.lp-sky .wv{stroke:var(--wv)}
 .lp-hero{color:var(--sc-ink)}.lp-tag{color:var(--sc-ink)}.lp-hero .lp-sub{color:var(--sc-sub)}
@@ -770,7 +773,7 @@ const SCENE = (()=>{
     <rect width="1440" height="420" fill="url(#skyg)"/>
     <g class="day"><circle cx="1130" cy="300" r="150" fill="url(#sung)"/><circle class="sun" cx="1130" cy="300" r="46"/>
       ${CLOUDS.map(cloudHTML).join("")}
-      ${[[300,120],[330,105],[1010,150],[1040,138],[1065,160]].map(([x,y],i)=>`<g class="gullg" style="--gd:${11+i*2}s"><path class="gull" style="animation-delay:-${(i*.37).toFixed(2)}s" d="M${x-9} ${y}q5-6 9 0q4-6 9 0"/></g>`).join("")}</g>
+      ${[[300,120],[330,105],[1010,150],[1040,138],[1065,160]].map(([x,y],i)=>`<g class="gullg" style="--gd:${11+i*2}s"><g class="gull" transform="translate(${x} ${y})" style="--fd:-${(i*.37).toFixed(2)}s"><path class="lw" d="M-9 0q5-6 9 0"/><path class="rw" d="M0 0q4-6 9 0"/></g></g>`).join("")}</g>
     <g class="night"><g class="stars">${stars}</g>
     <g class="cons"><path d="${cons.map((p,k)=>(k?"L":"M")+p.join(" ")).join("")}"/>${cons.slice(0,5).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join("")}</g>
     <circle cx="250" cy="90" r="30" fill="#fbe7c6" mask="url(#moonm)"/>

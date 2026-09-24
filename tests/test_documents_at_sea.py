@@ -47,8 +47,11 @@ def test_the_ship_sails_at_a_calm_pace() -> None:
     assert seconds >= 60
 
 
-def test_the_birds_flap_and_glide() -> None:
-    assert re.search(r"\.lp-sky \.gull\{[^}]*animation:lpflap", INDEX)
+def test_the_birds_flap_their_wings_and_glide() -> None:
+    """A flap swings each wing from the body; squashing the whole bird is not a flap."""
+    assert 'class="lw" d="M-9 0q5-6 9 0"' in INDEX and 'class="rw" d="M0 0q4-6 9 0"' in INDEX
+    assert ".lp-sky .gull .lw{transform-origin:100% 100%}" in INDEX and ".lp-sky .gull .rw{transform-origin:0 100%" in INDEX
+    assert "scaleY" not in INDEX[INDEX.index("@keyframes lpflapl"):][:200]
     assert ".lp-sky .gullg{animation:lpglide" in INDEX
     assert ".lp-sky .gullg," in INDEX, "glide resumes from the page clock after a redraw"
 
