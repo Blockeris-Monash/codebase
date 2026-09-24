@@ -508,8 +508,9 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .lp-sky .se1{stop-color:var(--se1)}.lp-sky .se2{stop-color:var(--se2)}
 .lp-sky .night{opacity:var(--night);transition:opacity .6s}.lp-sky .day{opacity:var(--day);transition:opacity .6s}
 .lp-sky .sun{fill:#ffd27a}
-.lp-sky .cloud path{fill:#fff;opacity:.9}.lp-sky .cloud{animation:lpcloud var(--d) ease-in-out infinite alternate}
-@keyframes lpcloud{to{transform:translateX(60px)}}
+.lp-sky .cloud path{fill:#fff;opacity:.9}.lp-sky .cloud{animation:lpcloud var(--d) linear infinite}
+@keyframes lpcloud{from{transform:translateX(var(--a))}to{transform:translateX(var(--b))}}
+.lp-sky .wv{animation-duration:7s}.lp-sky .w2{animation-duration:10s}
 .lp-sky .gull{fill:none;stroke:#2e4257;stroke-width:1.6;stroke-linecap:round;opacity:.7}
 .lp-sky .glint{stroke:var(--glint)}.lp-sky .wv{stroke:var(--wv)}
 .lp-hero{color:var(--sc-ink)}.lp-tag{color:var(--sc-ink)}.lp-hero .lp-sub{color:var(--sc-sub)}
@@ -529,7 +530,8 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 
 /* loops continue across redraws */
 .lp-hero .lp-sailer{animation-delay:calc(var(--t,0) * -1s)}
-.lp-sky .wv,.lp-sky .cloud,.scard .lh .beam,.lp-deco .sheet{animation-delay:calc(var(--t,0) * -1s)!important}
+.lp-sky .wv,.scard .lh .beam,.lp-deco .sheet{animation-delay:calc(var(--t,0) * -1s)!important}
+.lp-sky .cloud{animation-delay:calc(var(--t,0) * -1s - var(--o,0s))!important}
 .lp-sky .shoot{animation-delay:calc(3s - var(--t,0) * 1s)}
 /* the hero's sea fades into the page instead of stopping at a hard edge */
 .lp-hero .lp-sky{-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)}
@@ -746,6 +748,12 @@ function countNums(root){
   requestAnimationFrame(tick);
 }
 
+/* One wave repeats every 360 units, the distance lpwv moves it, so each loop ends where it began. */
+const wavePath = y=>`M0 ${y}` + "q90-8 180 0t180 0".repeat(6);
+/* Clouds drift right across the sky and come back in from the left out of sight:
+   [x, y, scale, seconds to cross]. --o starts each one where it is drawn. */
+const CLOUDS = [[140,70,1,70],[420,40,.8,85],[930,90,1.1,62],[1260,60,.9,78],[640,150,.7,90]];
+const cloudHTML = ([x,y,k,d])=>{ const a = -(x+220), b = 1560-x; return `<g class="cloud" style="--a:${a}px;--b:${b}px;--d:${d}s;--o:${(d*-a/(b-a)).toFixed(1)}s"><path transform="translate(${x} ${y}) scale(${k})" d="M0 30a18 18 0 0118-18 26 26 0 0148-6 20 20 0 0130 24z"/></g>`; };
 /* Our own decoration: paper documents drifting in the side margins (some stamped checked or flagged),
    and a night-voyage scene for the hero: sky, stars, a constellation, the moon, the sea and the ship. */
 const DECO = (()=>{
@@ -766,7 +774,7 @@ const SCENE = (()=>{
       <radialGradient id="sung"><stop offset="0" stop-color="#fff1c2" stop-opacity=".9"/><stop offset="1" stop-color="#fff1c2" stop-opacity="0"/></radialGradient><clipPath id="flclip"><rect x="-40" y="-40" width="80" height="43"/></clipPath><mask id="moonm"><circle cx="250" cy="90" r="30" fill="#fff"/><circle cx="264" cy="80" r="27" fill="#000"/></mask></defs>
     <rect width="1440" height="420" fill="url(#skyg)"/>
     <g class="day"><circle cx="1130" cy="300" r="150" fill="url(#sung)"/><circle class="sun" cx="1130" cy="300" r="46"/>
-      ${[[140,70,1],[420,40,.8],[930,90,1.1],[1260,60,.9],[640,150,.7]].map(([x,y,k])=>`<g class="cloud" style="--d:${(x%7)+30}s"><path transform="translate(${x} ${y}) scale(${k})" d="M0 30a18 18 0 0118-18 26 26 0 0148-6 20 20 0 0130 24z"/></g>`).join("")}
+      ${CLOUDS.map(cloudHTML).join("")}
       ${[[300,120],[330,105],[1010,150],[1040,138],[1065,160]].map(([x,y])=>`<path class="gull" d="M${x-9} ${y}q5-6 9 0q4-6 9 0"/>`).join("")}</g>
     <g class="night"><g class="stars">${stars}</g>
     <g class="cons"><path d="${cons.map((p,k)=>(k?"L":"M")+p.join(" ")).join("")}"/>${cons.slice(0,5).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join("")}</g>
@@ -775,8 +783,8 @@ const SCENE = (()=>{
     <path fill="url(#seag)" d="M0 330C200 318 380 342 560 330S940 316 1120 330 1360 340 1440 332V420H0Z"/>
     <path class="glint" d="M640 350h160M690 368h60M600 388h110M760 382h90"/>
     ${FLOATERS.map(([x,y,r,k],i)=>`<g class="floater" transform="translate(${x} ${y}) scale(${k})"><ellipse class="ripple" cx="0" cy="3" rx="24" ry="4" style="animation-delay:${(i*1.1).toFixed(1)}s"/><g clip-path="url(#flclip)"><g class="rock" style="animation-delay:${(i*.9).toFixed(1)}s"><g transform="rotate(${r}) skewX(-18) scale(1 .55)"><path class="pg" d="M-13 -24h18l8 8v28h-26z"/><path class="fold" d="M5 -24v8h8"/><path class="ln" d="M-9 -16h12M-9 -9h17M-9 -2h17M-9 5h10"/></g></g></g><path class="crest" d="M-22 3q5.5-2.6 11 0t11 0t11 0t11 0"/></g>`).join("")}
-    <path class="wv w1" d="M0 352C120 344 240 360 360 352S600 344 720 352 960 360 1080 352 1320 344 1440 352 1680 360 1800 352"/>
-    <path class="wv w2" d="M0 386C120 378 240 394 360 386S600 378 720 386 960 394 1080 386 1320 378 1440 386 1680 394 1800 386"/>
+    <path class="wv w1" d="${wavePath(352)}"/>
+    <path class="wv w2" d="${wavePath(386)}"/>
   </svg>`;
 })();
 
