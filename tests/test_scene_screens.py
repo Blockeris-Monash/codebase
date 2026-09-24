@@ -35,3 +35,10 @@ def test_the_help_body_carries_on_from_the_horizon() -> None:
     rule = rule[:rule.index("}")]
     assert "linear-gradient(180deg,var(--dlg-top) 0,var(--panel)" in rule and "var(--sk4) 22%" in rule
     assert INDEX.count("--dlg-top:") == 3, "its own top colour by day and at night"
+
+
+def test_the_help_body_scrolls_under_a_fixed_header() -> None:
+    """The popup hides its overflow (to clip the scene header), so the body must take the
+    remaining height and scroll on its own; without that, Guide and Contact support were cut off."""
+    assert ".dlg.wide{overflow:hidden;display:flex;flex-direction:column;" in INDEX
+    assert ".dlg.wide .dlgb{flex:1;min-height:0;overflow:auto}" in INDEX

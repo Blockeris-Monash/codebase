@@ -241,7 +241,7 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .dlg.wide{width:100%;max-width:660px;padding:0;border:1px solid var(--line)}
 .dlgh{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0}.dlgh h2{margin:0;font-size:1.25rem}
 /* Help opens on a strip of the landing page's sky, horizon at its lower edge; still, since it is used while working */
-.dlg.wide{overflow:hidden;background:radial-gradient(120% 55% at 100% 100%,color-mix(in srgb,var(--sk4) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--dlg-top) 0,var(--panel) 320px)}.dlg.wide .dlgb{overflow:auto}
+.dlg.wide{overflow:hidden;display:flex;flex-direction:column;background:radial-gradient(120% 55% at 100% 100%,color-mix(in srgb,var(--sk4) 22%,transparent),transparent 70%),linear-gradient(180deg,var(--dlg-top) 0,var(--panel) 320px)}.dlg.wide .dlgb{flex:1;min-height:0;overflow:auto}.dlg.wide .dlgh,.dlg.wide .tabs{flex:none}
 /* the body carries on from the header's horizon: deep water fading into the panel, a faint sunset glow at the foot */
 .dlgh.sky{position:relative;overflow:hidden;min-height:78px;padding:18px 20px 14px;align-items:flex-start;color:var(--sc-ink);border-bottom:3px solid transparent;border-image:linear-gradient(90deg,#b8583a,#f09a55 50%,#b8583a) 1}
 .dlgh.sky .lp-sky{position:absolute;left:0;top:-80px;width:100%;height:auto;min-height:170px;z-index:0}.dlgh.sky .lp-sky *{animation:none!important}
