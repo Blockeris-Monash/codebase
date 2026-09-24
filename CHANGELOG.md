@@ -125,7 +125,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 503 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 506 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -152,6 +152,17 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   regenerated here, so the screen and the API cannot disagree.
 
 ### Fixed
+
+- **Three defects in the batch extractor, all of them long-standing.** `--data`
+  defaulted to `backend/data`, a path that has never existed, so the command in
+  the module docstring extracted nothing for anyone who did not pass the flag.
+  The filename was validated with `assert`, which `python -O` removes entirely,
+  leaving a `TypeError` two lines later that names nothing. And one document
+  that raised took the whole run with it: `job.result()` re-raises inside the
+  `as_completed` loop, so a 250-document run over real model calls could die at
+  the first bad file having already written part of its output, with no summary
+  of what had been done. A failure is now recorded the way a model refusal
+  already was, and a rerun retries it, because a rerun skips whatever is on disk.
 
 - **The page no longer scrolls sideways on a narrow screen.** Rendered across ten
   geometries in English and Malay, every width under 500px scrolled horizontally —
