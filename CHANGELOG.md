@@ -9,6 +9,30 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The service's log lines now reach somewhere a person can read them.**
+  Nothing configured logging, so `logging.getLogger(__name__)` fell back to
+  Python's last resort: WARNING and above, to stderr, unformatted. Every
+  `log.info(...)` already written in the backend — eighteen of them, across
+  classification, reading, extraction and the rate limiter — was being discarded,
+  and the warnings that did survive carried no timestamp, no logger name and
+  nothing tying them to a request.
+
+  One handler now, level from `LOG_LEVEL`, and **every line carries the same
+  request id the response returns in `X-Request-ID`** — so a failure a judge saw
+  in a browser can be found in Render's log viewer. The id travels in a
+  `ContextVar`, because the alternative is threading it through every call
+  between the middleware and whatever eventually fails. One line per request with
+  how long it took, at WARNING when the status is 500 or worse so it is not read
+  in the same column as every healthy request. `/health` is left out: the uptime
+  monitor calls it every few minutes and would bury everything else. `httpx` and
+  friends are held at WARNING for the same reason — at INFO they print a
+  transcript of every Gmail and model call.
+
+  A misspelt `LOG_LEVEL` falls back to INFO rather than silencing the service,
+  which is the failure the whole module exists to prevent: `getLevelName` answers
+  `"Level NONSENSE"` for anything it does not recognise, and setting that as a
+  level turns logging off without saying so.
+
 - **A reports queue, on its own page.** `frontend/admin.html` lists what
   reviewers flagged with "Report a problem", newest first, filterable by whether
   a person or the pipeline filed it, each row linking back to the email it was
@@ -225,7 +249,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through the live pipeline. Its state, spinner, progress bar and glow went too,
   along with seven strings that no longer had anywhere to appear.
 
-- **Test count: 231 to 548 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 561 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 

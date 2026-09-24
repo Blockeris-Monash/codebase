@@ -24,9 +24,14 @@ from collections import defaultdict, deque
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from backend.logging_setup import REQUEST_ID
+
 log = logging.getLogger(__name__)
 
 REQUEST_ID_HEADER = "X-Request-ID"
+SERVER_ERROR = 500
+# A monitor hits /health every few minutes; logging it buries the rest.
+QUIET_PATHS = frozenset({"/health"})
 WINDOW_SECONDS = 60.0
 MAX_REQUESTS_PER_WINDOW = 30
 TOO_MANY_REQUESTS = 429
@@ -68,6 +73,11 @@ def is_over_limit(who: str, now: float) -> bool:
 
 async def tag_and_limit(request: Request, call_next):
     request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
+    # Set before anything else runs, so every line logged while handling this
+    # request carries the same id the caller sees in the response header.
+    REQUEST_ID.set(request_id)
+    started = time.monotonic()
+
     if request.url.path in LIMITED_PATHS and is_over_limit(caller(request), time.monotonic()):
         log.warning("rate limited %s on %s [%s]", caller(request), request.url.path, request_id)
         return JSONResponse(
@@ -78,5 +88,13 @@ async def tag_and_limit(request: Request, call_next):
 
     response = await call_next(request)
     response.headers[REQUEST_ID_HEADER] = request_id
+
+    # One line per request, with how long it took. /health is left out: the
+    # uptime monitor calls it every few minutes and would bury everything else.
+    if request.url.path not in QUIET_PATHS:
+        elapsed = time.monotonic() - started
+        level = logging.WARNING if response.status_code >= SERVER_ERROR else logging.INFO
+        log.log(level, "%s %s -> %s in %.2fs",
+                request.method, request.url.path, response.status_code, elapsed)
 
     return response

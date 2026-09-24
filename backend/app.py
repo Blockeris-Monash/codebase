@@ -30,9 +30,13 @@ from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
+from backend.logging_setup import configure as configure_logging
 
 
 load_dotenv()
+# Before anything else logs: without this every log.info in the service is
+# discarded and the warnings that survive carry no timestamp or request id.
+configure_logging()
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
