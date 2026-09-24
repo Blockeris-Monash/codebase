@@ -37,6 +37,8 @@ def attachments(data_dir: Path) -> Path:
 # reader nothing about coverage. Matched against the test's node id, first
 # match wins, so order matters.
 REPORT_AREAS: list[tuple[str, str, str]] = [
+    ("review_state_store", "Saved state", "a mark survives a change of browser"),
+    ("store", "Saved state", "a mark survives a change of browser"),
     ("reads_every_supported_format", "Formats", "txt, docx and xlsx parse"),
     ("locates_all_seven_fields", "Formats", "all 7 fields found in each format"),
     ("every_attachment_reads_except", "Formats", "242 of 250 parse"),
