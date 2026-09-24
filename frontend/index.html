@@ -43,6 +43,8 @@ body{background:var(--bg-grad,var(--bg));background-attachment:fixed;min-height:
 button,select{font:inherit;color:inherit}
 button{cursor:pointer}
 button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.authbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));background:var(--bad-soft);color:var(--ink);border-bottom:1px solid var(--line);font-size:0.875rem}
+.authbar button{border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--panel);min-height:32px}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:max(10px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));border-bottom:1px solid var(--line);background:var(--panel);box-shadow:var(--card);position:sticky;top:0;z-index:5}
 .brand{display:flex;align-items:center;gap:10px}
 .mark{width:44px;height:44px;flex:none;overflow:visible}
@@ -236,6 +238,9 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .hb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .themesw{display:inline-flex;gap:4px}
 .langwrap{position:relative;display:inline-block}
+.acctwrap{position:relative;display:inline-block}
+.avatar{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.75rem;line-height:1}
+.mhead{padding:8px 10px;overflow-wrap:anywhere}
 .langbtn .ico{margin:0}.langbtn .lname{margin:0 6px 0 6px;font-weight:600}.langbtn .ico:last-child{width:.9em;height:.9em}
 .menu{position:absolute;right:0;top:calc(100% + 8px);min-width:210px;display:flex;flex-direction:column;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--card);z-index:20}
 .mi{display:flex;align-items:center;gap:8px;background:none;border:0;border-radius:8px;padding:9px 10px;text-align:left;color:var(--ink)}
@@ -447,7 +452,7 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -489,6 +494,7 @@ const ICON = {
   RIGHT: ICO('<path d="M9 5l7 7-7 7"/>'),
   GLOBE: ICO('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
   CHEV: ICO('<path d="M6 9l6 6 6-6"/>'),
+  USER: ICO('<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
 const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${t(LABEL[e.status])}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
@@ -675,6 +681,27 @@ function countUp(){
 }
 
 let logoIntro = false;
+/* Sign in with Google (Supabase). Hidden until sign-in is available, so offline or
+   unconfigured the top bar is exactly as before. */
+/* Google refuses an account that is not on the consent screen's test-user list,
+   and it refuses AFTER the chooser - so without this the page just reappears
+   signed out, with the reason sitting in the address bar where nobody looks. */
+function signInErrorHTML(){
+  if(!S.authErr) return "";
+  const denied = S.authErr.code === (window.Store?.ACCESS_DENIED || "access_denied");
+  const why = denied
+    ? t("This Google account is not on the tester list for this app. Ask the team to add it, then try again.")
+    : t("Sign-in did not finish: {reason}", {reason: S.authErr.detail || S.authErr.code});
+  return `<div class="authbar" role="alert"><span>${esc(why)}</span><button class="ghost" data-a="dismisserr">${t("Dismiss")}</button></div>`;
+}
+
+function accountHTML(){
+  if(!S.authReady) return "";
+  if(!S.user) return `<button class="ghost hb" data-a="signin" aria-label="${t("Sign in with Google")}" title="${t("Sign in with Google")}">${ICON.USER}<span class="lbl">${t("Sign in")}</span></button>`;
+  const meta = S.user.user_metadata || {}, email = S.user.email || "", name = meta.full_name || meta.name || email;
+  return `<span class="acctwrap"><button class="ghost hb" data-a="usermenu" aria-haspopup="menu" aria-expanded="${S.userMenu}" aria-label="${t("Account")}" title="${esc(email)}"><span class="avatar" aria-hidden="true">${esc((name.trim()[0]||"?").toUpperCase())}</span><span class="lbl">${esc(name.split(/[\s@]/)[0])}</span>${ICON.CHEV}</button>${S.userMenu?`<div class="menu" role="menu" aria-label="${t("Account")}"><div class="mhead"><span class="mute small">${t("Signed in as")}</span><br><b>${esc(email)}</b></div><div class="msep"></div><button class="mi" role="menuitem" data-a="signout"><span class="mtick"></span>${t("Sign out")}</button></div>`:""}</span>`;
+}
+
 function render(){
   const rootTheme = document.documentElement.dataset.theme;
   const isDark = rootTheme ? rootTheme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
@@ -701,7 +728,7 @@ function render(){
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
   const brand = q(".brand");
   document.getElementById("app").innerHTML =
-    `<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span><button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
+    `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
      <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
        </div>
@@ -746,6 +773,7 @@ document.addEventListener("pointerdown", ev=>{
 
 document.addEventListener("click", ev=>{
   if(S.langMenu && !ev.target.closest(".langwrap")){ S.langMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
+  if(S.userMenu && !ev.target.closest(".acctwrap")){ S.userMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
   const el = ev.target.closest("[data-a]"); if(!el) return;
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="foldersel") return;
@@ -754,6 +782,10 @@ document.addEventListener("click", ev=>{
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
   else if(a==="langmenu") S.langMenu=!S.langMenu;
+  else if(a==="signin"){ window.Store?.signIn(); return; }
+  else if(a==="usermenu") S.userMenu=!S.userMenu;
+  else if(a==="dismisserr"){ S.authErr=null; }
+  else if(a==="signout"){ S.userMenu=false; window.Store?.signOut(); }
   else if(a==="langpick"){ S.langMenu=false; setLang(k); }
   else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
   else if(a==="langclose"){ S.langDlg=false; }
@@ -830,6 +862,21 @@ render();
 Store?.pull(S.marks)?.then(function (merged) {
   if (!merged) return;
   S.marks = merged; saveMarks(); render();
+});
+
+/* The Supabase library is a module script, and module scripts run after this one
+   but before DOMContentLoaded. So sign-in is wired here, not above. The callback
+   fires at once with the saved session, then on every sign-in and sign-out. */
+document.addEventListener("DOMContentLoaded", ()=>{
+  S.authErr = window.Store?.authError?.() || null;
+  S.authReady = !!window.Store?.onUser?.((user, event)=>{
+    S.user = user; S.userMenu = false; render();
+    // Outside the callback: supabase-js must not be called from inside its own auth callback.
+    if(user && (event==="INITIAL_SESSION"||event==="SIGNED_IN")) setTimeout(()=>{
+      window.Store?.pull(S.marks)?.then(merged=>{ if(merged){ S.marks = merged; saveMarks(); render(); } });
+    }, 0);
+  });
+  if(S.authReady) render();
 });
 </script>
 <script>

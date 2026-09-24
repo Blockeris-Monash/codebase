@@ -27,3 +27,22 @@ allows. Every other module uses the `TypedDict`s in `backend/contracts.py`.
 Supplied by the organisers. Kept byte-identical so it can be re-synced if they
 issue a fix, and so `from loader import Inbox` matches their documentation.
 Not held to house style.
+
+## `backend/db/migrations/` — snake_case names and uuid keys
+
+House says `PascalCase` tables and columns, `{TableName}Id` integer primary
+keys, and no UUIDs unless asked for.
+
+This schema uses `snake_case` and `uuid` throughout, because it is not ours
+alone. Supabase Auth owns the identity: `auth.uid()` returns a `uuid`, and every
+row-level-security policy compares a column against it, so a `uuid` key is not a
+preference but the type the platform hands us. `auth.users` and the rest of the
+`auth` schema are `snake_case`, and a `PascalCase` table sitting beside them
+would need quoting in every statement, since unquoted identifiers fold to lower
+case in Postgres.
+
+Naming the columns `UserId` while the thing they reference is `auth.users.id`
+would make the join harder to read, not easier, and the guidelines are explicit
+that clarity wins when a rule and a reader disagree.
+
+Revisit if the database ever stops being a Supabase one.

@@ -108,5 +108,72 @@
     }
   }
 
-  window.Store = { pushMark, pushReply, pushReport, pull, MARK_OK, MARK_BACK };
+  // Sign in with Google through Supabase. The Google client ID and secret live in
+  // the Supabase dashboard (Auth > Providers > Google), never in this file, so the
+  // code is the same before and after Google is switched on there.
+  async function signIn() {
+    const c = sb();
+    if (!c) return false;
+    try {
+      const { error } = await c.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: location.origin + location.pathname },  // back to this page
+      });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn("sign-in did not start:", error);
+      return false;
+    }
+  }
+
+  async function signOut() {
+    const c = sb();
+    if (!c) return;
+    try {
+      await c.auth.signOut();
+    } catch (error) {
+      console.warn("sign-out failed:", error);
+    }
+  }
+
+  // Calls back with the signed-in user (or null) now, and again on every sign-in
+  // and sign-out. Returns false when sign-in is not available here: unconfigured,
+  // or the library never arrived (offline), so the page shows no button.
+  function onUser(callback) {
+    const c = sb();
+    if (!c) return false;
+    c.auth.onAuthStateChange(function (event, session) {
+      callback(session ? session.user : null, event);
+    });
+    return true;
+  }
+
+
+  // Why a sign-in did not finish.
+  //
+  // Google hands its refusal back through Supabase as query or fragment
+  // parameters on the return URL, and nothing was reading them: the page
+  // simply reappeared signed out, with the reason sitting in the address bar.
+  // The commonest one is an account that is not on the OAuth consent screen's
+  // test-user list, which Google rejects AFTER the account chooser - so from
+  // the outside it looks like the button did nothing.
+  const ACCESS_DENIED = "access_denied";
+
+  function authError() {
+    const search = new URLSearchParams(location.search);
+    const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const code = search.get("error") || hash.get("error");
+    if (!code) return null;
+
+    const detail = search.get("error_description") || hash.get("error_description") || "";
+    // Read once. Leaving it in the address bar means a reload shows it again,
+    // and a shared link carries someone else's failure.
+    history.replaceState(null, "", location.pathname);
+
+    return { code: code, detail: detail.replace(/\+/g, " ") };
+  }
+
+  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError,
+                   ACCESS_DENIED, MARK_OK, MARK_BACK };
 })();

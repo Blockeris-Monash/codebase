@@ -44,7 +44,8 @@ allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()] if cors_
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    # No cookies and no auth header on any route here, so allow_credentials is False.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

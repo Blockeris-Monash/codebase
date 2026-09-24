@@ -2,6 +2,9 @@
 // The Malay and Chinese here were written by an AI and should be checked by a native speaker before they are shown to customers.
 window.I18N = {
  "ms": {
+  "Dismiss": "Tutup",
+  "Sign-in did not finish: {reason}": "Log masuk tidak selesai: {reason}",
+  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "Akaun Google ini tiada dalam senarai penguji untuk aplikasi ini. Minta pasukan menambahkannya, kemudian cuba lagi.",
   "Shipper": "Penghantar",
   "Consignee": "Penerima barang",
   "Notify party": "Pihak untuk dimaklumkan",
@@ -189,9 +192,17 @@ window.I18N = {
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "Bahasa Inggeris, Melayu dan Cina berfungsi hari ini. Menambah lebih banyak bahasa dirancang untuk kemas kini akan datang.",
   "See what's next": "Lihat apa seterusnya",
   "Colour-blind friendly themes": "Tema mesra buta warna",
-  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "Tema warna tambahan untuk orang yang buta warna, supaya Tidak sepadan, Perlu disemak dan Sepadan dapat dibezakan tanpa bergantung pada merah dan hijau."
+  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "Tema warna tambahan untuk orang yang buta warna, supaya Tidak sepadan, Perlu disemak dan Sepadan dapat dibezakan tanpa bergantung pada merah dan hijau.",
+  "Sign in": "Log masuk",
+  "Sign in with Google": "Log masuk dengan Google",
+  "Account": "Akaun",
+  "Signed in as": "Log masuk sebagai",
+  "Sign out": "Log keluar"
  },
  "zh": {
+  "Dismiss": "关闭",
+  "Sign-in did not finish: {reason}": "登录未完成：{reason}",
+  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "此 Google 帐号不在本应用的测试人员名单中。请让团队添加后重试。",
   "Shipper": "托运人",
   "Consignee": "收货人",
   "Notify party": "通知方",
@@ -379,6 +390,11 @@ window.I18N = {
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "目前支持英文、马来文和中文。添加更多语言已列入后续更新计划。",
   "See what's next": "查看下一步",
   "Colour-blind friendly themes": "色盲友好主题",
-  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "为色盲用户提供额外的配色主题，这样无需依赖红色和绿色，也能分辨“不一致”“需要审核”和“一致”。"
+  "Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.": "为色盲用户提供额外的配色主题，这样无需依赖红色和绿色，也能分辨“不一致”“需要审核”和“一致”。",
+  "Sign in": "登录",
+  "Sign in with Google": "使用 Google 登录",
+  "Account": "账户",
+  "Signed in as": "当前登录账号",
+  "Sign out": "退出登录"
  }
 };
