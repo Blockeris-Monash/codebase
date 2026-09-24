@@ -57,7 +57,7 @@ def test_the_longest_label_in_any_language_still_has_room() -> None:
     """The tiles were sized against English. Malay runs to two and a half times
     the length, and the language switch is on the differentiation slide."""
     longest = 0
-    for label in ("All mail", "Mismatch", "Needs review", "Match", "Checked"):
+    for label in ("All mail", "Action required", "Needs review", "Verified", "Done"):
         for translated in re.findall(re.escape(f'"{label}"') + r'\s*:\s*"([^"]+)"', I18N):
             longest = max(longest, len(translated))
 

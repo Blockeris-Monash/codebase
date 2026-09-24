@@ -127,6 +127,8 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .b-NEEDS_REVIEW{background:var(--rev-soft);color:var(--rev)}
 .b-OK{background:var(--ok-soft);color:var(--ok)}
 .b-none,.b-done{background:var(--sunk);color:var(--mute)}
+.badge .cnt{display:inline-block;min-width:1.4em;margin-left:6px;padding:0 5px;border-radius:999px;text-align:center;color:var(--panel)}
+.b-MISMATCH .cnt{background:var(--bad)}.b-NEEDS_REVIEW .cnt{background:var(--rev)}
 .mute{color:var(--mute)}
 .small{font-size:0.8125rem}
 .num{font-variant-numeric:tabular-nums}
@@ -342,14 +344,14 @@ const REASON = {
   unreadable:T("One attachment could not be read (scanned or cut off)."),
   wrong_doc_type:T("One attachment is not a Shipping Instruction or a Bill of Lading."),
   missing_attachment:T("The SI or the BL is not attached to this email.")};
-const LABEL = {MISMATCH:T("Mismatch"), NEEDS_REVIEW:T("Needs review"), OK:T("Match")};
+const LABEL = {MISMATCH:T("Action required"), NEEDS_REVIEW:T("Needs review"), OK:T("Verified")};
 const OTHER = {SI_REQUEST:T("SI request"), INVOICE_QUERY:T("Invoice"), GENERAL:T("General"), SPAM:T("Spam"), BL_COMPARISON:T("SI vs BL")};
 const FOLDERS = [
   {k:"all", n:T("All mail"), f:()=>true},
-  {k:"MISMATCH", n:T("Mismatch"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
+  {k:"MISMATCH", n:T("Action required"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
   {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !e.awaiting && !S.marks[e.id]},
-  {k:"OK", n:T("Match"), f:e=>e.status==="OK"},
-  {k:"CHECKED", n:T("Checked"), f:e=>!!S.marks[e.id]},
+  {k:"OK", n:T("Verified"), f:e=>e.status==="OK"},
+  {k:"CHECKED", n:T("Done"), f:e=>!!S.marks[e.id]},
   {k:"cmp", n:T("SI vs BL checks"), f:e=>e.category==="BL_COMPARISON"},
   {k:"AWAIT", n:T("Draft BL requests"), f:e=>!!e.awaiting},
   {k:"SI_REQUEST", n:T("SI requests"), f:e=>e.category==="SI_REQUEST"},
@@ -368,7 +370,7 @@ const ROADMAP = [
   [T("Shared review queue for a team"), T("Several reviewers work the same queue, with who checked what and when.")],
   [T("Translate an email"), T("Translate an email and its documents into the reviewer's language with one click, for people who do not read English.")],
   [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")],
-  [T("Colour-blind friendly themes"), T("Extra colour themes for people with colour blindness, so Mismatch, Needs review and Match can be told apart without relying on red and green.")]
+  [T("Colour-blind friendly themes"), T("Extra colour themes for people with colour blindness, so Action required, Needs review and Verified can be told apart without relying on red and green.")]
 ];
 function feedbackText(){
   const f = S.fb;
@@ -379,18 +381,18 @@ function saveFeedback(list){ try{ localStorage.setItem("blockeris.feedback", JSO
 const kbd = t=>`<kbd>${t}</kbd>`;
 
 function guideHTML(){
-  const pills = [T("All mail"),T("Mismatch"),T("Needs review"),T("Match"),T("Checked")].map(n=>`<span class="pillx">${t(n)}</span>`).join("");
+  const pills = [T("All mail"),T("Action required"),T("Needs review"),T("Verified"),T("Done")].map(n=>`<span class="pillx">${t(n)}</span>`).join("");
   const legend = [
-    ["MISMATCH",T("Mismatch"),T("The Shipping Instruction and the Bill of Lading disagree. The different field is marked. Fix the Bill of Lading.")],
+    ["MISMATCH",T("Action required"),T("The Shipping Instruction and the Bill of Lading disagree. The different field is marked. Fix the Bill of Lading.")],
     ["NEEDS_REVIEW",T("Needs review"),T("A person needs to look. The reason is under the banner (blank field, unreadable file, wrong document).")],
-    ["OK",T("Match"),T("All 7 fields match. Nothing to do.")]
+    ["OK",T("Verified"),T("All 7 fields match. Nothing to do.")]
   ].map(([k,n,d])=>`<div class="lg"><span class="badge b-${k}">${ICON[k]}${t(n)}</span><span>${t(d)}</span></div>`).join("");
   return `<ol class="steps">` +
     step(1,t("Pick a folder"),`<div class="pills">${pills}</div><div class="cap">${t("The boxes at the top filter the list. The Show menu has more folders, like invoices, SI requests and spam.")}</div>`) +
     step(2,t("Open an email"),`<div class="cap">${t("Click one in the list. Search by subject, sender or number, and press {esc} to clear it. Once an email is open, {left} {right} move to the previous or next email. On a phone, List takes you back.",{esc:kbd("Esc"),left:kbd("←"),right:kbd("→")})}</div>`) +
     step(3,t("Read the colour"),`<div class="legend">${legend}</div>`) +
     step(4,t("Check the details"),`<div class="cap">${t("Click a row in the table to highlight where that value sits in the original documents. Open {how} to see every step, from the cover email to the field by field check.",{how:"<b>"+t("How Ship Happens decided")+"</b>"})}</div>`) +
-    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as checked")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
+    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as done")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
     `</ol>`;
 }
 
@@ -497,7 +499,10 @@ const ICON = {
   USER: ICO('<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
-const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}">${ICON[e.status]}${t(LABEL[e.status])}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
+/* Fields that differ or are blank, shown on the list badge so the worst emails are opened first. */
+const issues = e=>(e.rows||[]).filter(r=>r.verdict!=="match").length;
+const issuesTip = e=>{ const n = issues(e); return e.status==="MISMATCH" ? t(n>1?T("{n} fields differ"):T("{n} field differs"),{n}) : t(n>1?T("{n} fields are blank"):T("{n} field is blank"),{n}); };
+const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}" ${issues(e)?`title="${issuesTip(e)}"`:""}>${ICON[e.status]}${t(LABEL[e.status])}${issues(e)?`<span class="cnt num" aria-label="${issuesTip(e)}">${issues(e)}</span>`:""}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
 
 function rowsHTML(rows){
   return rows.map(r=>{
@@ -622,7 +627,7 @@ function detail(e){
   const m = S.marks[e.id];
   if(!e.awaiting && (e.status==="MISMATCH"||e.status==="NEEDS_REVIEW")){
     const d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
-    if(m) h += `<div class="done"><span>${m==="ok"?t("Marked as checked"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
+    if(m) h += `<div class="done"><span>${m==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
     else if(d) h += `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
@@ -630,7 +635,7 @@ function detail(e){
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">${t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div class="small mute" style="margin-top:8px">${t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
-    else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as checked")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
+    else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
   }
   if(canRecheck(e)){
     h += `<div class="live" aria-live="polite">${live&&live.busy
@@ -720,7 +725,7 @@ function render(){
   const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
-    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Checked"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
+    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
   const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
@@ -729,7 +734,7 @@ function render(){
   const brand = q(".brand");
   document.getElementById("app").innerHTML =
     `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
-     <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
+     <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}</div>
      <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
        </div>
      <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}`;
