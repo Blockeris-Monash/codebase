@@ -38,9 +38,12 @@ app = FastAPI(title="Document Discrepancy Orchestrator")
 from fastapi.middleware.cors import CORSMiddleware
 
 # Enable CORS so Han's Vercel frontend can talk to Render
+cors_env = os.environ.get("CORS_ORIGINS", "*")
+allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()] if cors_env != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins (or you can specify Han's Vercel domain later)
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
