@@ -26,3 +26,12 @@ def test_help_opens_on_the_scene_and_it_stays_still() -> None:
 
 def test_the_help_backdrop_is_night_blue_and_blurred() -> None:
     assert ".ov{position:fixed;inset:0;background:rgba(20,26,51,.42);backdrop-filter:blur(3px);" in INDEX
+
+
+def test_the_help_body_carries_on_from_the_horizon() -> None:
+    """The body under the scene header was a flat panel. It now starts in a deep-water tint that
+    fades to the panel, with a faint sunset glow at the foot; text sits on near-plain panel."""
+    rule = INDEX[INDEX.index(".dlg.wide{overflow:hidden;"):]
+    rule = rule[:rule.index("}")]
+    assert "linear-gradient(180deg,var(--dlg-top) 0,var(--panel)" in rule and "var(--sk4) 22%" in rule
+    assert INDEX.count("--dlg-top:") == 3, "its own top colour by day and at night"
