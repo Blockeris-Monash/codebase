@@ -25,9 +25,9 @@ Everything below is the fastest path from "never seen this" to "it works".
 
 The app is a static page carrying its own results — all 520 emails, every
 comparison already run — so it opens with no backend, no key and no network.
-Only **Check again with AI** calls the API, which sits on a free host and can
-take about 100 seconds to wake — and re-runs the model, so it depends on a
-gateway we do not control. Nothing else on the page needs it. A private window gives the cleanest first look:
+Only **My mailbox** (after Sign in with Google) calls the API, which sits on a
+free host and can take about 100 seconds to wake. The demo data needs nothing
+else. A private window gives the cleanest first look:
 the page remembers your language, panel width and which emails you marked as
 checked. Use an ordinary window to try the phone home screen icon.
 
