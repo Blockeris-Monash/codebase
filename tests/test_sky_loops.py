@@ -39,5 +39,16 @@ def test_clouds_resume_from_the_page_clock_at_their_own_place() -> None:
 def test_clouds_and_waves_move_at_a_visible_pace() -> None:
     clouds = re.search(r"const CLOUDS = (\[\[.*?\]\]);", INDEX).group(1)
     durations = [float(c.split(",")[3]) for c in re.findall(r"\[([^\[\]]+)\]", clouds)]
-    assert durations and max(durations) <= 90
+    assert durations and 100 <= min(durations) and max(durations) <= 160, "drifting, neither stuck nor racing"
     assert ".lp-sky .wv{animation-duration:7s}.lp-sky .w2{animation-duration:10s}" in INDEX
+
+
+def test_the_night_sky_has_faint_stars_in_the_middle_too() -> None:
+    """The middle used to be left empty. Stars there are small and faint so the headline stays readable."""
+    assert 'if(x>330&&x<1110&&y>30) return ""' not in INDEX
+    assert "mid=x>330&&x<1110&&y>30" in INDEX and ".lp-sky .stars .mid{opacity:.5}" in INDEX
+
+
+def test_a_second_shooting_star_crosses_near_the_middle() -> None:
+    assert '<path class="shoot s2" d="M900 4l-170 30"/>' in INDEX
+    assert ".lp-sky .shoot.s2{animation-duration:13s;animation-delay:calc(7.5s - var(--t,0) * 1s)}" in INDEX

@@ -415,7 +415,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 @keyframes lpdrift{0%,100%{translate:0 0;rotate:-8deg}50%{translate:0 -18px;rotate:6deg}}
 .lp-hero{min-height:560px;overflow:hidden;color:#fff4e8;display:flex;flex-direction:column}
 .lp-sky{position:absolute;inset:0;width:100%;height:100%}
-.lp-sky .stars circle{fill:#fff}.lp-sky .stars .tw{animation:lpstar 3.2s ease-in-out infinite}
+.lp-sky .stars circle{fill:#fff}.lp-sky .stars .tw{animation:lpstar 3.2s ease-in-out infinite}.lp-sky .stars .mid{opacity:.5}
 @keyframes lpstar{50%{opacity:.2}}
 .lp-sky .cons path{fill:none;stroke:#ffd9ae;stroke-width:1;opacity:.45;stroke-dasharray:3 4}.lp-sky .cons circle{fill:#ffd9ae}
 .lp-sky .shoot{stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-dasharray:40 400;stroke-dashoffset:40;animation:lpshoot 9s ease-in 3s infinite}
@@ -534,6 +534,8 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .lp-sky .wv,.lp-sky .gullg,.scard .lh .beam,.lp-deco .sheet{animation-delay:calc(var(--t,0) * -1s)!important}
 .lp-sky .cloud{animation-delay:calc(var(--t,0) * -1s - var(--o,0s))!important}
 .lp-sky .shoot{animation-delay:calc(3s - var(--t,0) * 1s)}
+/* a second shooting star, near the middle, on its own rhythm */
+.lp-sky .shoot.s2{animation-duration:13s;animation-delay:calc(7.5s - var(--t,0) * 1s)}
 /* the hero's sea fades into the page instead of stopping at a hard edge */
 .lp-hero .lp-sky{-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)}
 </style>
@@ -753,7 +755,7 @@ function countNums(root){
 const wavePath = y=>`M0 ${y}` + "q90-8 180 0t180 0".repeat(6);
 /* Clouds drift right across the sky and come back in from the left out of sight:
    [x, y, scale, seconds to cross]. --o starts each one where it is drawn. */
-const CLOUDS = [[140,70,1,70],[420,40,.8,85],[930,90,1.1,62],[1260,60,.9,78],[640,150,.7,90]];
+const CLOUDS = [[140,70,1,125],[420,40,.8,140],[930,90,1.1,110],[1260,60,.9,130],[640,150,.7,150]];
 const cloudHTML = ([x,y,k,d])=>{ const a = -(x+220), b = 1560-x; return `<g class="cloud" style="--a:${a}px;--b:${b}px;--d:${d}s;--o:${(d*-a/(b-a)).toFixed(1)}s"><path transform="translate(${x} ${y}) scale(${k})" d="M0 30a18 18 0 0118-18 26 26 0 0148-6 20 20 0 0130 24z"/></g>`; };
 /* Our own decoration: paper documents drifting in the side margins (some stamped checked or flagged),
    and a night-voyage scene for the hero: sky, stars, a constellation, the moon, the sea and the ship. */
@@ -763,8 +765,8 @@ const DECO = (()=>{
 })();
 const SCENE = (()=>{
   let seed = 7; const rnd = ()=>(seed = (seed*16807) % 2147483647) / 2147483647;
-  // stars keep clear of the middle, where the headline sits
-  const stars = Array.from({length:110},()=>{ const x=rnd()*1440, y=rnd()*230, r=rnd()*1.4+.4, tw=rnd()<.35; if(x>330&&x<1110&&y>30) return ""; return `<circle class="${tw?"tw":""}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" style="animation-delay:${(rnd()*4).toFixed(1)}s"/>`; }).join("");
+  // behind the headline in the middle, stars are smaller and fainter (.mid) so the words stay easy to read
+  const stars = Array.from({length:110},()=>{ const x=rnd()*1440, y=rnd()*230, r=rnd()*1.4+.4, tw=rnd()<.35, mid=x>330&&x<1110&&y>30; return `<circle class="${tw?"tw":""} ${mid?"mid":""}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(mid?Math.min(r,.9):r).toFixed(1)}" style="animation-delay:${(rnd()*4).toFixed(1)}s"/>`; }).join("");
   const cons = [[1060,70],[1110,52],[1162,78],[1140,120],[1090,128],[1060,70]];
   return `<svg class="lp-sky" viewBox="0 0 1440 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="sk1"/><stop offset=".55" class="sk2"/><stop offset=".82" class="sk3"/><stop offset="1" class="sk4"/></linearGradient>
@@ -777,7 +779,7 @@ const SCENE = (()=>{
     <g class="night"><g class="stars">${stars}</g>
     <g class="cons"><path d="${cons.map((p,k)=>(k?"L":"M")+p.join(" ")).join("")}"/>${cons.slice(0,5).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join("")}</g>
     <circle cx="250" cy="90" r="30" fill="#fbe7c6" mask="url(#moonm)"/>
-    <path class="shoot" d="M1300 40l-120 60"/></g>
+    <path class="shoot" d="M1300 40l-120 60"/><path class="shoot s2" d="M900 4l-170 30"/></g>
     <path fill="url(#seag)" d="M0 330C200 318 380 342 560 330S940 316 1120 330 1360 340 1440 332V420H0Z"/>
     <path class="glint" d="M640 350h160M690 368h60M600 388h110M760 382h90"/>
     <path class="wv w1" d="${wavePath(352)}"/>
