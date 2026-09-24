@@ -215,7 +215,17 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 547 without a model key.** The 1.0.0 figure above is left
+- **A signed-in account sees only its own mail, and "Check again with AI" is
+  gone.** Signing in used to leave the demo data on screen with a Demo/My
+  mailbox switch beside it, so it was never obvious whose mail was being looked
+  at. Signing in now goes straight to the live mailbox and the switch is hidden;
+  signed-out visitors get the demo exactly as before, and signing out returns to
+  it. The button went with it because it had stopped meaning anything: it only
+  re-ran a saved demo result, and My mailbox already puts every new email
+  through the live pipeline. Its state, spinner, progress bar and glow went too,
+  along with seven strings that no longer had anywhere to appear.
+
+- **Test count: 231 to 548 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -242,6 +252,16 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   regenerated here, so the screen and the API cannot disagree.
 
 ### Fixed
+
+- **No flash of the wrong page after signing in.** Google returns with
+  `#access_token=...` in the address. The page drew that unknown address as the
+  inbox until Supabase cleared it, and an empty address is the landing page — so
+  a sign-in visibly bounced inbox, landing page, mailbox. The return is now
+  recognised before anything is drawn.
+
+- **Three small things in the review screen.** The Help popup scrolls again, the
+  Settings menu closes once a theme is picked, and What's next returns to the
+  page it was opened from rather than always to the landing page.
 
 - **Three defects in the batch extractor, all of them long-standing.** `--data`
   defaulted to `backend/data`, a path that has never existed, so the command in
