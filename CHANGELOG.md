@@ -9,6 +9,30 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The test suite runs on every pull request.** A green local run is not
+  evidence: it passes on one machine that has a `.env`. GitHub Actions runs
+  `pytest` on Python 3.11 and 3.12 for every pull request and every push to
+  `main`, from a clean clone with no credentials — which is exactly the position
+  a judge following the README setup steps is in.
+
+  No API keys are configured, deliberately, and a guard step fails the job if one
+  appears. Every test that reaches a model is gated behind `SHIP_HAPPENS_LIVE`, so
+  a key in CI would unskip five of them and turn a unit-test run into billed calls
+  against a gateway only this team can reach.
+
+- **What a reviewer marked now survives a change of browser.** The checked marks
+  and sent replies lived in `localStorage`, which is per-device: mark forty emails
+  on the demo laptop and the phone shows none of them. They now mirror to Postgres
+  for whoever is signed in, alongside field corrections and problem reports — six
+  tables, row-level security on every one, verified through the public API that an
+  anonymous caller reads nothing and writes nothing.
+
+  `localStorage` stays authoritative and the database is a background mirror. The
+  page builds its state synchronously at load, so an async read there would mean
+  rewriting the whole startup path; and this app opens *"with no backend, no key
+  and no network"*, so a paused free-tier database must never be able to stop a
+  mark registering. Signed out, every path is a no-op and nothing changes.
+
 - **The shipment an email is about, on the row and in the search.** Their service
   list includes *support the Commercial team on any shipping documentation query
   raised by the end customer*, which is lookup by reference rather than triage —
@@ -35,7 +59,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 271 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 285 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -62,6 +86,36 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   regenerated here, so the screen and the API cannot disagree.
 
 ### Fixed
+
+- **The page no longer scrolls sideways on a narrow screen.** Rendered across ten
+  geometries in English and Malay, every width under 500px scrolled horizontally —
+  `scrollWidth` 493 against a 360px viewport, and the same 493 at 320 and at 260,
+  because the figure had nothing to do with the screen. The header was a flex row
+  of brand, search, language and theme controls with no `flex-wrap`.
+
+  With that fixed, the rest of the layout stopped being sized for one handset. The
+  status tiles take as many columns as fit rather than a fixed three, which is what
+  the Malay labels need — *Ditandakan selesai* is eighteen characters where
+  *Checked* is seven. Two panes now appear when there is room in **both**
+  directions: a folding phone open is 673x841 and was getting the one-column phone
+  layout, while a phone in landscape is 800x360 and was getting the desktop one,
+  where `body{overflow:hidden}` left almost nothing on screen.
+
+  `viewport-fit=cover` was set with no `safe-area-inset` anywhere, so the installed
+  iOS app drew its header under the notch — and the README tells judges to install
+  it on iOS. Font sizes moved from px to rem so a reader on large text or at 200%
+  zoom is respected, anything you tap clears 44px, and Windows high contrast keeps
+  the card edges instead of flattening the screen into undifferentiated text.
+
+  The CSS breakpoint and the JavaScript that depends on it had already drifted: the
+  script still asked about 820px after the stylesheet moved, so searching on an
+  unfolded phone cleared the selection while both panes were on screen. They now
+  share one definition, with a test that fails if they diverge again.
+
+- **`/health` answers `HEAD`, not only `GET`.** The uptime monitor checks with
+  `HEAD` and was getting 405, so the dashboard showed the backend as down while it
+  was up and sent false alerts. The checks still kept Render awake; only the status
+  was wrong.
 
 - **Gemini now stands behind Qwen for classification and translation, not only
   extraction.** `/process-email` classifies before it extracts, so with Qwen down
