@@ -9,6 +9,30 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A reports queue, on its own page.** `frontend/admin.html` lists what
+  reviewers flagged with "Report a problem", newest first, filterable by whether
+  a person or the pipeline filed it, each row linking back to the email it was
+  about. It is a separate page on the same deployment rather than a route in the
+  reviewer app: a Supabase session is shared across one origin, so it signs in
+  alongside the inbox with nothing extra to deploy or keep awake.
+
+  **The gate is row-level security, not the page.** Anyone can open a page and
+  read its source, so hiding a link protects nothing. Migration 0004 adds an
+  `admins` table with deliberately no insert policy - RLS denies what no policy
+  permits, so no signed-in session can grant itself the queue - and membership
+  is managed in SQL.
+
+  It also closes something that was already there. `reports` shipped with
+  `using (auth.uid() is not null)`, which reads as "the team" but means any
+  account that can sign in at all; sign-in is Google, and nothing in the
+  database restricts which accounts. Harmless while nothing read the table, and
+  exactly the wrong policy under a page that lists everyone's reports. Filing
+  one stays open to any signed-in person and they can still read their own
+  back; reading everybody's now requires membership. Reads on `users` widened
+  the same way, so a report can carry a name instead of a raw uuid - and that
+  meant splitting the single `FOR ALL` policy, because one policy cannot widen
+  `select` without widening `insert`, `update` and `delete` along with it.
+
 - **Hardened for a deployment that has to stay up while judges look at it.**
   The rules say the deployed project must be *publicly accessible and functional
   during the judging period*, which turns several known gaps from tidy-ups into
