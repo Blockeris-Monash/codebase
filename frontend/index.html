@@ -11,6 +11,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ship Happens">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&display=swap">
 <style>
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
@@ -268,8 +271,8 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .home{flex:1;min-height:0}
 .hx{max-width:1000px;margin:0 auto;padding:28px 16px 60px}
 .hero{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
-.hero .kicker{margin:0 0 10px;font-weight:700;font-size:1.125rem;color:var(--accent)}
-.hero h1{font-size:2.25rem;line-height:1.1;margin:0 0 12px}.hero .lead{font-size:1.0625rem;line-height:1.5;max-width:52ch;margin:0}
+.hero .kicker{margin:0 0 12px;font-weight:700;font-size:2.25rem;line-height:1.1;color:var(--accent)}
+.hero h1{font-size:1.125rem;line-height:1.3;margin:0 0 10px}.hero .lead{font-size:1.0625rem;line-height:1.5;max-width:52ch;margin:0}
 .art{width:300px;height:auto;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .art .hullc{fill:var(--ink)}.art .winc{fill:var(--accent)}.art .cb{opacity:.9}
 .art .c-bad{fill:var(--bad)}.art .c-ok{fill:var(--ok)}.art .c-rev{fill:var(--rev)}.art .c-acc{fill:var(--accent)}
@@ -285,8 +288,60 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .how3{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .how3 li{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
 .how3 .ico{width:22px;height:22px;color:var(--accent);margin-bottom:4px}.how3 span{color:var(--mute);font-size:0.875rem;line-height:1.45}
-@media (max-width:659px){.hero{grid-template-columns:1fr}.art{width:100%;max-width:260px;justify-self:center}.hero h1{font-size:1.75rem}}
+@media (max-width:659px){.hero{grid-template-columns:1fr}.art{width:100%;max-width:260px;justify-self:center}.hero .kicker{font-size:1.75rem}}
 .brand{cursor:pointer}
+.hero .actions{margin-top:22px}
+.eyebrow{margin:0 0 6px;font-weight:700;font-size:0.8125rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lp-sec{margin-top:72px;scroll-margin-top:16px}
+.hx .lp-sec h2{font-size:1.75rem;line-height:1.15;margin:0 0 14px}
+.lp-p{max-width:68ch;line-height:1.55;margin:0 0 10px}
+.oi .ico{width:24px;height:24px;color:var(--accent)}
+.lp-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:40px;padding:18px 20px;border-radius:16px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--card)}
+.lp-num{display:flex;flex-direction:column;gap:2px}.lp-num b{font-size:1.75rem;line-height:1.1;color:var(--accent)}
+.lp-grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}
+.lp-grid3 .lp-num{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--card)}.lp-grid3 .lp-num b{font-size:2.25rem}
+.lp-card{display:flex;flex-direction:column;gap:8px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--card)}
+#results .lp-card{align-items:stretch;margin-bottom:14px}
+.lp-split{display:flex;gap:3px;height:14px;border-radius:99px;overflow:hidden}.s-OK{background:var(--ok)}.s-MISMATCH{background:var(--bad)}.s-NEEDS_REVIEW{background:var(--rev)}
+.lp-bar{display:grid;grid-template-columns:150px 1fr 32px;align-items:center;gap:10px;font-size:0.875rem}
+.lp-bar i{height:12px;width:0;border-radius:6px;background:var(--accent);transition:width .9s cubic-bezier(.2,.7,.2,1)}.rv.in .lp-bar i{width:var(--w)}.lp-bar b{text-align:right}
+.rv{opacity:0;transform:translateY(16px);transition:opacity .6s,transform .6s}.rv.in{opacity:1;transform:none}
+.lp-pipe{display:flex;flex-direction:column;gap:14px}
+.lp-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.lp-tab{position:relative;overflow:hidden;display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);cursor:pointer}
+.lp-tab>span:nth-child(2){display:flex;flex-direction:column;gap:2px}
+.lp-tab:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.lp-tab[aria-selected=true]{border-color:var(--accent);background:var(--accent-soft)}
+.lp-prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent)}
+.lp-pipe.auto .lp-tab[aria-selected=true] .lp-prog{animation:lpprog 4s linear}
+@keyframes lpprog{to{width:100%}}
+.lp-panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--card)}
+.lp-pipe[data-step="0"] [data-p="0"],.lp-pipe[data-step="1"] [data-p="1"],.lp-pipe[data-step="2"] [data-p="2"],.lp-pipe[data-step="3"] [data-p="3"]{display:block;animation:lpin .35s ease-out}
+@keyframes lpin{from{opacity:0;transform:translateY(6px)}}
+.lp-cap{margin:0 0 14px;font-weight:600;max-width:70ch;line-height:1.45}
+.lp-stage{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.lp-mail{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;max-width:360px;background:var(--sunk)}
+.lp-mail>div{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}.lp-mail .ico{width:20px;height:20px;color:var(--accent);flex:none}
+.lp-arrow .ico{width:22px;height:22px;color:var(--mute)}
+.lp-kinds{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.lp-docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;width:100%}
+.lp-doc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--sunk)}
+.lp-kv{display:flex;flex-direction:column;padding:5px 0;border-bottom:1px dashed var(--line);font-size:0.8125rem;overflow-wrap:anywhere}.lp-kv:last-child{border-bottom:0}
+.lp-stage .tblwrap,.lp-stage .banner{width:100%}.lp-stage .actions{margin-top:0}.lp-stage td.f .ico{width:14px;height:14px;vertical-align:-2px}
+.lp-team{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:18px}
+.lp-member{align-items:flex-start}.lp-major{display:flex;flex-direction:column;font-size:0.8125rem;font-weight:600;color:var(--ink)}.lp-major .mute{font-weight:400}
+.lp-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:1.25rem}
+.lp-links{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:auto}
+.lp-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:0.875rem;text-decoration:none}.lp-link .ico{width:16px;height:16px}.lp-link:hover{text-decoration:underline}
+.lp-foot{margin-top:72px;border-top:1px solid var(--line);background:var(--panel)}
+.lp-foot .hx{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between;padding:24px 16px}
+.lp-foot .hx>div:first-child{display:flex;flex-direction:column;gap:2px}
+.art .shipg{animation:lpbob 4.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+@keyframes lpbob{50%{transform:translateY(-3px) rotate(-1.2deg)}}
+.art .sea1{animation:lpwave 7s linear infinite}.art .sea2{animation:lpwave 5s linear infinite reverse}
+@keyframes lpwave{to{transform:translateX(-32px)}}
+@media (max-width:659px){.lp-tabs{grid-template-columns:repeat(2,1fr)}.lp-bar{grid-template-columns:110px 1fr 28px}.hx .lp-sec h2{font-size:1.5rem}.lp-sec{margin-top:56px;scroll-margin-top:124px}}
+@media (prefers-reduced-motion:reduce){.art *{animation:none!important}.rv{opacity:1;transform:none;transition:none}.lp-bar i{transition:none}.lp-panel{animation:none!important}}
 .route{display:flex;align-items:center;gap:10px;margin:10px 0 2px;font-weight:600;font-size:0.8125rem;letter-spacing:.02em}
 .route span{overflow-wrap:anywhere}
 .route .lane{flex:1;min-width:40px;max-width:200px;position:relative;height:18px;display:flex;justify-content:center;align-items:center}
@@ -337,6 +392,70 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
   .badge,.pill,.chip{border:1px solid CanvasText;forced-color-adjust:none}
   .btn{border:1px solid ButtonText}
 }
+
+/* landing page: our own look. Night-voyage hero, drifting documents, container-stripe card tops */
+.home{position:relative;isolation:isolate}
+.home>.hx,.home>.lp-foot,.lp-hero{position:relative;z-index:1}
+.lp-deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.lp-deco .sheet{position:absolute;width:74px;opacity:.55;animation:lpdrift 14s ease-in-out infinite}
+.sheet .pg{fill:var(--panel);stroke:var(--line);stroke-width:1.5}.sheet .fold{fill:var(--sunk);stroke:var(--line);stroke-width:1.5}.sheet .ln{stroke:var(--line);stroke-width:3;stroke-linecap:round}
+.sheet .stamp circle{fill:none;stroke-width:2.5}.sheet .stamp path{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stamp.ok circle,.stamp.ok path{stroke:var(--ok)}.stamp.bad circle,.stamp.bad path{stroke:var(--bad)}
+.s1{left:3%;top:62%;transform:rotate(-12deg)}.s2{left:6%;top:88%;width:56px!important;animation-delay:-4s!important}
+.s3{right:4%;top:70%;animation-delay:-7s!important}.s4{right:7%;top:95%;width:52px!important;animation-delay:-2s!important}.s5{left:2%;top:130%;animation-delay:-9s!important}
+@keyframes lpdrift{0%,100%{translate:0 0;rotate:-8deg}50%{translate:0 -18px;rotate:6deg}}
+.lp-hero{min-height:560px;overflow:hidden;color:#fff4e8;display:flex;flex-direction:column}
+.lp-sky{position:absolute;inset:0;width:100%;height:100%}
+.lp-sky .stars circle{fill:#fff}.lp-sky .stars .tw{animation:lpstar 3.2s ease-in-out infinite}
+@keyframes lpstar{50%{opacity:.2}}
+.lp-sky .cons path{fill:none;stroke:#ffd9ae;stroke-width:1;opacity:.45;stroke-dasharray:3 4}.lp-sky .cons circle{fill:#ffd9ae}
+.lp-sky .shoot{stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-dasharray:40 400;stroke-dashoffset:40;animation:lpshoot 9s ease-in 3s infinite}
+@keyframes lpshoot{0%{stroke-dashoffset:40;opacity:1}8%{stroke-dashoffset:-140;opacity:0}100%{stroke-dashoffset:-140;opacity:0}}
+.lp-sky .glint{stroke:#f6b57a;stroke-width:2;stroke-linecap:round;opacity:.45}
+.lp-sky .wv{fill:none;stroke:#8fa3d8;stroke-width:1.5;opacity:.35;animation:lpwv 9s linear infinite}.lp-sky .w2{animation-duration:13s;opacity:.25}
+@keyframes lpwv{to{transform:translateX(-360px)}}
+.hero2{position:relative;text-align:center;padding:44px 16px 170px;display:flex;flex-direction:column;align-items:center}
+.lp-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(6px);font-weight:700;font-size:0.8125rem;color:#ffd9ae}.lp-pill .ico{width:15px;height:15px}
+.wordmark{margin:18px 0 0;font-family:"Big Shoulders Stencil Display","Big Shoulders Stencil",Impact,"Arial Black",sans-serif;font-weight:800;font-size:clamp(3.4rem,11vw,8.5rem);line-height:.9;letter-spacing:.02em;color:#ff8a3d;text-shadow:0 0 40px rgba(255,138,61,.35)}
+.lp-tag{margin:14px 0 0;font-weight:800;font-size:clamp(1.4rem,3.2vw,2.25rem);line-height:1.15;color:#fff4e8}
+.lp-hero .lp-sub{color:#e9d6c6}
+.lp-sub{margin:10px auto 0;max-width:56ch;color:var(--mute);font-size:1.0625rem;line-height:1.5;text-align:center}
+.hero2 .actions{justify-content:center;margin-top:24px}
+.btn.ghostlight{background:rgba(255,255,255,.12);color:#fff4e8;border:1px solid rgba(255,255,255,.35)}
+.lp-hero .lp-sailer{position:absolute;bottom:70px;left:0;width:200px;z-index:1;animation:lpsail 40s linear infinite}
+.lp-hero .lp-sailer .art{width:200px;-webkit-mask-image:none;mask-image:none}.lp-hero .lp-sailer .sea1,.lp-hero .lp-sailer .sea2{display:none}
+@keyframes lpsail{from{transform:translateX(-220px)}to{transform:translateX(calc(100vw + 20px))}}
+.hx .lp-sec{text-align:center}.hx .lp-sec h2{font-size:clamp(1.75rem,4vw,2.6rem);font-weight:800;line-height:1.1;margin:6px 0 0}
+.lp-sec>.lp-grid3,.lp-sec>.opts,.lp-sec>.lp-team,.lp-sec>.lp-faq,.lp-sec .lp-pipe,.lp-sec .lp-card{text-align:left}
+.lp-sec>*:nth-child(n+4),.lp-sec>h2+div,.lp-sec>h2+.lp-pipe{margin-top:26px}
+.lp-strip3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));text-align:center;margin-top:26px}
+.lp-strip3 .lp-num{align-items:center}.lp-strip3 .lp-num b{font-size:2.6rem}
+.lp-num span{color:var(--mute);font-size:0.8125rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.n-ok b{color:var(--ok)!important}.n-bad b{color:var(--bad)!important}.n-rev b{color:var(--rev)!important}
+.top-acc,.top-ok,.top-rev,.top-bad{position:relative;overflow:hidden;padding-top:24px!important}
+.top-acc::before,.top-ok::before,.top-rev::before,.top-bad::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:repeating-linear-gradient(90deg,var(--c) 0 7px,color-mix(in srgb,var(--c) 60%,transparent) 7px 9px)}
+.top-acc{--c:var(--accent)}.top-ok{--c:var(--ok)}.top-rev{--c:var(--rev)}.top-bad{--c:var(--bad)}
+.lp-papers{position:relative;display:flex;justify-content:center;margin-top:30px;padding:10px 0 20px}
+.lp-paper{width:min(300px,44vw);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 14px 30px rgba(120,60,20,.14);text-align:left}
+.lp-paper.si{transform:rotate(-4deg) translateX(14px)}.lp-paper.bl{transform:rotate(3deg) translate(-14px,18px)}
+.lp-paper .hit b{position:relative;color:var(--ink)}
+.lp-paper.bl .hit b::after{content:"";position:absolute;inset:-6px -10px;border:2.5px solid var(--bad);border-radius:50%;transform:rotate(-3deg);animation:lpcircle 1s .6s both}
+@keyframes lpcircle{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.lp-lens{position:absolute;left:50%;top:40%;width:54px;height:54px;border-radius:50%;background:color-mix(in srgb,var(--panel) 70%,transparent);border:3px solid var(--ink);display:grid;place-items:center;animation:lplens 5s ease-in-out infinite}.lp-lens .ico{width:26px;height:26px;color:var(--ink)}
+@keyframes lplens{0%,100%{transform:translate(-120px,-20px)}50%{transform:translate(60px,30px)}}
+.lp-route{position:relative;height:34px;margin:0 12.5%}
+.lp-lane{position:absolute;left:0;right:0;top:50%;border-top:2px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
+.lp-boat{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 45%,transparent);transition:left .8s cubic-bezier(.4,.1,.2,1)}
+.lp-boat .ico{width:20px;height:20px;color:var(--accent-ink);margin:0}
+.lp-pipe[data-step="1"] .lp-boat{left:33.333%}.lp-pipe[data-step="2"] .lp-boat{left:66.666%}.lp-pipe[data-step="3"] .lp-boat{left:100%}
+.lp-faq{max-width:760px;margin:26px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--card);padding:6px 22px}
+.lp-faq details{border-bottom:1px solid var(--line)}.lp-faq details:last-child{border-bottom:0}
+.lp-faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;font-weight:700}
+.lp-faq summary::-webkit-details-marker{display:none}.lp-faq summary .ico{flex:none;width:18px;height:18px;transition:transform .2s}
+.lp-faq details[open] summary .ico{transform:rotate(180deg)}.lp-faq p{margin:0 0 16px;color:var(--mute);line-height:1.55}
+@media (max-width:1180px){.lp-deco{display:none}}
+@media (max-width:659px){.lp-hero{min-height:520px}.hero2{padding-bottom:150px}.lp-hero .lp-sailer{bottom:62px;width:150px}.lp-hero .lp-sailer .art{width:150px}.lp-route{margin:0 25%}.lp-pipe[data-step] .lp-boat{display:none}.lp-paper{width:46vw;padding:10px}.lp-lens{display:none}}
+@media (prefers-reduced-motion:reduce){.lp-hero .lp-sailer{animation:none;left:50%;transform:translateX(-50%)}.lp-deco *,.lp-sky *{animation:none!important}.lp-lens{animation:none}}
 </style>
 </head>
 <body>
@@ -478,31 +597,161 @@ const SHIP_ART = (()=>{
   const box = (x,y,c)=>`<rect class="cb ${c}" x="${x}" y="${y}" width="36" height="20" rx="2"/><rect x="${x}" y="${y}" width="36" height="20" rx="2" fill="url(#corr)"/>`;
   const low = [[40,"c-bad"],[78,"c-ok"],[116,"c-rev"],[154,"c-acc"]].map(([x,c])=>box(x,84,c)).join("");
   const high = [[59,"c-ok"],[97,"c-acc"],[135,"c-bad"]].map(([x,c])=>box(x,62,c)).join("");
-  return `<svg class="art" viewBox="0 40 260 130" aria-hidden="true"><defs><pattern id="corr" width="6" height="20" patternUnits="userSpaceOnUse"><path d="M3 0v20" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/></pattern></defs>${high}${low}<rect class="hullc" x="192" y="60" width="30" height="44" rx="3"/><rect class="winc" x="197" y="67" width="20" height="6" rx="1"/><rect class="winc" x="205" y="46" width="8" height="14" rx="1"/><path class="hullc" d="M24 104H236L216 138H44Z"/><path class="sea1" d="M0 142q16-8 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/><path class="sea2" d="M0 152q16-7 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/></svg>`;
+  return `<svg class="art" viewBox="0 40 260 130" aria-hidden="true"><defs><pattern id="corr" width="6" height="20" patternUnits="userSpaceOnUse"><path d="M3 0v20" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/></pattern></defs><g class="shipg">${high}${low}<rect class="hullc" x="192" y="60" width="30" height="44" rx="3"/><rect class="winc" x="197" y="67" width="20" height="6" rx="1"/><rect class="winc" x="205" y="46" width="8" height="14" rx="1"/><path class="hullc" d="M24 104H236L216 138H44Z"/></g><path class="sea1" d="M0 142q16-8 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/><path class="sea2" d="M0 152q16-7 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0V170H0Z"/></svg>`;
 })();
 
-/* The first step: choose where the mail comes from. Shown on every visit; the inbox lives at #/inbox. */
+/* Team Blockeris. A LinkedIn link shows only once its URL is filled in. */
+const TEAM = [
+  {name:"Elyesa Tee Way Yien", major:T("Data Science and AI"), gh:"veyroxie", li:"https://www.linkedin.com/in/elyesa-tee-865536320", did:T("Data contracts, the readers for every file format, and the phone home screen icon.")},
+  {name:"Muhammad Hanif Rafli", major:T("Data Science and AI"), gh:"hanif-rafli", li:"https://www.linkedin.com/in/muhammad-hanif-rafli-285420213/", did:T("Backend API, pipeline orchestration, deployment, health checks, the security pass and the live mailbox switch.")},
+  {name:"Ho Jia Jun", major:T("Data Science and AI"), gh:"05jiujing", li:"https://www.linkedin.com/in/jj-ho-jia-jun-07a17a340", did:T("The comparator engine behind every verdict, and the first classifier.")},
+  {name:"Tan Le Han", major:T("Data Science and AI"), gh:"HyperByte12263", li:"https://www.linkedin.com/in/le-han-tan-4a48682aa", did:T("Report screen wired to the live backend, hosting and deployment, merging pull requests, and the submission.")},
+  {name:"Athith Kounsana", major:T("Algorithms and Software"), gh:"Taohudess", li:"https://www.linkedin.com/in/athith-kounsana-475b70264/", did:T("AI extraction and saved results, the review interface, the validation evidence, the language switch and Sign in with Google.")}
+];
+function teamHTML(){
+  const link = (href,ico,label)=>`<a class="lp-link" href="${href}" target="_blank" rel="noopener">${ico}${label}</a>`;
+  return TEAM.map((m,i)=>`<div class="lp-card lp-member top-${["acc","ok","rev","bad","acc"][i%5]}"><span class="lp-av" aria-hidden="true">${m.name[0]}</span><b>${esc(m.name)}</b><span class="lp-major">${t(m.major)}<span class="mute">${t("Bachelor of Computer Science")}</span></span><span class="mute small">${t(m.did)}</span>
+    <span class="lp-links">${link("https://github.com/"+m.gh, ICON.GITHUB, "@"+m.gh)}${m.li?link(m.li, ICON.LINKEDIN, "LinkedIn"):""}</span></div>`).join("");
+}
+
+/* How many times each field differed, over every Action required email, largest first. */
+function fieldCounts(){
+  const c = new Map();
+  RESULTS.filter(e=>e.status==="MISMATCH").forEach(e=>e.rows.filter(r=>r.verdict==="mismatch").forEach(r=>c.set(r.field,(c.get(r.field)||0)+1)));
+  return [...c].sort((a,b)=>b[1]-a[1]);
+}
+
+/* The pipeline, told on one real email. Steps switch in place (setStep), never by a redraw. */
+const STEPS = [[T("Classify"),T("Sort the email")],[T("Extract"),T("Read the fields")],[T("Compare"),T("Check field by field")],[T("Review"),T("A person decides")]];
+function pipeHTML(){
+  const e = byId.email_302; if(!e) return "";
+  const kinds = [OTHER.BL_COMPARISON, OTHER.SI_REQUEST, OTHER.INVOICE_QUERY, OTHER.GENERAL, OTHER.SPAM];
+  const p1 = `<div class="lp-mail">${ICON.MAIL}<div><b>${esc(e.from)}</b><span class="mute small">${esc(e.subject)}</span></div></div><div class="lp-arrow">${ICON.RIGHT}</div><div class="lp-kinds">${kinds.map((k,i)=>`<span class="badge ${i?"b-none":"b-OK"}">${i?"":ICON.OK}${t(k)}</span>`).join("")}</div>`;
+  const doc = (name,key)=>`<div class="lp-doc"><div class="doch">${name}</div>${e.rows.map(r=>`<div class="lp-kv"><span class="mute">${fld(r.field)}</span><b>${esc(r[key])}</b></div>`).join("")}</div>`;
+  const p2 = `<div class="lp-docs">${doc(t("Shipping Instruction"),"si_raw")}${doc(t("Draft Bill of Lading"),"bl_raw")}</div>`;
+  const p3 = `<div class="tblwrap"><table class="tbl"><thead><tr><th>${t("Field")}</th><th>SI</th><th>BL</th></tr></thead><tbody>${e.rows.map(r=>{ const bad=r.verdict==="mismatch"; return `<tr class="${bad?"bad":""}"><td class="f">${bad?ICON.MISMATCH:ICON.OK} ${fld(r.field)}</td><td>${esc(r.si_raw)}</td><td class="${bad?"diff":""}">${esc(r.bl_raw)}</td></tr>`; }).join("")}</tbody></table></div>`;
+  const p4 = `<div class="banner MISMATCH">${ICON.MISMATCH}${t("{n} field differs",{n:1})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div><div class="actions"><span class="btn">${t("Ask to fix the BL")}</span><span class="btn alt">${t("Mark as done")}</span></div>`;
+  const caps = [T("The AI sorts every email into one of five types. Only SI against BL checks go on."),
+                T("A reader for each file format, then the AI maps every label to one of the seven fields. Each value must appear word for word in the file."),
+                T("Plain rules compare the values: 40176 and 40,176 are the same weight, but 2 and 4 containers are not."),
+                T("A person sees only what needs a decision, with the reason, the evidence and a reply drafted.")];
+  return `<div class="lp-pipe ${S.pipeManual?"":"auto"}" data-step="${S.step}">
+    <div class="lp-route" aria-hidden="true"><i class="lp-lane"></i><span class="lp-boat">${ICON.SHIP}</span></div>
+    <div class="lp-tabs" role="tablist">${STEPS.map(([n,d],i)=>`<button class="lp-tab" role="tab" data-a="step" data-k="${i}" aria-selected="${S.step===i}"><span class="rnum">${i+1}</span><span><b>${t(n)}</b><span class="mute small">${t(d)}</span></span><i class="lp-prog"></i></button>`).join("")}</div>
+    ${[p1,p2,p3,p4].map((p,i)=>`<div class="lp-panel" data-p="${i}" role="tabpanel"><p class="lp-cap">${t(caps[i])}</p><div class="lp-stage">${p}</div></div>`).join("")}
+    <p class="mute small">${t("A real email from the provided dataset: email 302.")}</p></div>`;
+}
+let pipeTimer = null;
+function setStep(i){
+  S.step = i;
+  const pipe = document.querySelector(".lp-pipe");
+  if(!pipe) return;
+  pipe.dataset.step = i;
+  pipe.querySelectorAll(".lp-tab").forEach(b=>b.setAttribute("aria-selected", String(+b.dataset.k===i)));
+}
+/* Autoplay moves one step every 4 seconds until the reader picks a step; off for reduced motion. */
+if(!matchMedia("(prefers-reduced-motion:reduce)").matches) pipeTimer = setInterval(()=>{ if(document.querySelector(".lp-pipe.auto")) setStep((S.step+1)%STEPS.length); }, 4000);
+
+/* Sections fade in once as they scroll into view; numbers with data-n count up the first time. */
+let revealObs = null;
+function revealHome(){
+  const els = document.querySelectorAll(".home .rv:not(.in)");
+  const show = el=>{ el.classList.add("in"); S.seen[el.dataset.rv]=true; };
+  if(!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion:reduce)").matches){ els.forEach(show); return; }
+  revealObs = revealObs || new IntersectionObserver(es=>es.forEach(x=>{ if(!x.isIntersecting) return; revealObs.unobserve(x.target); show(x.target); countNums(x.target); }), {threshold:.15});
+  els.forEach(el=>revealObs.observe(el));
+}
+function countNums(root){
+  const nums = [...root.querySelectorAll("[data-n]")], t0 = performance.now(), ms = 900;
+  const tick = now=>{ const p = Math.min(1,(now-t0)/ms), ease = 1-Math.pow(1-p,3); nums.forEach(n=>{ n.textContent = Math.round(+n.dataset.n*ease); }); if(p<1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
+/* Our own decoration: paper documents drifting in the side margins (some stamped checked or flagged),
+   and a night-voyage scene for the hero: sky, stars, a constellation, the moon, the sea and the ship. */
+const DECO = (()=>{
+  const sheet = (cls,stamp)=>`<svg class="sheet ${cls}" viewBox="0 0 90 116"><path class="pg" d="M4 4h60l22 22v86H4z"/><path class="fold" d="M64 4v22h22"/>${[34,44,54,64,74,84].map((y,k)=>`<path class="ln" d="M14 ${y}h${k%3===2?40:62}"/>`).join("")}${stamp==="ok"?`<g class="stamp ok"><circle cx="62" cy="92" r="14"/><path d="M55 92l5 5 9-10"/></g>`:stamp==="bad"?`<g class="stamp bad"><circle cx="62" cy="92" r="14"/><path d="M56 86l12 12M68 86l-12 12"/></g>`:""}</svg>`;
+  return `<div class="lp-deco" aria-hidden="true">${sheet("s1","ok")}${sheet("s2","")}${sheet("s3","bad")}${sheet("s4","")}${sheet("s5","ok")}</div>`;
+})();
+const SCENE = (()=>{
+  let seed = 7; const rnd = ()=>(seed = (seed*16807) % 2147483647) / 2147483647;
+  // stars keep clear of the middle, where the headline sits
+  const stars = Array.from({length:110},()=>{ const x=rnd()*1440, y=rnd()*230, r=rnd()*1.4+.4, tw=rnd()<.35; if(x>330&&x<1110&&y>30) return ""; return `<circle class="${tw?"tw":""}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" style="animation-delay:${(rnd()*4).toFixed(1)}s"/>`; }).join("");
+  const cons = [[1060,70],[1110,52],[1162,78],[1140,120],[1090,128],[1060,70]];
+  return `<svg class="lp-sky" viewBox="0 0 1440 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141a33"/><stop offset=".55" stop-color="#3b2c52"/><stop offset=".82" stop-color="#b8583a"/><stop offset="1" stop-color="#f09a55"/></linearGradient>
+      <linearGradient id="seag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e2a4a"/><stop offset="1" stop-color="#0f1426"/></linearGradient>
+      <mask id="moonm"><circle cx="250" cy="90" r="30" fill="#fff"/><circle cx="264" cy="80" r="27" fill="#000"/></mask></defs>
+    <rect width="1440" height="420" fill="url(#skyg)"/>
+    <g class="stars">${stars}</g>
+    <g class="cons"><path d="${cons.map((p,k)=>(k?"L":"M")+p.join(" ")).join("")}"/>${cons.slice(0,5).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join("")}</g>
+    <circle cx="250" cy="90" r="30" fill="#fbe7c6" mask="url(#moonm)"/>
+    <path class="shoot" d="M1300 40l-120 60"/>
+    <path fill="url(#seag)" d="M0 330C200 318 380 342 560 330S940 316 1120 330 1360 340 1440 332V420H0Z"/>
+    <path class="glint" d="M640 350h160M690 368h60M600 388h110M760 382h90"/>
+    <path class="wv w1" d="M0 352C120 344 240 360 360 352S600 344 720 352 960 360 1080 352 1320 344 1440 352 1680 360 1800 352"/>
+    <path class="wv w2" d="M0 386C120 378 240 394 360 386S600 378 720 386 960 394 1080 386 1320 378 1440 386 1680 394 1800 386"/>
+  </svg>`;
+})();
+
+/* The landing page, shown on every visit; the inbox lives at #/inbox. Few words per section, a visual
+   each, and the detail in a FAQ. Numbers are the deck's or computed from the saved results. */
 function homePage(){
+  const rv = id=>`rv ${S.seen[id]?"in":""}" data-rv="${id}`;
   const u = S.user, name = u ? ((u.user_metadata||{}).full_name || u.email || "") : "";
   const gmail = u ? `<div class="small mute">${t("Signed in as {name}. Your mailbox appears here in the next update.",{name:esc(name)})}</div>`
     : `<button class="btn alt" data-a="signin" ${S.authReady?"":"disabled"}>${t("Sign in with Google")}</button>`;
-  const stat = k=>`<span class="badge b-${k}">${ICON[k]}${count(k)} ${t(LABEL[k])}</span>`;
-  const how = [[ICON.MAIL,T("Emails arrive"),T("Each one is sorted into one of five types.")],
-               [ICON.SHIP,T("Seven fields compared"),T("Shipper, consignee, notify party, both ports, containers and weight.")],
-               [ICON.OK,T("You fix only what is flagged"),T("Action required comes first, with a reply drafted for you.")]];
-  return `<main class="home"><div class="hx">
-    <section class="hero"><div><p class="kicker">${t("Ship happens. We catch it before it sails.")}</p><h1>${t("Check every Bill of Lading before it ships")}</h1>
-      <p class="lead mute">${t("Ship Happens reads each email, compares the Shipping Instruction with the draft Bill of Lading field by field, and shows you only what needs fixing.")}</p></div>${SHIP_ART}</section>
-    <h2>${t("Where is your mail?")}</h2>
+  const n = k=>RESULTS.filter(folder(k).f).length;
+  const stat = k=>`<span class="badge b-${k}">${ICON[k]}${n(k)} ${t(LABEL[k])}</span>`;
+  const big = (v,label,cls="")=>`<div class="lp-num ${cls}"><b class="num" ${/^\d+$/.test(v)?`data-n="${v}"`:""}>${v}</b><span>${t(label)}</span></div>`;
+  const head = (eye,h,sub)=>`<span class="eyebrow">${t(eye)}</span><h2>${t(h)}</h2>${sub?`<p class="lp-sub">${t(sub)}</p>`:""}`;
+  const fc = fieldCounts(), top = fc.length ? fc[0][1] : 1, diffs = fc.reduce((a,x)=>a+x[1],0);
+  const card = (c,ico,h,d)=>`<div class="lp-card top-${c}"><span class="oi">${ico}</span><b>${t(h)}</b><span class="mute small">${t(d)}</span></div>`;
+  const e = byId.email_302, row = f=>(e?e.rows.find(r=>r.field===f):null)||{};
+  const paper = (cls,name,key)=>`<div class="lp-paper ${cls}"><div class="doch">${t(name)}</div>${["consignee","port_of_discharge","container_count","gross_weight_kg"].map(f=>`<div class="lp-kv ${f==="container_count"?"hit":""}"><span class="mute">${fld(f)}</span><b>${esc(row(f)[key])}</b></div>`).join("")}</div>`;
+  const faq = [[T("Does the AI decide whether the documents match?"),T("No. The AI only reads the files and pulls out the seven fields. Plain rules compare them, so every verdict can be explained.")],
+               [T("What happens when a file cannot be read?"),T("The email goes to Needs review with the reason: a blank field, an unreadable or scanned file, a missing attachment or the wrong document. Nothing is guessed.")],
+               [T("How accurate is it?"),T("Checked on the provided dataset: 630 of 630 injected defects caught on exactly the changed field, 0 false alarms on 378 harmless edits, and 1.0000 on the organisers' own scorer. Time saved is an estimate: 63 verified emails at 3 minutes each is about 3 hours.")],
+               [T("Which files can it read?"),T("Text, Word, Excel, PDF and EDI files. Scanned PDFs go to a person for now.")],
+               [T("Is my Gmail safe?"),T("Sign-in goes through Google and we store no passwords. Mailbox access will be read-only.")],
+               [T("What is next?"),T("Reading scanned files, sending replies from your own mailbox, and a shared review queue for a team.")]];
+  return `<main class="home">${DECO}<section class="lp-hero">${SCENE}<div class="lp-sailer">${SHIP_ART}</div><div class="hx hero2"><span class="lp-pill">${ICON.NEXT}${t("Averis x Monash Hackathon 2026 · Top 10 finalist")}</span>
+      <h1 class="wordmark">SHIP HAPPENS</h1><p class="lp-tag">${t("We catch it before it sails.")}</p>
+      <p class="lp-sub">${t("Check every Bill of Lading before it ships")}</p>
+      <div class="actions"><button class="btn" data-a="inbox">${t("Open the demo inbox")}</button><button class="btn ghostlight" data-a="howto">${t("See how it works")}</button></div></div></section>
+  <div class="hx">
+    <div class="lp-strip ${rv("strip")}">${big("520",T("emails in the demo dataset"))}${big("7",T("fields compared in every check"))}${big("630/630",T("injected defects caught"))}${big("1.0000",T("on the organisers' own scorer"))}${big("3",T("languages on screen"))}</div>
+
+    <section id="problem" class="lp-sec ${rv("problem")}">${head(T("The problem"),T("Every draft BL is still checked by hand"),T("Seven fields, four file formats, one person comparing by eye."))}
+      <div class="lp-papers">${paper("si",T("Shipping Instruction"),"si_raw")}${paper("bl",T("Draft Bill of Lading"),"bl_raw")}<span class="lp-lens">${ICO('<circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/>')}</span></div>
+      <div class="lp-strip lp-strip3">${big("520",T("emails in the dataset"))}${big("250",T("attached SI and BL files in text, Word, Excel and PDF"))}${big("220",T("emails ask for an SI against BL check"))}</div></section>
+
+    <section id="how" class="lp-sec ${rv("how")}">${head(T("How we solve it"),T("Four steps from inbox to decision"),T("Click a port to follow one real email."))}${pipeHTML()}</section>
+
+    <section id="different" class="lp-sec ${rv("different")}">${head(T("Why it is different"),T("Evidence first, not a fluent guess"))}
+      <div class="lp-grid3">${card("acc",ICON.NEEDS_REVIEW,T("The AI only reads"),T("It pulls the values out. It never decides whether two documents match."))}${card("ok",ICON.CHECKED,T("Every value is in the file"),T("A value must appear word for word in the document, so nothing is made up."))}${card("rev",ICON.USER,T("Rules decide, people stay in charge"),T("Plain rules give the verdict. A blank value, an unreadable file or a missing attachment goes to a person with the reason."))}</div></section>
+
+    <section id="results" class="lp-sec ${rv("results")}">${head(T("Results"),T("What it found in the dataset"))}
+      <div class="lp-strip lp-strip3">${big(String(n("OK")),LABEL.OK,"n-ok")}${big(String(n("MISMATCH")),LABEL.MISMATCH,"n-bad")}${big(String(n("NEEDS_REVIEW")),LABEL.NEEDS_REVIEW,"n-rev")}</div>
+      <div class="lp-card lp-bars"><b>${t("Where the {n} differences were",{n:diffs})}</b>${fc.map(([f,v])=>`<div class="lp-bar"><span>${fld(f)}</span><i style="--w:${Math.round(v*100/top)}%"></i><b class="num">${v}</b></div>`).join("")}</div></section>
+
+    <section id="start" class="lp-sec ${rv("start")}">${head(T("Try it"),T("Where is your mail?"))}
     <div class="opts">
-      <div class="opt main"><span class="oi">${ICON.MAIL}</span><b>${t("Try with demo data")}</b><span class="mute small">${t("{n} sample emails, already checked.",{n:RESULTS.length})}</span>
+      <div class="opt main top-acc"><span class="oi">${ICON.MAIL}</span><b>${t("Try with demo data")}</b><span class="mute small">${t("{n} sample emails, already checked.",{n:RESULTS.length})}</span>
         <div class="ostat">${stat("MISMATCH")}${stat("NEEDS_REVIEW")}${stat("OK")}</div><button class="btn" data-a="inbox">${t("Open the demo inbox")}</button></div>
-      <div class="opt"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}<span class="pill">${t("Coming soon")}</span></b><span class="mute small">${t("Read-only access. New emails are checked as they arrive.")}</span>${gmail}</div>
-      <div class="opt off"><span class="oi">${ICON.UPLOAD}</span><b>${t("Upload SI and BL files")}<span class="pill">${t("Planned")}</span></b><span class="mute small">${t("Drop in a Shipping Instruction and a draft Bill of Lading to check them without an email.")}</span></div>
-    </div>
-    <h2>${t("How it works")}</h2>
-    <ol class="how3">${how.map(([i,h,d])=>`<li>${i}<b>${t(h)}</b><span>${t(d)}</span></li>`).join("")}</ol>
-  </div></main>`;
+      <div class="opt top-ok"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}<span class="pill">${t("Coming soon")}</span></b><span class="mute small">${t("Read-only access. New emails are checked as they arrive.")}</span>${gmail}</div>
+      <div class="opt off top-rev"><span class="oi">${ICON.UPLOAD}</span><b>${t("Upload SI and BL files")}<span class="pill">${t("Planned")}</span></b><span class="mute small">${t("Drop in a Shipping Instruction and a draft Bill of Lading to check them without an email.")}</span></div>
+    </div></section>
+
+    <section id="team" class="lp-sec ${rv("team")}">${head(T("The team"),T("Built by Team Blockeris"),T("Five Monash University Malaysia students at the Averis x Monash Hackathon 2026."))}
+      <div class="lp-team">${teamHTML()}</div></section>
+
+    <section id="faq" class="lp-sec ${rv("faq")}">${head(T("Questions"),T("Frequently asked questions"))}
+      <div class="lp-faq">${faq.map(([q,a])=>`<details><summary>${t(q)}${ICON.CHEV}</summary><p>${t(a)}</p></details>`).join("")}</div></section>
+  </div>
+  <footer class="lp-foot"><div class="hx"><div><b class="logo">SHIP HAPPENS</b><span class="mute small">${t("Ship happens. We catch it before it sails.")}</span></div>
+    <div class="lp-links"><button class="ghost" data-a="inbox">${t("Open the demo inbox")}</button><button class="ghost" data-a="next">${t("What's next")}</button><a class="lp-link" href="https://github.com/Blockeris-Monash/codebase" target="_blank" rel="noopener">${ICON.GITHUB}${t("Code on GitHub")}</a></div>
+    <span class="mute small">${t("Team Blockeris · Averis x Monash Hackathon 2026")}</span></div></footer></main>`;
 }
 
 function nextPage(){
@@ -538,7 +787,7 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -595,6 +844,8 @@ const ICON = {
   GEAR: ICO('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>'),
   SHIP: ICO('<path d="M3 16h18l-2.5 4h-13z"/><path d="M5 16v-5h14v5"/><path d="M8 11V7h8v4"/><path d="M12 7V4"/>'),
   UPLOAD: ICO('<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>'),
+  GITHUB: ICO('<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 00-.9-2.6c3.1-.4 6.4-1.5 6.4-7a5.4 5.4 0 00-1.5-3.8 5.1 5.1 0 00-.1-3.8s-1.2-.3-3.9 1.5a13.4 13.4 0 00-7 0C6.3.6 5.1 1 5.1 1a5.1 5.1 0 00-.1 3.8 5.4 5.4 0 00-1.5 3.8c0 5.4 3.3 6.6 6.4 7a3.4 3.4 0 00-.9 2.6V22"/>'),
+  LINKEDIN: ICO('<path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
 /* Fields that differ or are blank, shown on the list badge so the worst emails are opened first. */
@@ -832,7 +1083,8 @@ function render(){
   // at 0. These put them back. The list and the pane reset independently: selecting an
   // email must start the pane at the top, but it does not change the list, which on a wide
   // screen is a separate box still on show and should stay where the reader left it.
-  const keep = {pane: S.resetPane ? null : (q(".pane")||{}).scrollTop,
+  const keep = {home: (q(".home")||{}).scrollTop,
+                pane: S.resetPane ? null : (q(".pane")||{}).scrollTop,
                 list: S.resetList ? null : (q(".list")||{}).scrollTop,
                 y: (S.resetList || S.resetPane) ? null : window.scrollY};
   S.resetList = false; S.resetPane = false;
@@ -859,12 +1111,14 @@ function render(){
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
   if(brand&&q(".brand")) q(".brand").replaceWith(brand);
   else if(!logoIntro){ logoIntro=true; const m=q(".mark"); if(m){ m.classList.add("go"); setTimeout(()=>m.classList.remove("go"),4000); } }
-  { const pane=q(".pane"), list=q(".list");
+  { const pane=q(".pane"), list=q(".list"), home=q(".home");
+    if(home&&keep.home) home.scrollTop=keep.home;
     if(pane&&keep.pane) pane.scrollTop=keep.pane;
     if(list&&keep.list) list.scrollTop=keep.list;
     if(keep.y) window.scrollTo(0,keep.y); }
   if(S.fade){ S.fade=false; const dt=q(".detail"); if(dt) dt.classList.add("fadein"); }
   if(!S.counted && q(".kpi")){ S.counted=true; countUp(); }
+  if(onHome) revealHome();
   if(S.markScroll){ S.markScroll=false; document.querySelectorAll(".text .srcline").forEach(m=>{ const box=m.closest(".text"); box.scrollTop = Math.max(0, m.offsetTop - 40); }); }
   if(S.keyNav){ S.keyNav=false; const on=q(".item.on"); if(on) on.scrollIntoView({block:"nearest"}); }
   if(S.scrollTo){ const el=q(S.scrollTo); if(el) el.scrollIntoView({block:"start"}); S.scrollTo=null; }
@@ -926,6 +1180,8 @@ document.addEventListener("click", ev=>{
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
+  else if(a==="step"){ S.pipeManual=true; document.querySelector(".lp-pipe")?.classList.remove("auto"); setStep(+k); return; }
+  else if(a==="howto"){ document.getElementById("how")?.scrollIntoView({behavior:"smooth", block:"start"}); return; }
   else if(a==="report"){ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; }
   else if(a==="switchbox"){
     if (k==="live" && !S.user) return;
