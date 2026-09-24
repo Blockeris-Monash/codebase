@@ -87,7 +87,13 @@ li.technical{border-left-color:var(--rev)}
   window.supabase = { createClient };
 </script>
 <script src="store.js"></script>
-<script>
+<!-- A module, and that is load-bearing. `type="module"` is deferred, so the
+     import above runs only after the document is parsed - while a classic
+     script runs during it. As a classic script this ran before
+     `window.supabase` existed, so `sb()` returned null, `currentUser()` said
+     nobody was signed in, and the page asked a signed-in reviewer to sign in
+     again. Modules run in document order, so this one runs after the import. -->
+<script type="module">
 (function(){
   "use strict";
   const app = document.getElementById("app");
