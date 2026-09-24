@@ -823,8 +823,12 @@ function homePage(){
     <span class="mute small">${t("Team Blockeris · Averis x Monash Hackathon 2026")}</span></div></footer></main>`;
 }
 
+/* What's next goes back to where it was opened from: the landing page or the inbox (the default
+   when the page was opened directly). */
+const fromHomeHash = ()=>S.nextFrom==="" || S.nextFrom==="#/";
 function nextPage(){
-  return `<main class="nextpage"><div class="nx"><button class="ghost" data-a="inbox">\u2190 ${t("Back to inbox")}</button>
+  const fromHome = fromHomeHash();
+  return `<main class="nextpage"><div class="nx"><button class="ghost" data-a="nextback">\u2190 ${fromHome?t("Back to home"):t("Back to inbox")}</button>
     <h1>${t("What is next for Ship Happens")}</h1>
     <p class="mute lead">${t("Here is what works today and what we plan to build after the hackathon.")}</p>
     <h2>${t("Working today")}</h2>
@@ -1226,8 +1230,9 @@ document.addEventListener("click", ev=>{
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="sortsel"||a==="kindsel") return;   // a redraw here would close the dropdown as it opens
   if(a==="theme") document.documentElement.dataset.theme = k;
-  if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; location.hash="#/next"; window.scrollTo(0,0); }
-  else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
+  if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; S.nextFrom=location.hash; location.hash="#/next"; window.scrollTo(0,0); }
+  else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); }
+  else if(a==="nextback"){ location.hash = fromHomeHash() ? "#/" : "#/inbox"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="inbox"){ location.hash="#/inbox"; window.scrollTo(0,0); }
   else if(a==="mymailbox"){ if(!S.user) return; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="live"){ S.mailbox="live"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } if(!S.polling) startPolling(); }
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
