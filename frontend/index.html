@@ -480,7 +480,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .tally .voy{position:relative;width:150px;height:24px;flex:none;margin-left:12px}
 .tally .voy::before{content:"";position:absolute;left:0;right:14px;top:50%;border-top:2px dashed color-mix(in srgb,var(--accent) 45%,transparent)}
 .tally .voy::after{content:"";position:absolute;left:0;top:calc(50% - 1px);height:3px;width:calc((100% - 14px) * var(--p) / 100);border-radius:2px;background:var(--ok);transition:width .4s}
-.tally .boat{position:absolute;top:50%;left:calc((100% - 14px) * var(--p) / 100);transform:translate(-50%,-55%);width:22px;height:22px;border-radius:50%;background:var(--accent);display:grid;place-items:center;transition:left .4s}
+.tally .boat{position:absolute;top:50%;left:calc((100% - 14px) * var(--p) / 100);transform:translate(-50%,-55%);width:22px;height:22px;border-radius:50%;background:var(--accent);display:grid;place-items:center;transition:left .4s;z-index:1}
 .tally .boat .ico{width:13px;height:13px;color:var(--accent-ink);margin:0}
 .tally .port{position:absolute;right:0;top:50%;transform:translateY(-60%)}.tally .port .ico{width:15px;height:15px;color:var(--ok);margin:0}
 /* every email done: the boat is in port, so it takes the flag's place rather than sitting on it */
