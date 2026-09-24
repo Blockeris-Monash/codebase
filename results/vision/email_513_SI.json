@@ -1,0 +1,45 @@
+{
+  "fields": {
+    "shipper": {
+      "present": true,
+      "label_seen": "Shipper",
+      "raw": "APRIL, FINE PAPER TRADING"
+    },
+    "consignee": {
+      "present": true,
+      "label_seen": "Consignee",
+      "raw": "KPP-ANTALIS (SINGAPORE) PTE LTD."
+    },
+    "notify_party": {
+      "present": true,
+      "label_seen": "Notify",
+      "raw": "EAST BRIGHT FZ-LLC"
+    },
+    "port_of_loading": {
+      "present": true,
+      "label_seen": "Port of Loading",
+      "raw": "NHAVA SHEVA"
+    },
+    "port_of_discharge": {
+      "present": true,
+      "label_seen": "Port of Discharge",
+      "raw": "VALPARAISO"
+    },
+    "container_count": {
+      "present": true,
+      "label_seen": "Containers",
+      "raw": "10 x 40'HC"
+    },
+    "gross_weight_kg": {
+      "present": true,
+      "label_seen": "Gross Weight",
+      "raw": "237,750 KG"
+    }
+  },
+  "untrusted": [
+    "shipper",
+    "consignee",
+    "port_of_loading",
+    "port_of_discharge"
+  ]
+}

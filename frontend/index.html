@@ -217,6 +217,9 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{display:inline-flex;align-items:center;gap:4px;font-size:0.8125rem;border-radius:99px;padding:3px 10px 3px 6px}
 .chip .ico{width:1em;height:1em}.c-OK{background:var(--ok-soft);color:var(--ok)}.c-MISMATCH{background:var(--bad-soft);color:var(--bad)}.c-NEEDS_REVIEW{background:var(--rev-soft);color:var(--rev)}
 .linkbtn{display:block;background:none;border:0;color:var(--accent);padding:6px 0;margin-top:8px;font-weight:600;text-align:left}
+.scanbox{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card)}
+.scanbox h3{margin:0 0 4px;font-size:0.9375rem}
+.scanbox .cap{margin:0 0 10px}
 .docs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .doc{min-width:0}
 .doch{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:4px}
@@ -551,11 +554,15 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <div id="app"></div>
 <script src="config.js"></script>
 <script src="results.js"></script>
+<script src="scans.js"></script>
 <script src="i18n.js"></script>
 <script type="module">
   // Loaded from a CDN because this page has no build step. Only the auth and
   // REST helpers are used; the page still renders if this never arrives.
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/+esm";
+  // Pinned exactly. "@2" floats: a release during judging would change the code
+  // running in a judge's browser with nothing in this repository changing, and
+  // sign-in failing then looks like our bug.
   window.supabase = { createClient };
 </script>
 <script src="store.js"></script>
@@ -987,6 +994,33 @@ function textHTML(text, span){
     `<mark class="srcline">${esc(lines.slice(span[0],span[1]+1).join("\n"))}</mark>` +
     (span[1]<lines.length-1?"\n":"") + esc(lines.slice(span[1]+1).join("\n"));
 }
+/* These emails escalate as unreadable and still will - a value read from an
+   image is not trusted to decide a defect. But showing what the page says, with
+   the values this corpus has never seen marked, is the difference between
+   "we could not open this" and something a reviewer can act on. */
+const SCAN_FIELDS = Object.keys(FIELDS);   // one definition of the seven, not two
+
+function scanRow(field, si, bl){
+  const cell = (doc)=>{
+    if(!doc) return `<td class="mute">-</td>`;
+    const v = (doc.fields[field]||{}).raw;
+    if(!v) return `<td class="mute">-</td>`;
+    const doubted = (doc.untrusted||[]).includes(field);
+    return `<td class="${doubted?"gap":""}">${esc(v)}${doubted?` <span class="pill" title="${t("This exact value does not appear anywhere in these documents, so it is probably a misreading.")}">${t("not verified")}</span>`:""}</td>`;
+  };
+  return `<tr><td class="f">${fld(field)}</td>${cell(si)}${cell(bl)}</tr>`;
+}
+
+function scanHTML(e){
+  const scan = (window.SCANS||{})[e.id];
+  if(!scan) return "";
+  const doubted = (scan.SI?.untrusted||[]).length + (scan.BL?.untrusted||[]).length;
+  return `<div class="scanbox"><h3>${t("What the scan says")}</h3>` +
+    `<p class="cap">${t("Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.",{n:doubted})}</p>` +
+    `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead>` +
+    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div></div>`;
+}
+
 function docsHTML(e, rows){
   const row = S.hl ? rows.find(r=>r.field===S.hl) : null;
   const box = (role,name)=>{
@@ -1112,6 +1146,7 @@ function detail(e){
     banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by==="fallback"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
   h += banner + actionsHTML(e) + tbl;
+  h += scanHTML(e);
   if(e.docs) h += docsHTML(e, view.rows||[]);
   h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
   h += `<button class="linkbtn report" data-a="report">${ICON.FLAG}${t("Report a problem with this result")}</button>`;

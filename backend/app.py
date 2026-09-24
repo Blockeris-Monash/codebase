@@ -39,9 +39,15 @@ app = FastAPI(title="Document Discrepancy Orchestrator")
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.middleware import tag_and_limit
+
 # Enable CORS so Han's Vercel frontend can talk to Render
 cors_env = os.environ.get("CORS_ORIGINS", "*")
 allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()] if cors_env != "*" else ["*"]
+
+# A request id on every answer, and a ceiling on how fast the model routes can
+# be called - the URL is public and one ?live=true press spends two Qwen calls.
+app.middleware("http")(tag_and_limit)
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,7 +60,11 @@ app.add_middleware(
     expose_headers=["X-Mailbox-Pending"],
 )
 
-@app.api_route("/health", methods=["GET", "HEAD"])
+class Health(BaseModel):
+    status: str
+
+
+@app.api_route("/health", methods=["GET", "HEAD"], response_model=Health)
 def health_check():
     """Lightweight endpoint for UptimeRobot and cloud health checkers."""
     return {"status": "ok"}
@@ -430,7 +440,29 @@ async def compare_email(email: EmailInput, live: bool = False):
 # 6. Master Route: Classify -> Route (Compare or Pass-Through)
 # =====================================================================
 
-@app.post("/process-email")
+class SubmissionEntryOut(BaseModel):
+    """The line that reaches the organisers' scorer. Named so a change to it is
+    a visible change to a contract, not an edit to a dict literal."""
+    category: str
+    status: str
+    review_reason: Optional[str] = None
+    has_defect: bool
+    defect_fields: List[str]
+
+
+class ProcessedEmail(BaseModel):
+    """What /process-email answers with. It returned Dict[str, Any], so nothing
+    checked the shape and the five people integrating against it had only the
+    source to go on."""
+    email_id: str
+    EmailRecord: Dict[str, Any]
+    ClassificationResult: Dict[str, Any]
+    ComparisonResult: Optional[Dict[str, Any]] = None
+    SubmissionEntry: SubmissionEntryOut
+
+
+
+@app.post("/process-email", response_model=ProcessedEmail)
 async def process_email(
     email: EmailInput,
     live: bool = Query(

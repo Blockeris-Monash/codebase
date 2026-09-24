@@ -9,6 +9,74 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Hardened for a deployment that has to stay up while judges look at it.**
+  The rules say the deployed project must be *publicly accessible and functional
+  during the judging period*, which turns several known gaps from tidy-ups into
+  risks.
+
+  **Every dependency is pinned exactly**, including the two the reply drafting
+  added: `langchain-text-splitters>=0.2.0` already resolved to 1.1.2, a major
+  version past its own floor, so the floor never described what CI installed. They were all `>=`, so a release
+  between a green CI run and judging could change what Render built with nothing
+  here going red — CI floats too, so it would have agreed with the broken
+  deploy. `supabase-js` was loaded from a CDN on `@2`, a floating major: a
+  release during judging would have changed the code running in a judge's
+  browser without a line changing in this repository, and sign-in failing then
+  would have looked like our bug. Both now name exact versions, and the suite
+  passes on a clean install of exactly those.
+
+  **A rate limit and a request id.** The backend URL is in a public repository,
+  there is no auth, and one `?live=true` press spends two Qwen calls against a
+  quota the whole team shares — so anyone who found it could have exhausted the
+  demo before judging without meaning any harm. Thirty requests a minute per
+  caller, health checks exempt because throttling the uptime monitor would put
+  Render to sleep. Every response now carries `X-Request-ID`, so a failure a
+  judge sees in the browser can be tied to the log line that explains it; there
+  were seventeen log calls and no way to join any of them to a request.
+
+  **Every route declares the shape it answers with.** `/process-email` returned
+  `Dict[str, Any]`, so nothing checked it and the people integrating against it
+  had only the source to go on.
+
+  **`cli/validate_contracts.py` now runs in CI.** It existed and was never
+  executed, which made it documentation rather than a check.
+
+- **The scanned attachments are read, and what cannot be trusted is marked.**
+  Six of the eight attachments on the five `unreadable` emails are real scans —
+  about 20 KB each, one page image, no text layer at all. A vision model now
+  reads all six, seven of seven fields each, behind `SHIP_HAPPENS_VISION=1` and
+  off by default so the submitted numbers stay reproducible. The readings are
+  cached, so a demo never waits on a free tier.
+
+  The other two, `email_511_BL.pdf` and `email_515_BL.pdf`, are 775 and 765
+  bytes: a header and binary, no image, no font, no page. Nothing reads those,
+  and they stay `unreadable` because that is the correct answer rather than a
+  limitation.
+
+  **A value read from an image is never allowed to decide anything.** Comparing
+  the three readable pairs produced twelve differences across 42 fields, and
+  every one was the model rather than the document: a dropped space
+  (`AL GURG STATIONERYLLC`), an invented comma (`APRIL, FINE PAPER TRADING`), a
+  lost full stop (`PTE LTD.` for `PTE. LTD.`) and ports that lost their country
+  (`NHAVA SHEVA` for `NHAVA SHEVA, INDIA`). Reading the pages by eye confirmed
+  all twelve — including one this author had missed.
+
+  So each reading is checked against the values these documents actually use.
+  `cli/make_vocabulary.py` writes `results/vocabulary.json` from the 192 text
+  attachments — no model, no answer key — and six of the seven fields turn out
+  to draw on a small closed set: four shippers, seven loading ports, twenty
+  notify parties. Gross weight takes 104 distinct values, so it has no closed
+  set and is excluded rather than pretended. A reading outside the set is
+  reported as read and marked **not verified**; nothing is corrected towards a
+  near neighbour, because the entity pool holds deliberately near-identical
+  parties and any similarity threshold loose enough to merge a scanning
+  artefact would merge two real companies with it.
+
+  These five emails escalate exactly as they did before. What changes is what a
+  reviewer is handed: not "one attachment could not be read", but the seven
+  fields from both documents with the doubtful values marked — which is the
+  difference between opening the file yourself and not having to.
+
 - **The test suite runs on every pull request.** A green local run is not
   evidence: it passes on one machine that has a `.env`. GitHub Actions runs
   `pytest` on Python 3.11 and 3.12 for every pull request and every push to
@@ -59,7 +127,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 285 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 525 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -86,6 +154,17 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   regenerated here, so the screen and the API cannot disagree.
 
 ### Fixed
+
+- **Three defects in the batch extractor, all of them long-standing.** `--data`
+  defaulted to `backend/data`, a path that has never existed, so the command in
+  the module docstring extracted nothing for anyone who did not pass the flag.
+  The filename was validated with `assert`, which `python -O` removes entirely,
+  leaving a `TypeError` two lines later that names nothing. And one document
+  that raised took the whole run with it: `job.result()` re-raises inside the
+  `as_completed` loop, so a 250-document run over real model calls could die at
+  the first bad file having already written part of its output, with no summary
+  of what had been done. A failure is now recorded the way a model refusal
+  already was, and a rerun retries it, because a rerun skips whatever is on disk.
 
 - **The page no longer scrolls sideways on a narrow screen.** Rendered across ten
   geometries in English and Malay, every width under 500px scrolled horizontally —

@@ -2,6 +2,10 @@
 // The Malay and Chinese here were written by an AI and should be checked by a native speaker before they are shown to customers.
 window.I18N = {
  "ms": {
+  "What the scan says": "Apa yang tertulis pada imbasan",
+  "not verified": "belum disahkan",
+  "This exact value does not appear anywhere in these documents, so it is probably a misreading.": "Nilai tepat ini tidak muncul di mana-mana dalam dokumen ini, jadi kemungkinan besar ia tersalah baca.",
+  "Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.": "Dibaca daripada imej halaman, kerana fail ini tiada teks. Tiada apa-apa di sini menentukan keputusan: {n} nilai tidak muncul di mana-mana lain dalam dokumen ini, jadi e-mel ini tetap dihantar kepada seseorang.",
   "Dismiss": "Tutup",
   "Sign-in did not finish: {reason}": "Log masuk tidak selesai: {reason}",
   "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "Akaun Google ini tiada dalam senarai penguji untuk aplikasi ini. Minta pasukan menambahkannya, kemudian cuba lagi.",
@@ -312,6 +316,10 @@ window.I18N = {
   "{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.": "{reply} menulis draf untuk anda sunting. Dalam Peti mel saya, Hantar balasan menghantarnya dari Gmail anda, dalam perbualan yang sama. Pada data demo tiada apa yang dihantar, dan klik yang salah boleh dibatalkan dengan Buat asal."
  },
  "zh": {
+  "What the scan says": "扫描件上的内容",
+  "not verified": "未核实",
+  "This exact value does not appear anywhere in these documents, so it is probably a misreading.": "这个值在本批文件中从未出现过，因此很可能是误读。",
+  "Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.": "因为这些文件没有文字层，内容是从页面图像读取的。这里的内容不决定任何结论：有 {n} 个值在本批文件中未曾出现，因此该邮件仍交由人工处理。",
   "Dismiss": "关闭",
   "Sign-in did not finish: {reason}": "登录未完成：{reason}",
   "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "此 Google 帐号不在本应用的测试人员名单中。请让团队添加后重试。",
