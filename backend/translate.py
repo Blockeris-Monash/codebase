@@ -31,7 +31,7 @@ class TooMuchText(ValueError):
 PROMPT = (
     "Translate the value of every key in the JSON object below into {target}. "
     "Keep company names, person names, port names, container numbers, reference numbers and "
-    "codes exactly as written. Keep placeholder tokens like {{PHONE_NUMBER_1}} or {{EMAIL_ADDRESS_1}} unchanged. Keep the line breaks. "
+    "codes exactly as written. Keep placeholder tokens (like __PHONE_NUMBER_1__ or __EMAIL_ADDRESS_1__) exactly as written. Keep the line breaks. "
     "Reply with only one JSON object that has the same keys.\n\n"
 )
 

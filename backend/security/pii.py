@@ -298,7 +298,7 @@ class PIIMasker:
         for r in sorted_results:
             entity_type = r.entity_type
             token_counts[entity_type] = token_counts.get(entity_type, 0) + 1
-            token = f"{{{{{entity_type}_{token_counts[entity_type]}}}}}"
+            token = f"__{entity_type}_{token_counts[entity_type]}__"
             original_val = text[r.start:r.end]
             mapping[token] = original_val
             modified = modified[:r.start] + token + modified[r.end:]

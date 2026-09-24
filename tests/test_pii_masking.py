@@ -12,6 +12,13 @@ from backend.classify import EmailInput, classify_email, ClassificationSchema
 from backend.translate import translate_texts
 
 
+@pytest.fixture(autouse=True)
+def fake_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("QWEN_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+
 @pytest.fixture
 def masker() -> PIIMasker:
     return get_pii_masker()
