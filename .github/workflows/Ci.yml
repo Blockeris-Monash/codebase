@@ -1,0 +1,58 @@
+# Runs on every pull request, so a branch that breaks the suite cannot be
+# merged on the strength of a green local run.
+#
+# No API keys are configured here, deliberately. Every test that reaches a
+# model over the network is gated behind SHIP_HAPPENS_LIVE (tests/live_gate.py)
+# and skips without it, so CI proves the repository works from a clean clone
+# with no credentials - which is exactly what a judge following the README has.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same branch supersedes the run already in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.12 is what the team develops on; 3.11 catches anything that
+        # silently depends on a 3.12-only feature.
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Refuse to run if a model key reached the environment
+        # A key in CI would unskip the live tests and turn a unit-test run into
+        # billed network calls against a gateway only this team can reach.
+        run: |
+          for name in QWEN_API_KEY GEMINI_API_KEY GOOGLE_API_KEY SHIP_HAPPENS_LIVE; do
+            if [ -n "${!name:-}" ]; then
+              echo "::error::$name is set in CI. Remove it: the suite must not call a live model."
+              exit 1
+            fi
+          done
+          echo "No model keys present. Live tests will skip."
+
+      - name: Run the test suite
+        run: pytest
