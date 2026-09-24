@@ -35,7 +35,7 @@ def test_the_empty_states_are_a_sea_scene() -> None:
 
 def test_the_sky_and_sea_sit_behind_the_app() -> None:
     render = block("function render(){")
-    assert "onHome?\"\":APPBG" in render.replace(" ", "")
+    assert "onHome?\"\":onNext?APPBG_LIVE:APPBG" in render.replace(" ", "")
     assert re.search(r"\.appbg\{position:fixed;inset:0;z-index:0;pointer-events:none", INDEX)
 
 
@@ -54,7 +54,8 @@ def test_inside_pages_have_a_home_button() -> None:
 
 
 def test_the_app_background_is_still_and_faint() -> None:
-    """Behind the work it should be calm: no motion, and faded so the boxes stand out."""
+    """Behind the work it should be calm: no motion, and faded so the boxes stand out.
+    Only What's next, which is read rather than worked in, moves (.live)."""
     rule = re.search(r"\.appbg\{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:(\.\d+)\}", INDEX)
     assert rule and float(rule.group(1)) <= 0.5
-    assert re.search(r"\.appbg \*\{animation:none!important\}", INDEX)
+    assert re.search(r"\.appbg:not\(\.live\) \*\{animation:none!important\}", INDEX)
