@@ -71,3 +71,7 @@ def test_an_email_shows_its_route_from_the_shipping_instruction() -> None:
 
 def test_the_tiles_carry_a_container_stripe() -> None:
     assert re.search(r"\.kpi::before\{[^}]*repeating-linear-gradient", INDEX)
+
+
+def test_the_landing_page_uses_the_pitch_line_from_the_deck() -> None:
+    assert 't("Ship happens. We catch it before it sails.")' in block("function homePage(){")

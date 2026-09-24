@@ -267,6 +267,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .home{flex:1;min-height:0}
 .hx{max-width:1000px;margin:0 auto;padding:28px 16px 60px}
 .hero{display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
+.hero .kicker{margin:0 0 10px;font-weight:700;font-size:1.125rem;color:var(--accent)}
 .hero h1{font-size:2.25rem;line-height:1.1;margin:0 0 12px}.hero .lead{font-size:1.0625rem;line-height:1.5;max-width:52ch;margin:0}
 .art{width:300px;height:auto;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 .art .hullc{fill:var(--ink)}.art .winc{fill:var(--accent)}.art .cb{opacity:.9}
@@ -489,7 +490,7 @@ function homePage(){
                [ICON.SHIP,T("Seven fields compared"),T("Shipper, consignee, notify party, both ports, containers and weight.")],
                [ICON.OK,T("You fix only what is flagged"),T("Action required comes first, with a reply drafted for you.")]];
   return `<main class="home"><div class="hx">
-    <section class="hero"><div><h1>${t("Check every Bill of Lading before it ships")}</h1>
+    <section class="hero"><div><p class="kicker">${t("Ship happens. We catch it before it sails.")}</p><h1>${t("Check every Bill of Lading before it ships")}</h1>
       <p class="lead mute">${t("Ship Happens reads each email, compares the Shipping Instruction with the draft Bill of Lading field by field, and shows you only what needs fixing.")}</p></div>${SHIP_ART}</section>
     <h2>${t("Where is your mail?")}</h2>
     <div class="opts">
