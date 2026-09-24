@@ -14,7 +14,9 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   during the judging period*, which turns several known gaps from tidy-ups into
   risks.
 
-  **Every dependency is pinned exactly.** They were all `>=`, so a release
+  **Every dependency is pinned exactly**, including the two the reply drafting
+  added: `langchain-text-splitters>=0.2.0` already resolved to 1.1.2, a major
+  version past its own floor, so the floor never described what CI installed. They were all `>=`, so a release
   between a green CI run and judging could change what Render built with nothing
   here going red — CI floats too, so it would have agreed with the broken
   deploy. `supabase-js` was loaded from a CDN on `@2`, a floating major: a
@@ -125,7 +127,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 513 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 525 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
