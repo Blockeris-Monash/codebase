@@ -106,3 +106,38 @@ def test_workers_run_documents_at_the_same_time_and_save_the_same_results(
     assert extractor.peak == 2
     assert summary == {"done": 3, "skipped": 0, "failed": []}
     assert len(list((tmp_path / "out").glob("*.json"))) == 3
+
+
+def test_a_name_that_is_not_an_attachment_raises_rather_than_asserts(attachments: Path) -> None:
+    """`assert` is removed entirely by `python -O`, which would turn a clear
+    message into a TypeError on the following line naming nothing useful."""
+    with pytest.raises(ValueError, match="not an SI or BL attachment: notes.txt"):
+        extract_attachment(attachments / "notes.txt", FakeExtractor())
+
+
+def test_the_data_default_points_at_a_folder_that_exists() -> None:
+    """It resolved to backend/data, which has never been a directory in this
+    repository, so the documented command failed for anyone who omitted --data."""
+    from backend.extract.batch import REPO_ROOT
+
+    assert (REPO_ROOT / "data").is_dir()
+    assert REPO_ROOT.name != "backend"
+
+
+def test_one_document_that_raises_does_not_discard_the_rest(
+        attachments: Path, tmp_path: Path) -> None:
+    """A 250-document run costs real model calls. Before this, the first
+    exception propagated out of job.result() and took the whole run with it,
+    leaving whatever had already been written on disk and no summary at all."""
+    class RaisesOnOne(FakeExtractor):
+        def extract_fields(self, email_id, pairs):
+            if email_id == "email_001":
+                raise RuntimeError("upstream said no")
+            return super().extract_fields(email_id, pairs)
+
+    out = tmp_path / "out"
+    summary = run_batch(attachments, out, RaisesOnOne())
+
+    assert summary["failed"] == ["email_001_BL.txt", "email_001_SI.txt"]
+    assert summary["done"] == 1
+    assert [p.name for p in out.glob("*.json")] == ["email_002_SI.json"]

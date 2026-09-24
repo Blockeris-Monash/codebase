@@ -26,6 +26,9 @@ from backend.read.documents import document_title, read_document
 # this; batch was the one entry point that needed a key and did not load it.
 load_dotenv()
 
+# backend/extract/batch.py -> parents[0] backend/extract, [1] backend, [2] the repo.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 ATTACHMENT_NAME = re.compile(r"^(?P<email_id>email_\d+)_(?P<role>SI|BL)\.(?P<format>\w+)$")
 
 
@@ -36,7 +39,9 @@ def absent_fields() -> dict:
 def extract_attachment(path: Path, extractor: AiExtractor) -> DocumentExtract | None:
     """The DocumentExtract for one attachment, or None if the model never answered."""
     name = ATTACHMENT_NAME.match(path.name)
-    assert name, f"not an SI or BL attachment: {path.name}"
+    if not name:
+        raise ValueError(f"not an SI or BL attachment: {path.name}")
+
     result: DocumentExtract = {
         "email_id": name["email_id"], "declared_role": name["role"],
         "source_path": f"attachments/{path.name}", "format": name["format"].lower(),
@@ -67,7 +72,16 @@ def run_batch(attachments_dir: Path, out_dir: Path, extractor: AiExtractor,
         jobs = {pool.submit(extract_attachment, path, extractor): path for path in todo}
         for number, job in enumerate(as_completed(jobs), 1):
             path = jobs[job]
-            result = job.result()
+            # A 250-document run costs real model calls, so one file that raises
+            # must not discard the 249 that worked. Recorded like a refusal and
+            # retried on the next run, which already skips what is on disk.
+            try:
+                result = job.result()
+            except Exception as error:                      # noqa: BLE001 - reported, not hidden
+                summary["failed"].append(path.name)
+                log(f"[{number}/{len(todo)}] {path.name}: {type(error).__name__}: {error}")
+                continue
+
             if result is None:
                 summary["failed"].append(path.name)
                 log(f"[{number}/{len(todo)}] {path.name}: model did not answer")
@@ -85,7 +99,7 @@ def run_batch(attachments_dir: Path, out_dir: Path, extractor: AiExtractor,
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--data", default=str(Path(__file__).resolve().parents[1] / "data"))
+    parser.add_argument("--data", default=str(REPO_ROOT / "data"))
     parser.add_argument("--out", required=True)
     parser.add_argument("--model", choices=("qwen", "gemini"), default="qwen")
     parser.add_argument("--workers", type=int, default=4, help="documents sent at the same time")
