@@ -79,3 +79,16 @@ def test_the_landing_page_no_longer_says_read_only_or_coming_soon_for_gmail() ->
     assert "Mailbox access will be read-only." not in INDEX
     assert "Your mailbox appears here in the next update." not in INDEX
     assert "Send is a demo today." not in INDEX
+
+
+def test_mailbox_mail_opens_its_thread_in_gmail_not_a_mail_app() -> None:
+    """mailto: does nothing on a computer with no mail app, which is most people who use Gmail
+    in the browser. A live email is already in their Gmail, so the button opens it there."""
+    actions = function(INDEX, "actionsHTML")
+
+    assert 'isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`' in actions
+    assert 'data-a="mailto"' in actions  # demo emails keep it
+    link = INDEX[INDEX.index("const gmailLink"):]
+    link = link[:link.index("\n")]
+    assert "https://mail.google.com/mail/?authuser=" in link and "#all/" in link
+    assert "encodeURIComponent" in link
