@@ -1,5 +1,5 @@
-"""The ship carries documents, not containers, and loose documents float on the sea:
-the product checks paperwork, so the picture should show paperwork."""
+"""The ship carries containers mixed with documents, and loose documents float on the sea:
+the product checks the paperwork that travels with the cargo."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,10 +12,11 @@ def block(start: str) -> str:
     return part[:part.index("})();")]
 
 
-def test_the_ship_carries_documents_not_containers() -> None:
+def test_the_ship_carries_containers_mixed_with_documents() -> None:
     ship = block("const SHIP_ART = (()=>{")
-    assert "corr" not in ship, "container ridges are gone"
-    assert 'class="cargo' in ship and 'class="fold"' in ship and 'class="stamp' in ship
+    assert 'class="cb ${c}"' in ship and "url(#corr)" in ship, "containers"
+    assert 'class="cargo' in ship and 'class="fold"' in ship and 'class="stamp' in ship, "documents"
+    assert ship.count(",box]") >= 3 and ship.count(",doc]") >= 3, "a mix on both rows"
 
 
 def test_documents_float_on_the_sea() -> None:
