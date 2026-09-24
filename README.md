@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 271 passed, 5 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,10 +108,10 @@ python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 263 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 271 passed, 5 skipped (skips need a model key)
 ```
 
-If the tests print 263 passed, you are done — that is the whole system checked
+If the tests print 271 passed, you are done — that is the whole system checked
 offline, with no key and no network.
 
 The suite prints its own grouped report rather than a wall of dots, so the run

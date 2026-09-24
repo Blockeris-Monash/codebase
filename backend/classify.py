@@ -1,6 +1,7 @@
 """classify.py
 
-Classifies incoming shipping operations emails using Qwen via the team gateway.
+Classifies incoming shipping operations emails using Qwen via the team gateway,
+with Gemini answering when Qwen fails or stalls and a Gemini key is set.
 
     python -m backend.classify    # classify the whole inbox -> results/classifications/
 
@@ -21,6 +22,8 @@ from typing import Any, Callable, Iterable, List, Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
 
+from backend.extract.fallback import with_fallback
+from backend.extract.gemini import api_key as gemini_key, gemini_json
 from backend.extract.qwen import (
     DEFAULT_BASE_URL,
     DEFAULT_MODEL,
@@ -241,7 +244,21 @@ def qwen_classification_model(
     return ClassificationSchema.model_validate_json(json_str)
 
 
-async def classify_email(email: EmailInput) -> ClassificationResult:
+def gemini_classification_model(prompt: str) -> ClassificationSchema:
+    """Same prompt and schema as Qwen, so either model's answer reads the same."""
+    return ClassificationSchema.model_validate_json(
+        gemini_json(prompt, system=CLASSIFICATION_PROMPT, schema=ClassificationSchema))
+
+
+# Qwen first, Gemini when Qwen fails or stalls, only when a Gemini key is set (as in extraction).
+classification_model = with_fallback(qwen_classification_model, gemini_classification_model,
+                                     enabled=lambda: bool(gemini_key()))
+
+
+async def classify_email(
+    email: EmailInput,
+    model: Callable[[str], ClassificationSchema] = classification_model,
+) -> ClassificationResult:
     prompt = (
         f"Email Content:\n"
         f"- Email ID: {email.email_id}\n"
@@ -252,7 +269,7 @@ async def classify_email(email: EmailInput) -> ClassificationResult:
     )
 
     try:
-        parsed = await asyncio.to_thread(qwen_classification_model, prompt)
+        parsed = await asyncio.to_thread(model, prompt)
         return ClassificationResult(
             email_id=email.email_id,
             category=parsed.category,
@@ -284,6 +301,8 @@ async def classify_many(
     - Emails that already have a saved file are skipped, so re-running resumes.
     - At most `concurrency` requests are in flight, to avoid overloading the gateway.
     - One failure doesn't stop the batch; failures are returned as (email_id, reason).
+    - Qwen only, no Gemini backup: the saved results feed the quoted numbers, so one
+      model must have made all of them.
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -296,7 +315,7 @@ async def classify_many(
             return
         async with gate:
             try:
-                result = await classify_email(email)
+                result = await classify_email(email, model=qwen_classification_model)
             except ClassificationFailed as err:
                 failed.append((email.email_id, str(err)))
                 return
