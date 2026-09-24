@@ -33,6 +33,30 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `"Level NONSENSE"` for anything it does not recognise, and setting that as a
   level turns logging off without saying so.
 
+- **The pipeline files its own reports when the AI struggles.** The reports
+  queue had an Automatic tab and nothing that wrote to it. Now every step that
+  calls a model (sorting an email, reading its SI, reading its BL, drafting a
+  reply) files one technical report when it took more than one model call or
+  never got an answer: which email, which step, each attempt's model, result
+  and time, and what happened to the email in the end. A Qwen outage that
+  Gemini covered used to be invisible, and an extraction with no answer looked
+  exactly like a document with blank fields. Both are now on the admin's list.
+
+  The Automatic tab lists them **most tries first**, because the step that
+  struggled most is the one to read first. The count lives in the report's
+  existing `context` column, so there is no migration to run.
+
+  One report per email and step, not one per failed call: the attempts are
+  collected in a `ContextVar` while the step runs, which keeps an email's SI and
+  BL apart even though they are read at the same moment. Written with the
+  service-role key (`SUPABASE_SERVICE_ROLE_KEY`, server only), because a
+  technical report has no user and migration 0004 lets only admins read them.
+  The write runs on a background thread and a failure there is logged and
+  dropped, so a paused database can never slow down or break a check. Without
+  the key, reports go to the log only. A test fixture removes the key from every
+  test, so a developer's `.env` cannot fill the real queue with the failures
+  the tests cause on purpose.
+
 - **A reports queue, on its own page.** `frontend/admin.html` lists what
   reviewers flagged with "Report a problem", newest first, filterable by whether
   a person or the pipeline filed it, each row linking back to the email it was

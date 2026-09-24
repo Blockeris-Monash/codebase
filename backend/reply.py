@@ -4,6 +4,7 @@ import urllib.request
 from typing import Optional, List, Dict, Any
 from supabase import create_client, Client
 from google import genai
+from backend import reports
 from backend.classify import EmailInput
 from backend.extract.fallback import with_fallback
 
@@ -139,7 +140,8 @@ GLOBETRANS POLICY CONTEXT:
     )
 
     try:
-        reply_text = generate_fn(prompt)
+        with reports.watching("Reply draft", email.email_id, "No reply was drafted."):
+            reply_text = generate_fn(prompt)
         return strip_dangerous_tags(reply_text)
     except Exception as e:
         # None, not a sentence: the page shows draft_reply as the reply itself, and from

@@ -32,11 +32,20 @@ def attachments(data_dir: Path) -> Path:
     return data_dir / "attachments"
 
 
+@pytest.fixture(autouse=True)
+def no_reports_reach_the_real_queue(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests make models fail on purpose, and each failure files a technical
+    report. A developer's .env may hold the service key, so without this a test
+    run would fill the team's admin queue with fake failures."""
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+
+
 # --- verification report ------------------------------------------------
 # Grouped by what each test actually proves, because "128 passed" tells a
 # reader nothing about coverage. Matched against the test's node id, first
 # match wins, so order matters.
 REPORT_AREAS: list[tuple[str, str, str]] = [
+    ("technical_report", "Technical reports", "every retry reaches the admin queue, most tries first"),
     ("vision", "Scans", "read the scans, and say what cannot be trusted"),
     ("sign_in_error", "Sign-in", "say why a sign-in did not finish"),
     ("vision", "Scans", "read the scans, refuse to guess at them"),

@@ -61,6 +61,7 @@ li.technical{border-left-color:var(--rev)}
 .pill{font-size:.75rem;border-radius:99px;padding:2px 9px;background:var(--sunk);color:var(--mute);white-space:nowrap}
 .pill.human{background:var(--accent-soft);color:var(--accent)}
 .pill.technical{background:var(--rev-soft);color:var(--rev)}
+.pill.tries{background:var(--bad-soft);color:var(--bad)}
 .detail{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .meta{margin-top:10px;color:var(--mute);font-size:.8125rem;display:flex;flex-wrap:wrap;gap:4px 12px}
 .stars{color:var(--rev);letter-spacing:1px}
@@ -128,6 +129,10 @@ li.technical{border-left-color:var(--rev)}
       : esc(ref);
   }
 
+  // How many model calls an automatic report's step took (backend/reports.py).
+  // Number() because it came from the database: anything else counts as none.
+  const tries = r => Number(r.context && r.context.tries) || 0;
+
   function card(inner){ return `<div class="card msg">${inner}</div>`; }
 
   function screenSignedOut(){
@@ -160,10 +165,13 @@ li.technical{border-left-color:var(--rev)}
     const kind = r.kind === KIND_TECHNICAL ? KIND_TECHNICAL : KIND_HUMAN;
     const stars = r.rating ? `<span class="stars" title="${r.rating} out of 5">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>` : "";
     const ref = emailCell(r.email_ref);
+    const n = tries(r);
+    const count = kind === KIND_TECHNICAL && n ? `<span class="pill tries">${n} ${n === 1 ? "try" : "tries"}</span>` : "";
     return `<li class="${kind}">
       <div class="top">
         <span class="title">${esc(r.title)}</span>
         <span class="pill ${kind}">${esc(KIND_LABEL[kind])}</span>
+        ${count}
         ${stars}
       </div>
       ${r.detail ? `<p class="detail">${esc(r.detail)}</p>` : ""}
@@ -175,7 +183,10 @@ li.technical{border-left-color:var(--rev)}
   }
 
   function screenList(){
-    const rows = state.filter === KIND_ALL ? state.rows : state.rows.filter(r => r.kind === state.filter);
+    let rows = state.filter === KIND_ALL ? state.rows : state.rows.filter(r => r.kind === state.filter);
+    // Automatic reports are read most tries first: the step that struggled most
+    // is the one to look at. The sort is stable, so equal tries stay newest first.
+    if (state.filter === KIND_TECHNICAL) rows = rows.slice().sort((a, b) => tries(b) - tries(a));
     const tab = (key, label) =>
       `<button data-filter="${key}" class="${state.filter === key ? "on" : ""}">${label}</button>`;
     const counts = {

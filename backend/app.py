@@ -24,7 +24,7 @@ from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
-from backend import gmail
+from backend import gmail, reports
 from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
 from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
@@ -151,7 +151,9 @@ async def extract_live(
     Run in a threadpool so the SI and the BL extract concurrently.
     """
     try:
-        raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
+        with reports.watching(f"Extraction ({role})", email_id,
+                              "Every field was treated as missing, so the email went to a person."):
+            raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
     except Exception as error:  # third-party model client, any failure is one
         log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
         raw_fields = None
