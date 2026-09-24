@@ -108,5 +108,46 @@
     }
   }
 
-  window.Store = { pushMark, pushReply, pushReport, pull, MARK_OK, MARK_BACK };
+  // Sign in with Google through Supabase. The Google client ID and secret live in
+  // the Supabase dashboard (Auth > Providers > Google), never in this file, so the
+  // code is the same before and after Google is switched on there.
+  async function signIn() {
+    const c = sb();
+    if (!c) return false;
+    try {
+      const { error } = await c.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: location.origin + location.pathname },  // back to this page
+      });
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.warn("sign-in did not start:", error);
+      return false;
+    }
+  }
+
+  async function signOut() {
+    const c = sb();
+    if (!c) return;
+    try {
+      await c.auth.signOut();
+    } catch (error) {
+      console.warn("sign-out failed:", error);
+    }
+  }
+
+  // Calls back with the signed-in user (or null) now, and again on every sign-in
+  // and sign-out. Returns false when sign-in is not available here: unconfigured,
+  // or the library never arrived (offline), so the page shows no button.
+  function onUser(callback) {
+    const c = sb();
+    if (!c) return false;
+    c.auth.onAuthStateChange(function (event, session) {
+      callback(session ? session.user : null, event);
+    });
+    return true;
+  }
+
+  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, MARK_OK, MARK_BACK };
 })();
