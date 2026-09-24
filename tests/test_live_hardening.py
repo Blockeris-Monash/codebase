@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from backend import middleware
 from backend.app import app
 from backend.middleware import (
-    MAX_REQUESTS_PER_WINDOW, REQUEST_ID_HEADER, UNLIMITED_PATHS, is_over_limit,
+    LIMITED_PATHS, MAX_REQUESTS_PER_WINDOW, REQUEST_ID_HEADER, is_over_limit,
 )
 
 
@@ -43,7 +43,7 @@ def test_a_caller_supplied_id_is_kept_so_a_trace_survives_the_hop() -> None:
 def test_the_health_check_is_never_throttled() -> None:
     """Uptime Robot is what keeps Render awake. Throttling it puts the service
     to sleep, which is the opposite of the point."""
-    assert "/health" in UNLIMITED_PATHS
+    assert "/health" not in LIMITED_PATHS
     client = TestClient(app)
 
     codes = {client.get("/health").status_code for _ in range(MAX_REQUESTS_PER_WINDOW + 5)}
@@ -133,3 +133,19 @@ def test_the_browser_library_is_pinned_too() -> None:
 
     assert not re.search(r"supabase-js@\d+/", index), "still on a floating major"
     assert re.search(r"supabase-js@\d+\.\d+\.\d+/", index)
+
+
+def test_polling_the_mailbox_is_not_throttled() -> None:
+    """The page polls /mailbox every 10 seconds. Five people behind one venue
+    wifi share a public address, so polling alone is 30 requests a minute -
+    the whole ceiling - and the demo would answer 429 during judging. A repeat
+    poll returns a saved result and costs no model call, so there is nothing
+    to protect there."""
+    assert "/mailbox" not in LIMITED_PATHS
+    assert "/reply" not in LIMITED_PATHS
+
+
+def test_the_routes_that_spend_model_quota_are_the_ones_limited() -> None:
+    """That quota is shared by the whole team and the URL is public."""
+    assert LIMITED_PATHS == {"/process-email", "/classify", "/translate",
+                             "/extract-clean-compare"}

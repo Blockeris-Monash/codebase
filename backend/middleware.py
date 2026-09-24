@@ -30,9 +30,17 @@ REQUEST_ID_HEADER = "X-Request-ID"
 WINDOW_SECONDS = 60.0
 MAX_REQUESTS_PER_WINDOW = 30
 TOO_MANY_REQUESTS = 429
-# Health checks are what keep Render awake; counting them would throttle the
-# uptime monitor and put the service to sleep, which is the opposite of the aim.
-UNLIMITED_PATHS = frozenset({"/health", "/docs", "/openapi.json", "/redoc"})
+
+# An allow-list, not a deny-list. The first version listed the cheap paths and
+# limited everything else, which throttled exactly the wrong thing: the page
+# polls /mailbox every 10 seconds, so five people behind one venue wifi spend
+# 30 requests a minute on polling alone and the demo starts answering 429.
+#
+# What is worth protecting is the model quota the whole team shares. These are
+# the routes that spend it; /mailbox, /reply, /health and the docs do not, and
+# a new cheap route added later is not throttled by accident.
+LIMITED_PATHS = frozenset({"/process-email", "/classify", "/translate",
+                           "/extract-clean-compare"})
 
 _seen: dict[str, deque[float]] = defaultdict(deque)
 
@@ -60,7 +68,7 @@ def is_over_limit(who: str, now: float) -> bool:
 
 async def tag_and_limit(request: Request, call_next):
     request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
-    if request.url.path not in UNLIMITED_PATHS and is_over_limit(caller(request), time.monotonic()):
+    if request.url.path in LIMITED_PATHS and is_over_limit(caller(request), time.monotonic()):
         log.warning("rate limited %s on %s [%s]", caller(request), request.url.path, request_id)
         return JSONResponse(
             status_code=TOO_MANY_REQUESTS,
