@@ -889,7 +889,11 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+/* Back from Google, the address holds #access_token=... until Supabase reads and clears it.
+   Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
+const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
+let signInReturn = FROM_SIGN_IN;
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1464,6 +1468,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if (!user && S.mailbox === "live") { S.mailbox = "demo"; S.polling = false; clearInterval(pollTimer); pollTimer = null; }
     // A signed-in account sees only its own mail, never the demo data.
     if (user && S.mailbox !== "live") { S.mailbox = "live"; S.sel = null; S.page = 0; S.q = ""; S.f = "MISMATCH"; startPolling(); }
+    if (user && !S.polling) startPolling();
+    // Supabase has cleared the token from the address by now; point it at the inbox, not the landing page.
+    if (user && signInReturn) { signInReturn = false; setTimeout(()=>{ history.replaceState(null, "", location.pathname + "#/inbox"); render(); }, 0); }
     render();
     // Outside the callback: supabase-js must not be called from inside its own auth callback.
     if(user && (event==="INITIAL_SESSION"||event==="SIGNED_IN")) setTimeout(()=>{

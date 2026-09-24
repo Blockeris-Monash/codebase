@@ -42,3 +42,15 @@ def test_signed_in_the_landing_page_offers_no_demo_inbox() -> None:
 def test_check_again_with_ai_is_gone() -> None:
     for gone in ("Check again with AI", "function recheck(", "canRecheck", 'a==="recheck"', "S.live["):
         assert gone not in INDEX, gone
+
+
+def test_coming_back_from_google_goes_straight_to_my_mailbox() -> None:
+    """Google returns to the page with #access_token=... in the address. The page drew the
+    inbox for that unknown address, then Supabase cleared it and the page jumped to the
+    landing page. The return is now noticed before Supabase clears it, drawn as My mailbox
+    loading, and the address is set to the inbox once the sign-in lands."""
+    assert "const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);" in INDEX
+    assert 'mailbox:FROM_SIGN_IN?"live":"demo"' in INDEX
+    wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
+    wiring = wiring[:wiring.index("\n  });")]
+    assert 'history.replaceState(null, "", location.pathname + "#/inbox")' in wiring
