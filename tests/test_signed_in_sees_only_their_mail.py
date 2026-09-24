@@ -27,7 +27,7 @@ def test_signing_in_opens_my_mailbox_and_starts_fetching_it() -> None:
 
 
 def test_the_demo_switch_only_shows_when_signed_out() -> None:
-    assert '${S.user?"":`<div class="seg mbox">' in INDEX
+    assert '${S.user||signInReturn?"":`<div class="seg mbox">' in INDEX
 
 
 def test_signed_in_the_landing_page_offers_no_demo_inbox() -> None:
@@ -54,3 +54,16 @@ def test_coming_back_from_google_goes_straight_to_my_mailbox() -> None:
     wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
     wiring = wiring[:wiring.index("\n  });")]
     assert 'history.replaceState(null, "", location.pathname + "#/inbox")' in wiring
+
+
+def test_the_screen_while_a_sign_in_arrives_shows_no_nan_and_no_demo_switch() -> None:
+    """Back from Google, before the account loaded, the tiles read NaN (the count-up
+    counted towards the loading dots), and the Demo data / My mailbox switch and the Sign in
+    button showed."""
+    count_up = INDEX[INDEX.index("function countUp(){"):]
+    count_up = count_up[:count_up.index("\n}")]
+    assert '.filter(t=>/^\\d+$/.test(t.textContent))' in count_up
+    assert '${S.user||signInReturn?"":`<div class="seg mbox">' in INDEX
+    wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
+    assert "if (!user) signInReturn = false;" in wiring[:wiring.index("\n  });")]
+    assert 'if(!S.authReady || (!S.user && signInReturn)) return "";' in INDEX  # no Sign in button either
