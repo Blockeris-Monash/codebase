@@ -49,7 +49,6 @@ window.I18N = {
   "Finish": "Selesai",
   "Mark as done": "Tandakan selesai",
   "Reply to sender": "Balas kepada penghantar",
-  "{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.": "{reply} menulis draf untuk anda sunting. Penghantaran hanyalah demo buat masa ini: gunakan Salin atau Buka dalam aplikasi e-mel anda. Tersalah klik? Tekan Buat asal.",
   "Thank you, we got it.": "Terima kasih, kami sudah menerimanya.",
   "Your email app should have opened with the message ready to send.": "Aplikasi e-mel anda sepatutnya telah dibuka dengan mesej sedia untuk dihantar.",
   "It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.": "Ia disimpan pada peranti ini. E-mel kepada pasukan sokongan belum diaktifkan dalam demo ini, jadi ia belum dihantar.",
@@ -73,7 +72,6 @@ window.I18N = {
   "Pulls the 7 fields out of each document with AI": "Mengeluarkan 7 medan daripada setiap dokumen dengan AI",
   "Compares the fields with plain rules, so every result can be explained": "Membandingkan medan dengan peraturan biasa, jadi setiap keputusan boleh dijelaskan",
   "Sends unclear cases to a review queue with the reason": "Menghantar kes yang tidak jelas ke giliran semakan berserta sebabnya",
-  "Writes a draft reply for the sender (sending is a demo)": "Menulis draf balasan untuk penghantar (penghantaran hanyalah demo)",
   "Back to inbox": "Kembali ke peti masuk",
   "Back to home": "Kembali ke laman utama",
   "What is next for Ship Happens": "Apa seterusnya untuk Ship Happens",
@@ -309,7 +307,9 @@ window.I18N = {
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "Log masuk melalui Google, dan kami tidak menyimpan kata laluan atau kunci Gmail. Aplikasi ini boleh membaca peti masuk anda dan menghantar balasan yang anda tekan Hantar. Ia tidak boleh memadam atau mengubah e-mel anda.",
   "Signed in as {name}.": "Log masuk sebagai {name}.",
   "Open in Gmail": "Buka dalam Gmail",
-  "Loading your mailbox...": "Memuatkan peti mel anda..."
+  "Loading your mailbox...": "Memuatkan peti mel anda...",
+  "Writes a draft reply, and sends it from your own Gmail when you press Send": "Menulis draf balasan, dan menghantarnya dari Gmail anda sendiri apabila anda menekan Hantar",
+  "{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.": "{reply} menulis draf untuk anda sunting. Dalam Peti mel saya, Hantar balasan menghantarnya dari Gmail anda, dalam perbualan yang sama. Pada data demo tiada apa yang dihantar, dan klik yang salah boleh dibatalkan dengan Buat asal."
  },
  "zh": {
   "Dismiss": "关闭",
@@ -359,7 +359,6 @@ window.I18N = {
   "Finish": "完成",
   "Mark as done": "标记为已完成",
   "Reply to sender": "回复发件人",
-  "{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.": "{reply}会为您写好草稿，供您修改。目前发送只是演示：请使用“复制”或“在邮件应用中打开”。点错了？按“撤销”。",
   "Thank you, we got it.": "谢谢，我们已收到。",
   "Your email app should have opened with the message ready to send.": "您的邮件应用应该已打开，消息已准备好发送。",
   "It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.": "已保存在此设备上。本演示尚未开通向支持团队发送邮件，所以并未发出。",
@@ -383,7 +382,6 @@ window.I18N = {
   "Pulls the 7 fields out of each document with AI": "用 AI 从每份文件中提取 7 个字段",
   "Compares the fields with plain rules, so every result can be explained": "用普通规则比较各字段，所以每个结果都可以解释",
   "Sends unclear cases to a review queue with the reason": "把不明确的情况连同原因送入审核队列",
-  "Writes a draft reply for the sender (sending is a demo)": "为发件人写好回复草稿（发送仅为演示）",
   "Back to inbox": "返回收件箱",
   "Back to home": "返回首页",
   "What is next for Ship Happens": "Ship Happens 的下一步",
@@ -619,6 +617,8 @@ window.I18N = {
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "登录通过 Google 完成，我们不保存密码，也不保存 Gmail 密钥。本应用可以读取您的收件箱，并发送您按下“发送”的回复。它无法删除或更改您的邮件。",
   "Signed in as {name}.": "已登录为 {name}。",
   "Open in Gmail": "在 Gmail 中打开",
-  "Loading your mailbox...": "正在加载您的邮箱..."
+  "Loading your mailbox...": "正在加载您的邮箱...",
+  "Writes a draft reply, and sends it from your own Gmail when you press Send": "撰写回复草稿，并在您按下“发送”时从您自己的 Gmail 发出",
+  "{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.": "{reply} 会为您写好草稿供您修改。在“我的邮箱”中，“发送回复”会从您的 Gmail 在同一对话中发出。演示数据不会真的发送，点错了可以用“撤销”恢复。"
  }
 };

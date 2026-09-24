@@ -650,7 +650,7 @@ function guideHTML(){
     step(2,t("Open an email"),`<div class="cap">${t("Click one in the list. Search by subject, sender or number, and press {esc} to clear it. Once an email is open, {left} {right} move to the previous or next email. On a phone, List takes you back.",{esc:kbd("Esc"),left:kbd("←"),right:kbd("→")})}</div>`) +
     step(3,t("Read the colour"),`<div class="legend">${legend}</div>`) +
     step(4,t("Check the details"),`<div class="cap">${t("Click a row in the table to highlight where that value sits in the original documents. Open {how} to see every step, from the cover email to the field by field check.",{how:"<b>"+t("How Ship Happens decided")+"</b>"})}</div>`) +
-    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as done")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. Sending is a demo for now: use Copy or Open in your email app. Wrong click? Press Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
+    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as done")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
     `</ol>`;
 }
 
@@ -676,7 +676,7 @@ const TODAY = [
   T("Pulls the 7 fields out of each document with AI"),
   T("Compares the fields with plain rules, so every result can be explained"),
   T("Sends unclear cases to a review queue with the reason"),
-  T("Writes a draft reply for the sender (sending is a demo)"),
+  T("Writes a draft reply, and sends it from your own Gmail when you press Send"),
   T("Translates the page into English, Malay and Chinese")
 ];
 /* A container ship in the status colours, drawn in the logo's style. Decoration only. */
