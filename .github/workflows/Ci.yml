@@ -54,5 +54,10 @@ jobs:
           done
           echo "No model keys present. Live tests will skip."
 
+      - name: Check every contract still validates
+        # The schemas are the thing five people integrate against. A checker
+        # that is never executed is documentation, not a check.
+        run: python -m cli.validate_contracts
+
       - name: Run the test suite
         run: pytest

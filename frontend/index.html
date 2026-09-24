@@ -555,7 +555,10 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <script type="module">
   // Loaded from a CDN because this page has no build step. Only the auth and
   // REST helpers are used; the page still renders if this never arrives.
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/+esm";
+  // Pinned exactly. "@2" floats: a release during judging would change the code
+  // running in a judge's browser with nothing in this repository changing, and
+  // sign-in failing then looks like our bug.
   window.supabase = { createClient };
 </script>
 <script src="store.js"></script>
