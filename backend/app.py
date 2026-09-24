@@ -46,7 +46,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     """Lightweight endpoint for UptimeRobot and cloud health checkers."""
     return {"status": "ok"}
