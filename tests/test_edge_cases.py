@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
 from backend import app as app_module
 from backend.classify import EmailInput, classify_email
@@ -109,12 +108,10 @@ def test_edge_case_is_classified_as_expected(case: dict) -> None:
     assert result.category == case["category"], f"{case['why']} ({result.evidence})"
 
 
-@pytest.mark.xfail(strict=True, raises=ValidationError,
-                   reason="The contracts accept only email_NNN ids, so a Gmail message id crashes compare(). "
-                          "The live mailbox (task 2) must map its ids or the contract must widen.")
 def test_a_mailbox_email_id_does_not_crash_the_comparison(pipeline) -> None:
+    """The live mailbox (task 2) sends gmail_<Gmail message id>; the contract accepts it."""
     email = load_email(BY_CASE["edge_a4"]).model_dump(by_alias=True)
-    gmail = EmailInput(**{**email, "email_id": "18c2f4e9a1b3d5f7"})
+    gmail = EmailInput(**{**email, "email_id": "gmail_18c2f4e9a1b3d5f7"})
 
     report = asyncio.run(app_module.compare_email(gmail, live=False))
 

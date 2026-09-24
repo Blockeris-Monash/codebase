@@ -19,6 +19,8 @@
   const URL_ = window.SUPABASE_URL || "";
   const KEY = window.SUPABASE_ANON_KEY || "";
   const DEMO = "demo";                       // the 520 shipped emails
+  const MAILBOX = "mailbox";                 // mail read from the person's own Gmail (gmail_<id>)
+  const sourceOf = ref => String(ref).startsWith("gmail_") ? MAILBOX : DEMO;
   const MARK_OK = "ok", MARK_BACK = "back";  // mirrors the check constraint
 
   let client = null;
@@ -49,7 +51,7 @@
     if (!c || !u) return;
     try {
       await c.from("reviews")
-             .upsert({ user_id: u.id, email_ref: emailRef, source: DEMO, mark: mark },
+             .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef), mark: mark },
                      { onConflict: "user_id,email_ref" });
     } catch (error) {
       console.warn("mark not mirrored to the database:", error);
@@ -61,12 +63,13 @@
     if (!c || !u) return;
     try {
       const { data } = await c.from("reviews")
-        .upsert({ user_id: u.id, email_ref: emailRef, source: DEMO, mark: MARK_BACK },
+        .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef), mark: MARK_BACK },
                 { onConflict: "user_id,email_ref" })
         .select("id").single();
       if (!data) return;
       await c.from("replies").insert({
         review_id: data.id, to_address: reply.to, subject: reply.subject, body: reply.body,
+        sent_at: reply.real ? new Date().toISOString() : null,   // null: the demo Send, nothing went out
       });
     } catch (error) {
       console.warn("reply not mirrored to the database:", error);
@@ -117,7 +120,12 @@
     try {
       const { error } = await c.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: location.origin + location.pathname },  // back to this page
+        options: {
+          redirectTo: location.origin + location.pathname,  // back to this page
+          // Read the inbox, and send the replies a person presses Send on. Neither
+          // can delete or change mail. Both must also be on the Google consent screen.
+          scopes: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
+        },
       });
       if (error) throw error;
       return true;
@@ -144,9 +152,20 @@
     const c = sb();
     if (!c) return false;
     c.auth.onAuthStateChange(function (event, session) {
+      // Google's token arrives with the session right after sign-in. Supabase drops
+      // it at its next refresh, so the last one seen is kept here, in memory only.
+      if (!session) googleAccess = null;
+      else if (session.provider_token) googleAccess = session.provider_token;
       callback(session ? session.user : null, event);
     });
     return true;
+  }
+
+  // The Google access token for /mailbox and /reply, or null. It lasts about an
+  // hour; after that the backend answers 401 and the page asks for a new sign-in.
+  let googleAccess = null;
+  function googleToken() {
+    return googleAccess;
   }
 
 
@@ -174,6 +193,6 @@
     return { code: code, detail: detail.replace(/\+/g, " ") };
   }
 
-  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError,
+  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError, googleToken,
                    ACCESS_DENIED, MARK_OK, MARK_BACK };
 })();

@@ -38,7 +38,8 @@ def test_the_landing_page_offers_demo_gmail_and_upload() -> None:
     assert 'data-a="inbox"' in home, "no way into the demo inbox"
     assert 'data-a="signin"' in home, "no way to connect Gmail"
     assert 't("Upload SI and BL files")' in home and 't("Planned")' in home
-    assert 't("Coming soon")' in home, "the live mailbox is not built yet and must say so"
+    assert 'data-a="mymailbox"' in home, "signed in, no way into the live mailbox"
+    assert 't("Coming soon")' not in home, "the live mailbox is built (task 2) and must not say otherwise"
 
 
 def test_the_inbox_has_its_own_address_and_the_logo_goes_home() -> None:

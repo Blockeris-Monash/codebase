@@ -601,8 +601,7 @@ const OTHER_KINDS = ["AWAIT","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
 const SUPPORT_EMAIL = (window.BLOCKERIS_SUPPORT_EMAIL || "").trim();
 const KINDS = {question:T("Question"), problem:T("Problem"), idea:T("Idea")};
 const ROADMAP = [
-  [T("Connect a real mailbox"), T("Sign in with Outlook, Gmail or any IMAP mailbox (OAuth) so new emails arrive on their own, instead of the saved dataset.")],
-  [T("Send replies from this page"), T("Send is a demo today. Next, the reply goes out from your own mailbox, with a copy kept in the thread.")],
+  [T("Outlook and other mailboxes"), T("Gmail works today. Next, Outlook and any IMAP mailbox, signed in the same way (OAuth).")],
   [T("A second AI that double checks"), T("A critic agent scores how sure it is about each extracted field. Low scores are retried, then sent to a person.")],
   [T("Read scanned and cut-off files"), T("Scanned PDFs are sent to review today. OCR would read most of them, so fewer emails need a person.")],
   [T("Shared review queue for a team"), T("Several reviewers work the same queue, with who checked what and when.")],
@@ -769,7 +768,7 @@ const SCENE = (()=>{
 function homePage(){
   const rv = id=>`rv ${S.seen[id]?"in":""}" data-rv="${id}`;
   const u = S.user, name = u ? ((u.user_metadata||{}).full_name || u.email || "") : "";
-  const gmail = u ? `<div class="small mute">${t("Signed in as {name}. Your mailbox appears here in the next update.",{name:esc(name)})}</div>`
+  const gmail = u ? `<div class="small mute">${t("Signed in as {name}.",{name:esc(name)})}</div><button class="btn alt" data-a="mymailbox">${t("Open my mailbox")}</button>`
     : `<button class="btn alt" data-a="signin" ${S.authReady?"":"disabled"}>${t("Sign in with Google")}</button>`;
   const n = k=>RESULTS.filter(folder(k).f).length;
   const stat = k=>`<span class="badge b-${k}">${ICON[k]}${n(k)} ${t(LABEL[k])}</span>`;
@@ -783,8 +782,8 @@ function homePage(){
                [T("What happens when a file cannot be read?"),T("The email goes to Needs review with the reason: a blank field, an unreadable or scanned file, a missing attachment or the wrong document. Nothing is guessed.")],
                [T("How accurate is it?"),T("Checked on the provided dataset: 630 of 630 injected defects caught on exactly the changed field, 0 false alarms on 378 harmless edits, and 1.0000 on the organisers' own scorer. Time saved is an estimate: 63 verified emails at 3 minutes each is about 3 hours.")],
                [T("Which files can it read?"),T("Text, Word, Excel, PDF and EDI files. Scanned PDFs go to a person for now.")],
-               [T("Is my Gmail safe?"),T("Sign-in goes through Google and we store no passwords. Mailbox access will be read-only.")],
-               [T("What is next?"),T("Reading scanned files, sending replies from your own mailbox, and a shared review queue for a team.")]];
+               [T("Is my Gmail safe?"),T("Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.")],
+               [T("What is next?"),T("Reading scanned files, Outlook and other mailboxes, and a shared review queue for a team.")]];
   return `<main class="home">${DECO}<section class="lp-hero">${SCENE}<div class="lp-sailer">${SHIP_ART}</div><div class="hx hero2"><span class="lp-pill">${ICON.NEXT}${t("Averis x Monash Hackathon 2026 · Top 10 finalist")}</span>
       <h1 class="wordmark">SHIP HAPPENS</h1><p class="lp-tag">${t("We catch it before it sails.")}</p>
       <p class="lp-sub">${t("Check every Bill of Lading before it ships")}</p>
@@ -809,7 +808,7 @@ function homePage(){
     <div class="opts">
       <div class="opt main top-acc"><span class="oi">${ICON.MAIL}</span><b>${t("Try with demo data")}</b><span class="mute small">${t("{n} sample emails, already checked.",{n:RESULTS.length})}</span>
         <div class="ostat">${stat("MISMATCH")}${stat("NEEDS_REVIEW")}${stat("OK")}</div><button class="btn" data-a="inbox">${t("Open the demo inbox")}</button></div>
-      <div class="opt top-ok"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}<span class="pill">${t("Coming soon")}</span></b><span class="mute small">${t("Read-only access. New emails are checked as they arrive.")}</span>${gmail}</div>
+      <div class="opt top-ok"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}</b><span class="mute small">${t("New emails are checked as they arrive, and replies go out from your Gmail.")}</span>${gmail}</div>
       <div class="opt off top-rev"><span class="oi">${ICON.UPLOAD}</span><b>${t("Upload SI and BL files")}<span class="pill">${t("Planned")}</span></b><span class="mute small">${t("Drop in a Shipping Instruction and a draft Bill of Lading to check them without an email.")}</span></div>
     </div></section>
 
@@ -857,7 +856,7 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1037,14 +1036,15 @@ function routeHTML(e){
 function actionsHTML(e){
   if(e.awaiting || (e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW")) return "";
   const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
-  if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
+  if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):sent&&sent.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${sent&&sent.real?"":`<button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button>`}</div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
   if(d) return `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
-      <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">${t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
-      <div class="small mute" style="margin-top:8px">${t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
+      <div class="actions"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
+      ${S.sendErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.sendErr)}</div>`:""}
+      <div class="small mute" style="margin-top:8px">${isLive(e.id)?t("Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back."):t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
   const step = NEXT_STEP[e.status==="MISMATCH" ? "MISMATCH" : e.review_reason];
   return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
 }
@@ -1174,7 +1174,7 @@ function render(){
   // every redraw rebuilds the scene; its loops resume from the page clock instead of restarting
   document.documentElement.style.setProperty("--t", (performance.now()/1000).toFixed(2));
   document.getElementById("app").innerHTML =
-    `${onHome?"":APPBG}${signInErrorHTML()}<div class="top"><span class="brand" data-a="home" role="link" tabindex="0" title="${t("Home")}"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${!onHome?`<button class="ghost hb" data-a="home" aria-label="${t("Home")}" title="${t("Home")}">${ICON.HOME}<span class="lbl">${t("Home")}</span></button>`:""}${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb" data-a="settings" aria-haspopup="menu" aria-expanded="${S.langMenu}" aria-label="${t("Settings")}" title="${t("Settings")}">${ICON.GEAR}<span class="lbl">${t("Settings")}</span>${ICON.CHEV}</button>${S.langMenu?settingsHTML(isDark):""}</span></div>${onNext ? nextPage() : onHome ? homePage() : `
+    `${onHome?"":APPBG}${signInErrorHTML()}${mailboxBarHTML()}<div class="top"><span class="brand" data-a="home" role="link" tabindex="0" title="${t("Home")}"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${!onHome?`<button class="ghost hb" data-a="home" aria-label="${t("Home")}" title="${t("Home")}">${ICON.HOME}<span class="lbl">${t("Home")}</span></button>`:""}${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb" data-a="settings" aria-haspopup="menu" aria-expanded="${S.langMenu}" aria-label="${t("Settings")}" title="${t("Settings")}">${ICON.GEAR}<span class="lbl">${t("Settings")}</span>${ICON.CHEV}</button>${S.langMenu?settingsHTML(isDark):""}</span></div>${onNext ? nextPage() : onHome ? homePage() : `
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
      <div class="bar"><div class="seg mbox"><button class="segb ${S.mailbox==='demo'?'on':''}" data-a="switchbox" data-k="demo">${t("Demo data")}</button><button class="segb ${S.mailbox==='live'?'on':''}" data-a="switchbox" data-k="live" ${!S.user?'disabled title="'+t("Sign in to see your mailbox")+'"':''}>${t("My mailbox")}</button></div><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${tallyHTML()}
        </div>
@@ -1229,6 +1229,7 @@ document.addEventListener("click", ev=>{
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="inbox"){ location.hash="#/inbox"; window.scrollTo(0,0); }
+  else if(a==="mymailbox"){ if(!S.user) return; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="live"){ S.mailbox="live"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } if(!S.polling) startPolling(); }
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
   else if(a==="settings") S.langMenu=!S.langMenu;
   else if(a==="signin"){ window.Store?.signIn(); return; }
@@ -1275,7 +1276,7 @@ document.addEventListener("click", ev=>{
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="discard"){ S.draft=null; }
-  else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); advance(id); }
+  else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
   else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
   else if(a==="recheck") return recheck(id);
@@ -1300,13 +1301,13 @@ let toastTimer = null;
 function advance(id){
   const list = items(), at = list.findIndex(e=>e.id===id), rest = list.filter(e=>e.id!==id);
   const next = rest[at] || (RANKED.includes(S.f) ? rest[0] : null);
-  S.toast = {id, kind:S.marks[id]};
+  S.toast = {id, kind:S.marks[id], real:!!(S.sent[id]&&S.sent[id].real)};
   clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ S.toast=null; render(); }, 6000);
   S.draft=null; S.hl=null; S.docs=true; S.body=false; S.how=false; S.resetPane=true; S.fade=true;
   if(!next){ S.sel=null; return; }
   S.sel=next.id; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===next.id)/PAGE));
 }
-const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button></div>` : "";
+const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):S.toast.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${S.toast.real?"":`<button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button>`}</div>` : "";
 /* Language and colour mode share one menu, so the top bar keeps only Help, What's next and the account. */
 function settingsHTML(isDark){
   const lang = allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="menuitemradio" aria-checked="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("");
@@ -1372,15 +1373,42 @@ Store?.pull(S.marks)?.then(function (merged) {
 let pollTimer = null;
 async function fetchLiveMailbox() {
   if (S.mailbox !== "live" || !S.user) return;
+  // Google's token says whose mailbox it is; the backend never takes a user id.
+  const token = window.Store?.googleToken?.();
+  if (!token) { S.mailboxErr = T("Sign in with Google again to see your mailbox."); render(); return; }
   try {
-    const res = await fetch(API_BASE + "/mailbox?user_id=" + encodeURIComponent(S.user.id));
+    const res = await fetch(API_BASE + "/mailbox", {headers: {"Authorization": "Bearer " + token}});
+    if (res.status === 401) { S.mailboxErr = T("Sign in with Google again to see your mailbox."); render(); return; }
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
-    S.liveEmails = data;
+    S.liveEmails = data; S.mailboxErr = null;
+    S.pending = +(res.headers.get("X-Mailbox-Pending") || 0);
     if (S.mailbox === "live") render();
   } catch (err) {
     console.warn("Could not fetch live mailbox:", err);
   }
+}
+/* Mail from the person's own Gmail has a gmail_ id. Only that is ever really sent:
+   the demo emails carry real companies' addresses. */
+const isLive = id=>String(id).startsWith("gmail_");
+async function sendLive(id){
+  const d = S.draft, token = window.Store?.googleToken?.();
+  if(!d) return;
+  if(!token){ S.sendErr = t("Sign in with Google again to send from your Gmail."); render(); return; }
+  S.sending = true; S.sendErr = null; render();
+  try{
+    const res = await fetch(API_BASE + "/reply", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+                                                  body: JSON.stringify({email_id:id, to:d.to, subject:d.subject, body:d.body})});
+    if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
+    S.sent[id]={to:d.to, subject:d.subject, body:d.body, real:true}; S.marks[id]="back"; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id);
+  }catch(err){ S.sendErr = t("Not sent: {reason}", {reason: err.message}); }
+  S.sending = false; render();
+}
+/* Under the top bar in My mailbox: why nothing shows, or how many are still being checked. */
+function mailboxBarHTML(){
+  if(S.mailbox !== "live" || location.hash === "#/" || !location.hash) return "";
+  if(S.mailboxErr) return `<div class="authbar" role="alert"><span>${esc(t(S.mailboxErr))}</span><button class="ghost" data-a="signin">${t("Sign in")}</button></div>`;
+  return S.pending ? `<div class="authbar" role="status"><span>${t("Checking {n} new emails...", {n:S.pending})}</span></div>` : "";
 }
 function startPolling() {
   if (S.polling) return;
