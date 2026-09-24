@@ -9,6 +9,36 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Hardened for a deployment that has to stay up while judges look at it.**
+  The rules say the deployed project must be *publicly accessible and functional
+  during the judging period*, which turns several known gaps from tidy-ups into
+  risks.
+
+  **Every dependency is pinned exactly.** They were all `>=`, so a release
+  between a green CI run and judging could change what Render built with nothing
+  here going red — CI floats too, so it would have agreed with the broken
+  deploy. `supabase-js` was loaded from a CDN on `@2`, a floating major: a
+  release during judging would have changed the code running in a judge's
+  browser without a line changing in this repository, and sign-in failing then
+  would have looked like our bug. Both now name exact versions, and the suite
+  passes on a clean install of exactly those.
+
+  **A rate limit and a request id.** The backend URL is in a public repository,
+  there is no auth, and one `?live=true` press spends two Qwen calls against a
+  quota the whole team shares — so anyone who found it could have exhausted the
+  demo before judging without meaning any harm. Thirty requests a minute per
+  caller, health checks exempt because throttling the uptime monitor would put
+  Render to sleep. Every response now carries `X-Request-ID`, so a failure a
+  judge sees in the browser can be tied to the log line that explains it; there
+  were seventeen log calls and no way to join any of them to a request.
+
+  **Every route declares the shape it answers with.** `/process-email` returned
+  `Dict[str, Any]`, so nothing checked it and the people integrating against it
+  had only the source to go on.
+
+  **`cli/validate_contracts.py` now runs in CI.** It existed and was never
+  executed, which made it documentation rather than a check.
+
 - **The test suite runs on every pull request.** A green local run is not
   evidence: it passes on one machine that has a `.env`. GitHub Actions runs
   `pytest` on Python 3.11 and 3.12 for every pull request and every push to
@@ -59,7 +89,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 285 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 337 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
