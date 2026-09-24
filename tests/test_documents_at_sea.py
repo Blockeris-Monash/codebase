@@ -63,6 +63,6 @@ def test_all_of_it_holds_still_for_reduced_motion() -> None:
 def test_the_margin_documents_are_easy_to_see() -> None:
     """The documents drifting in the landing page's side margins were too faint: pale paper on a
     pale page, dark on dark. They now have their own paper colours in each theme, at full strength."""
-    assert ".lp-deco .sheet{position:absolute;width:74px;opacity:1;" in INDEX
+    assert ".lp-deco .sheet{position:absolute;width:74px;opacity:.75;" in INDEX
     assert ".sheet .pg{fill:var(--sheet);stroke:var(--sheet-bd)" in INDEX
     assert INDEX.count("--sheet:") == 3, "light, and both dark-mode rules"
