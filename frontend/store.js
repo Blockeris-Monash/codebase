@@ -22,6 +22,7 @@
   const MAILBOX = "mailbox";                 // mail read from the person's own Gmail (gmail_<id>)
   const sourceOf = ref => String(ref).startsWith("gmail_") ? MAILBOX : DEMO;
   const MARK_OK = "ok", MARK_BACK = "back";  // mirrors the check constraint
+  const REPORT_LIMIT = 200;                  // a queue, not an archive: page it if it ever fills
 
   let client = null;
 
@@ -87,6 +88,44 @@
       });
     } catch (error) {
       console.warn("report not mirrored to the database:", error);
+    }
+  }
+
+  // --- the reports queue (admin.html) ------------------------------------
+  // Both of these are guarded by row-level security, not by the caller. A
+  // session that is not in `admins` gets an empty list from the database
+  // however it asks, so hiding the page is presentation, never protection.
+
+  async function isAdmin() {
+    const c = sb(), u = await user();
+    if (!c || !u) return false;
+    try {
+      // Keyed on email, not id: a `users` row only exists after a first
+      // sign-in, so an id would exclude a teammate who has not signed in yet.
+      const { data } = await c.from("admins").select("email").limit(1);
+      return Boolean(data && data.length);
+    } catch (error) {
+      console.warn("could not check admin membership:", error);
+      return false;                             // refuse rather than assume yes
+    }
+  }
+
+  // Newest first, with the filer's name resolved through the foreign key.
+  // Returns null on failure so the page can say the list did not load, which
+  // an empty array cannot express - the queue is empty far more often.
+  async function listReports() {
+    const c = sb(), u = await user();
+    if (!c || !u) return null;
+    try {
+      const { data, error } = await c.from("reports")
+        .select("id,kind,email_ref,title,detail,rating,created_at,users(email,display_name)")
+        .order("created_at", { ascending: false })
+        .limit(REPORT_LIMIT);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.warn("could not load the reports queue:", error);
+      return null;
     }
   }
 
@@ -194,5 +233,6 @@
   }
 
   window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError, googleToken,
+                   isAdmin, listReports, currentUser: user,
                    ACCESS_DENIED, MARK_OK, MARK_BACK };
 })();

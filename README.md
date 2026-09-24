@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 271 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 548 passed, 80 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,11 +108,12 @@ python -m pytest -q          # 271 passed, 5 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 271 passed, 5 skipped (skips need a model key)
+python -m pytest -q          # 548 passed, 80 skipped (skips need a model key)
 ```
 
-If the tests print 271 passed, you are done — that is the whole system checked
-offline, with no key and no network.
+If the tests print 548 passed, you are done — that is the whole system checked
+offline, with no key and no network. The 80 skips are the tests that reach a
+model over the network; they stay skipped unless you ask for them by name.
 
 The suite prints its own grouped report rather than a wall of dots, so the run
 says what it proved:
@@ -188,6 +189,10 @@ Python 3.12.
 
 `/extract-clean-compare` takes label/value pairs, not a file: `email_id`,
 `si_pairs`, `bl_pairs`, `si_title`, `bl_title` and the two parse statuses.
+`GET /mailbox` and `POST /reply` are the live mailbox: they read the signed-in
+person's own Gmail and send a reply in the original thread, and both need a
+Google token sent by the browser, never a key in the environment.
+
 `cli.demo_pipeline` above builds that body for you. `/translate` renders an
 email into English, Malay or Chinese; it has no caller in the review app, whose
 language switch uses a built-in table in `frontend/i18n.js`, so it is an

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Reports · Ship Happens</title>
+<style>
+/* Deliberately a separate page rather than a route in index.html: the reviewer
+   app is not the place for an internal queue, and a Supabase session is shared
+   across one origin, so this signs in once alongside it and nothing else. */
+:root{
+  --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
+  --accent:#e8620c; --accent-ink:#fff; --accent-soft:#fdeadb;
+  --bad:#c62828; --bad-soft:#fde8e6; --rev:#8a5a00; --rev-soft:#fff0b8; --ok:#1f8a4c; --ok-soft:#e2f4e9;
+  --card:0 1px 2px rgba(150,70,20,.06),0 8px 24px rgba(150,70,20,.10);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17120e; --panel:#211b16; --sunk:#2a221c; --line:#3a2f27; --ink:#f4ece4; --mute:#b5a698;
+  --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312;
+  --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
+  --card:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.4);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#17120e; --panel:#211b16; --sunk:#2a221c; --line:#3a2f27; --ink:#f4ece4; --mute:#b5a698;
+  --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312;
+  --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
+  --card:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+     padding:0 max(16px,env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom))}
+.wrap{max-width:1000px;margin:0 auto;padding-top:max(24px,env(safe-area-inset-top))}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:6px}
+h1{font-size:1.375rem;margin:0}
+.sub{color:var(--mute);margin:0 0 20px;font-size:.9375rem}
+a{color:var(--accent)}
+.grow{flex:1 1 auto}
+button{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+       padding:9px 14px;min-height:44px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--card);padding:18px}
+.msg{text-align:center;padding:44px 18px}
+.msg b{display:block;font-size:1.0625rem;margin-bottom:6px}
+.msg span{color:var(--mute);display:block;max-width:46ch;margin:0 auto 16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;min-height:40px;padding:8px 14px}
+.seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.count{color:var(--mute);font-size:.875rem}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+li{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);
+   border-radius:12px;box-shadow:var(--card);padding:14px 16px}
+li.human{border-left-color:var(--accent)}
+li.technical{border-left-color:var(--rev)}
+.top{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.title{font-weight:600}
+.pill{font-size:.75rem;border-radius:99px;padding:2px 9px;background:var(--sunk);color:var(--mute);white-space:nowrap}
+.pill.human{background:var(--accent-soft);color:var(--accent)}
+.pill.technical{background:var(--rev-soft);color:var(--rev)}
+.detail{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.meta{margin-top:10px;color:var(--mute);font-size:.8125rem;display:flex;flex-wrap:wrap;gap:4px 12px}
+.stars{color:var(--rev);letter-spacing:1px}
+@media (forced-colors:active){li{border:1px solid CanvasText}.pill{border:1px solid CanvasText}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Reports</h1>
+    <span class="grow"></span>
+    <a href="./index.html">← Back to the inbox</a>
+  </header>
+  <p class="sub">Everything a reviewer flagged with “Report a problem”, plus anything the
+     pipeline logged about itself. Newest first.</p>
+  <div id="app"><div class="card msg"><b>Loading…</b></div></div>
+</div>
+
+<script src="config.js"></script>
+<script type="module">
+  // Pinned exactly, for the same reason index.html pins it: "@2" floats, and a
+  // release during judging would change this page with nothing here changing.
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/+esm";
+  window.supabase = { createClient };
+</script>
+<script src="store.js"></script>
+<script>
+(function(){
+  "use strict";
+  const app = document.getElementById("app");
+  const KIND_ALL = "all", KIND_HUMAN = "human", KIND_TECHNICAL = "technical";
+  const KIND_LABEL = { human: "From a reviewer", technical: "Logged by the pipeline" };
+  const state = { filter: KIND_ALL, rows: null };
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+    c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+  // The database stores UTC. Show the reader's own zone, because "was this
+  // before or after the run we just did" is the only question anyone asks.
+  function when(iso){
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  }
+
+  function who(row){
+    const u = row.users;
+    if (!u) return "Automatic";              // a technical report carries no user
+    return u.display_name || u.email || "Unknown";
+  }
+
+  // A demo reference is email_013; a live one is gmail_<id>. Only the demo ones
+  // can be linked, because a Gmail id means nothing without that person's inbox.
+  function emailCell(ref){
+    if (!ref) return "";
+    const demo = /^email_\d+$/.test(ref);
+    return demo
+      ? `<a href="./index.html#/email/${esc(ref)}">${esc(ref)}</a>`
+      : esc(ref);
+  }
+
+  function card(inner){ return `<div class="card msg">${inner}</div>`; }
+
+  function screenSignedOut(){
+    return card(`<b>Sign in to see the queue</b>
+      <span>This page lists reports from everyone on the team, so it needs to know who you are.</span>
+      <button class="primary" id="in">Sign in with Google</button>`);
+  }
+
+  function screenNotAdmin(){
+    return card(`<b>You are signed in, but not on the reports list</b>
+      <span>Reading everyone's reports is restricted to team accounts. Ask someone already on
+      it to add you, or open your own reports from the inbox instead.</span>
+      <a href="./index.html">Back to the inbox</a>`);
+  }
+
+  function screenFailed(){
+    return card(`<b>The queue did not load</b>
+      <span>The database did not answer. This is not the same as an empty queue — retry,
+      and if it keeps failing the console has the reason.</span>
+      <button class="primary" id="retry">Try again</button>`);
+  }
+
+  function screenEmpty(){
+    return card(`<b>Nothing reported yet</b>
+      <span>When someone presses “Report a problem” on an email, it lands here with the
+      email it was about.</span>`);
+  }
+
+  function row(r){
+    const kind = r.kind === KIND_TECHNICAL ? KIND_TECHNICAL : KIND_HUMAN;
+    const stars = r.rating ? `<span class="stars" title="${r.rating} out of 5">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>` : "";
+    const ref = emailCell(r.email_ref);
+    return `<li class="${kind}">
+      <div class="top">
+        <span class="title">${esc(r.title)}</span>
+        <span class="pill ${kind}">${esc(KIND_LABEL[kind])}</span>
+        ${stars}
+      </div>
+      ${r.detail ? `<p class="detail">${esc(r.detail)}</p>` : ""}
+      <div class="meta">
+        <span>${esc(who(r))}</span>
+        <span>${esc(when(r.created_at))}</span>
+        ${ref ? `<span>about ${ref}</span>` : ""}
+      </div></li>`;
+  }
+
+  function screenList(){
+    const rows = state.filter === KIND_ALL ? state.rows : state.rows.filter(r => r.kind === state.filter);
+    const tab = (key, label) =>
+      `<button data-filter="${key}" class="${state.filter === key ? "on" : ""}">${label}</button>`;
+    const counts = {
+      all: state.rows.length,
+      human: state.rows.filter(r => r.kind === KIND_HUMAN).length,
+      technical: state.rows.filter(r => r.kind === KIND_TECHNICAL).length,
+    };
+    const bar = `<div class="bar"><div class="seg">
+        ${tab(KIND_ALL, "All " + counts.all)}
+        ${tab(KIND_HUMAN, "From reviewers " + counts.human)}
+        ${tab(KIND_TECHNICAL, "Automatic " + counts.technical)}
+      </div><span class="grow"></span>
+      <span class="count">${rows.length} shown</span></div>`;
+    if (!state.rows.length) return bar + screenEmpty();
+    if (!rows.length) return bar + card(`<b>Nothing of this kind</b><span>Try another filter.</span>`);
+    return bar + `<ul>${rows.map(row).join("")}</ul>`;
+  }
+
+  async function render(){
+    if (!window.Store) { app.innerHTML = card(`<b>Could not reach the database</b>
+      <span>The Supabase client did not load, so this page cannot show anything.</span>`); return; }
+
+    // Signed out and signed-in-but-not-a-member both fail the admin check and
+    // need different words, so ask who this is before asking what they may do.
+    const me = await window.Store.currentUser();
+    if (!me) {
+      app.innerHTML = screenSignedOut();
+      document.getElementById("in").addEventListener("click", () => window.Store.signIn());
+      return;
+    }
+
+    if (!await window.Store.isAdmin()) { app.innerHTML = screenNotAdmin(); return; }
+
+    state.rows = await window.Store.listReports();
+    if (state.rows === null) {
+      app.innerHTML = screenFailed();
+      document.getElementById("retry").addEventListener("click", render);
+      return;
+    }
+    app.innerHTML = screenList();
+  }
+
+  app.addEventListener("click", event => {
+    const button = event.target.closest("[data-filter]");
+    if (!button || !state.rows) return;
+    state.filter = button.dataset.filter;
+    app.innerHTML = screenList();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
