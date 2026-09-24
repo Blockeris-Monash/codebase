@@ -16,7 +16,8 @@ from fastapi import FastAPI, Header, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 # Import Milk's Extractor and Model
-from backend.classify import ClassificationFailed, ClassificationResult, EmailInput, classify_email
+from backend.classify import (ClassificationFailed, ClassificationResult, EmailInput, classify_email,
+                              gemini_second_opinion)
 from backend.extract.ai import AiExtractor
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_model
@@ -335,9 +336,10 @@ async def translate(request: TranslateRequest) -> TranslateResponse:
 
 @app.post("/classify", response_model=ClassificationResult)
 async def classify(email: EmailInput) -> ClassificationResult:
-    """One email in, one ClassificationResult out. Contract 02."""
+    """One email in, one ClassificationResult out. Contract 02. Live, so the critic
+    checks the answer when there is a reason to doubt it (backend/critic.py)."""
     try:
-        return await classify_email(email)
+        return await classify_email(email, second_opinion=gemini_second_opinion)
     except ClassificationFailed as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
 

@@ -18,11 +18,11 @@ import sys
 import time
 import urllib.error
 from pathlib import Path
-from typing import Any, Callable, Iterable, List, Literal
+from typing import Any, Callable, Iterable, List, Literal, Optional
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend import reports
+from backend import critic, reports
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_json
 from backend.extract.qwen import (
@@ -270,10 +270,26 @@ classification_model = with_fallback(qwen_classification_model, gemini_classific
                                      enabled=lambda: bool(gemini_key()))
 
 
+def gemini_second_opinion(prompt: str) -> ClassificationSchema:
+    """The critic's model (backend/critic.py): Gemini, on GEMINI_CRITIC_API_KEY and
+    GEMINI_CRITIC_MODEL when they are set. Limits are per Google project and per
+    model, so a key from another project, or another model, keeps a run of second
+    opinions from using up the quota the backup needs when Qwen is down."""
+    key = os.environ.get("GEMINI_CRITIC_API_KEY") or gemini_key()
+    if not key:
+        raise RuntimeError("no Gemini key is set, so there is no second opinion")
+    return ClassificationSchema.model_validate_json(
+        gemini_json(prompt, system=CLASSIFICATION_PROMPT, schema=ClassificationSchema,
+                    key=key, model=os.environ.get("GEMINI_CRITIC_MODEL")))
+
+
 async def classify_email(
     email: EmailInput,
     model: Callable[[str], ClassificationSchema] = classification_model,
+    second_opinion: Optional[Callable[[str], ClassificationSchema]] = None,
 ) -> ClassificationResult:
+    """One email, sorted. With `second_opinion`, the answer is checked by the critic
+    first. Off unless asked for: the saved results were made by Qwen alone."""
     masker = get_pii_masker()
     masked_from, masked_subject, masked_body = masker.mask_email_metadata(
         email.from_email, email.subject, email.body
@@ -297,6 +313,8 @@ async def classify_email(
         with reports.watching("Classification", email.email_id,
                               "The email could not be sorted, so it was not checked."):
             parsed = await asyncio.to_thread(model, prompt)
+            if second_opinion is not None:
+                parsed = await asyncio.to_thread(critic.review, email, parsed, prompt, second_opinion)
         return ClassificationResult(
             email_id=email.email_id,
             category=parsed.category,
