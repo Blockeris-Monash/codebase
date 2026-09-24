@@ -117,11 +117,21 @@ def file(row: dict[str, Any]) -> None:
         _writer.submit(send, url.rstrip("/"), key, row)
 
 
+def headers_for(key: str) -> dict[str, str]:
+    """A secret key (sb_secret_...) goes in `apikey` alone: it is not a JWT, and
+    sent as `Authorization: Bearer` Supabase rejects it as an invalid JWT. A
+    legacy service_role key is a JWT, and goes in both, as Supabase's own clients send it."""
+    headers = {"apikey": key, "Prefer": "return=minimal"}
+    if not key.startswith("sb_"):
+        headers["Authorization"] = f"Bearer {key}"
+
+    return headers
+
+
 def send(url: str, key: str, row: dict[str, Any]) -> None:
     try:
         with httpx.Client(transport=TRANSPORT, timeout=TIMEOUT_SECONDS) as client:
-            response = client.post(f"{url}/rest/v1/reports", json=row, headers={
-                "apikey": key, "Authorization": f"Bearer {key}", "Prefer": "return=minimal"})
+            response = client.post(f"{url}/rest/v1/reports", json=row, headers=headers_for(key))
         response.raise_for_status()
     except Exception as error:  # the network, Supabase or the key: none of them may reach the check
         log.warning("technical report not saved (%s): %s", error, row["title"])

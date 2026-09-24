@@ -197,6 +197,19 @@ def test_the_report_goes_to_the_reports_table_with_the_service_key(queue) -> Non
     assert "user_id" not in row  # automatic: no person filed it
 
 
+def test_a_new_style_secret_key_is_sent_as_apikey_only(queue, monkeypatch) -> None:
+    """sb_secret_ keys are not JWTs. On Authorization: Bearer, Supabase rejects
+    them as an invalid JWT, so every report would silently fail to save."""
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "sb_secret_abc123")
+
+    backup_step()
+    reports.settle()
+
+    request, _ = queue[0]
+    assert request.headers["apikey"] == "sb_secret_abc123"
+    assert "authorization" not in request.headers
+
+
 def test_without_the_service_key_the_report_only_goes_to_the_log(queue, monkeypatch, caplog) -> None:
     monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY")
     caplog.set_level(logging.WARNING, logger="backend.reports")
