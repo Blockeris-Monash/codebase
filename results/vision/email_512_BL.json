@@ -1,0 +1,37 @@
+{
+  "shipper": {
+    "present": true,
+    "label_seen": "Shipper",
+    "raw": "APRIL FAR EAST (M) SDN BHD"
+  },
+  "consignee": {
+    "present": true,
+    "label_seen": "Consignee",
+    "raw": "AL GURG STATIONERY LLC"
+  },
+  "notify_party": {
+    "present": true,
+    "label_seen": "Notify",
+    "raw": "AL GURG STATIONERYLLC"
+  },
+  "port_of_loading": {
+    "present": true,
+    "label_seen": "Port of Loading",
+    "raw": "NHAVA SHEVA INDIA"
+  },
+  "port_of_discharge": {
+    "present": true,
+    "label_seen": "Port of Discharge",
+    "raw": "TUTICORIN, INDIA"
+  },
+  "container_count": {
+    "present": true,
+    "label_seen": "Containers",
+    "raw": "6 x 40'HC"
+  },
+  "gross_weight_kg": {
+    "present": true,
+    "label_seen": "Gross Weight",
+    "raw": "128,544 KG"
+  }
+}
