@@ -34,8 +34,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  // Never touch anything but our own GETs: the "Check again with AI" call is a
-  // cross-origin POST to the backend and must always go straight to the network.
+  // Never touch anything but our own GETs: the mailbox and reply calls are
+  // cross-origin requests to the backend and must always go straight to the network.
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
   event.respondWith(
