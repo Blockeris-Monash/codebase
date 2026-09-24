@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from backend.contracts import ExtractedField
+from backend.security.pii import get_pii_masker
 
 log = logging.getLogger(__name__)
 
@@ -66,10 +67,16 @@ class AiExtractor:
 
     def extract_fields(self, email_id: str,
                        pairs: LabelledPairs) -> dict[str, ExtractedField] | None:
-        """The seven fields for one document, or None if the model never answered."""
-        text = pairs_as_text(pairs)
+        """The seven fields for one document, or None if the model never answered.
+        PII (phone numbers, personal emails, bank details) is masked before AI call,
+        while shipper, consignee, and notify party are strictly preserved.
+        """
+        masker = get_pii_masker()
+        masked_pairs = masker.mask_document_pairs(pairs)
+        text = pairs_as_text(masked_pairs)
         fields = self.ask_model(email_id, text)
         if fields is None:
             return None
 
-        return keep_only_values_in_text(email_id, fields, text)
+        orig_text = pairs_as_text(pairs)
+        return keep_only_values_in_text(email_id, fields, orig_text)

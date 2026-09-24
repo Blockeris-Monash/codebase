@@ -38,13 +38,13 @@ app = FastAPI(title="Document Discrepancy Orchestrator")
 from fastapi.middleware.cors import CORSMiddleware
 
 # Enable CORS so Han's Vercel frontend can talk to Render
+cors_env = os.environ.get("CORS_ORIGINS", "*")
+allowed_origins = [o.strip() for o in cors_env.split(",") if o.strip()] if cors_env != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    # No cookies and no auth header on any route here, so there are no
-    # credentials to allow. Asking for them alongside a wildcard origin is
-    # invalid per the CORS spec - a browser is required to reject the pair, and
-    # this only worked because Starlette quietly echoes the origin back instead.
+    allow_origins=allowed_origins,
+    # No cookies and no auth header on any route here, so allow_credentials is False.
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
