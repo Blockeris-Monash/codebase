@@ -37,6 +37,7 @@ def attachments(data_dir: Path) -> Path:
 # reader nothing about coverage. Matched against the test's node id, first
 # match wins, so order matters.
 REPORT_AREAS: list[tuple[str, str, str]] = [
+    ("sign_in_error", "Sign-in", "say why a sign-in did not finish"),
     ("phone_and_fold", "Any screen", "flip, fold, landscape and high contrast"),
     ("google_sign_in", "Sign in", "Google sign-in through Supabase"),
     ("review_state_store", "Saved state", "a mark survives a change of browser"),
