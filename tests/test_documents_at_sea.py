@@ -58,3 +58,8 @@ def test_the_birds_flap_their_wings_and_glide() -> None:
 
 def test_all_of_it_holds_still_for_reduced_motion() -> None:
     assert ".lp-deco *,.lp-sky *,.art *{animation:none!important}" in INDEX
+
+
+def test_the_margin_documents_are_easy_to_see() -> None:
+    """The documents drifting in the landing page's side margins were too faint at .55."""
+    assert ".lp-deco .sheet{position:absolute;width:74px;opacity:.75;" in INDEX
