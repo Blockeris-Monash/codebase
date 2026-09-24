@@ -306,7 +306,8 @@ window.I18N = {
   "Sign in with Google again to see your mailbox.": "Log masuk dengan Google sekali lagi untuk melihat peti mel anda.",
   "Sign in with Google again to send from your Gmail.": "Log masuk dengan Google sekali lagi untuk menghantar dari Gmail anda.",
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "Log masuk melalui Google, dan kami tidak menyimpan kata laluan atau kunci Gmail. Aplikasi ini boleh membaca peti masuk anda dan menghantar balasan yang anda tekan Hantar. Ia tidak boleh memadam atau mengubah e-mel anda.",
-  "Signed in as {name}.": "Log masuk sebagai {name}."
+  "Signed in as {name}.": "Log masuk sebagai {name}.",
+  "Open in Gmail": "Buka dalam Gmail"
  },
  "zh": {
   "Dismiss": "关闭",
@@ -613,6 +614,7 @@ window.I18N = {
   "Sign in with Google again to see your mailbox.": "请重新使用 Google 登录以查看您的邮箱。",
   "Sign in with Google again to send from your Gmail.": "请重新使用 Google 登录以从您的 Gmail 发送。",
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "登录通过 Google 完成，我们不保存密码，也不保存 Gmail 密钥。本应用可以读取您的收件箱，并发送您按下“发送”的回复。它无法删除或更改您的邮件。",
-  "Signed in as {name}.": "已登录为 {name}。"
+  "Signed in as {name}.": "已登录为 {name}。",
+  "Open in Gmail": "在 Gmail 中打开"
  }
 };
