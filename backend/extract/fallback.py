@@ -9,14 +9,19 @@ is no Gemini key), the first model is used exactly as if there were no fallback,
 timeout, so a slow but working call is still waited for. A hung first call is not waited for: it finishes on its own thread
 while the second model works, so a stalled gateway costs first_timeout seconds and not the
 gateway's own much longer retry chain.
+
+Every call is recorded for the technical reports (backend/reports.py), named by `names`.
+Every caller today stands Gemini behind Qwen, hence the default.
 """
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as NoAnswerInTime
 
+from backend import reports
 from backend.extract.ai import ModelCall
 
 log = logging.getLogger(__name__)
@@ -28,22 +33,41 @@ DEFAULT_FIRST_TIMEOUT_SECONDS = 60.0
 
 def with_fallback(first: ModelCall, second: ModelCall,
                   first_timeout: float = DEFAULT_FIRST_TIMEOUT_SECONDS,
-                  enabled: Callable[[], bool] = lambda: True) -> ModelCall:
+                  enabled: Callable[[], bool] = lambda: True,
+                  names: tuple[str, str] = ("Qwen", "Gemini")) -> ModelCall:
     def call(text: str):
         if not enabled():
-            return first(text)
+            return timed(names[0], first, text)
 
         pool = ThreadPoolExecutor(max_workers=1)
+        started = time.perf_counter()
         try:
-            return pool.submit(first, text).result(timeout=first_timeout)
+            answer = pool.submit(first, text).result(timeout=first_timeout)
         except NoAnswerInTime:
             reason = f"no answer in {first_timeout:g}s"
         except Exception as error:
             reason = str(error) or type(error).__name__
+        else:
+            reports.record(names[0], reports.ANSWERED, time.perf_counter() - started)
+            return answer
         finally:
             pool.shutdown(wait=False)  # do not wait for a hung call; it ends on its own
 
+        reports.record(names[0], reason, time.perf_counter() - started)
         log.warning("first model failed (%s), using the second", reason)
-        return second(text)
+        return timed(names[1], second, text)
 
     return call
+
+
+def timed(name: str, model: ModelCall, text: str):
+    """One model call, recorded whether it answers or raises."""
+    started = time.perf_counter()
+    try:
+        answer = model(text)
+    except Exception as error:
+        reports.record(name, str(error) or type(error).__name__, time.perf_counter() - started)
+        raise
+    reports.record(name, reports.ANSWERED, time.perf_counter() - started)
+
+    return answer

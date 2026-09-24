@@ -22,6 +22,7 @@ from typing import Any, Callable, Iterable, List, Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend import reports
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_json
 from backend.extract.qwen import (
@@ -293,7 +294,9 @@ async def classify_email(
     )
 
     try:
-        parsed = await asyncio.to_thread(model, prompt)
+        with reports.watching("Classification", email.email_id,
+                              "The email could not be sorted, so it was not checked."):
+            parsed = await asyncio.to_thread(model, prompt)
         return ClassificationResult(
             email_id=email.email_id,
             category=parsed.category,

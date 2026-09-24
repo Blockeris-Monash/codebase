@@ -118,7 +118,7 @@
     if (!c || !u) return null;
     try {
       const { data, error } = await c.from("reports")
-        .select("id,kind,email_ref,title,detail,rating,created_at,users(email,display_name)")
+        .select("id,kind,email_ref,title,detail,rating,context,created_at,users(email,display_name)")
         .order("created_at", { ascending: false })
         .limit(REPORT_LIMIT);
       if (error) throw error;
