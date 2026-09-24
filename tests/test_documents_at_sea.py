@@ -1,7 +1,9 @@
-"""The ship carries containers mixed with documents, and loose documents float on the sea:
-the product checks the paperwork that travels with the cargo."""
+"""The landing scene: a ship with containers and documents that sits in the water, a
+calm pace, and living birds. Floating paper was tried and removed: it read as rubbish
+in the sea."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 INDEX = (Path(__file__).resolve().parents[1] / "frontend" / "index.html").read_text(encoding="utf-8")
@@ -19,26 +21,37 @@ def test_the_ship_carries_containers_mixed_with_documents() -> None:
     assert ship.count(",box]") >= 3 and ship.count(",doc]") >= 3, "a mix on both rows"
 
 
-def test_documents_float_on_the_sea() -> None:
-    scene = block("const SCENE = (()=>{")
-    assert scene.count('class="floater"') >= 1 and "FLOATERS" in INDEX
-    assert ".lp-sky .floater .rock{" in INDEX
+def test_no_paper_floats_on_the_sea() -> None:
+    for gone in ("FLOATERS", "floater", "flclip", "--float"):
+        assert gone not in INDEX, gone
 
 
-def test_the_floating_documents_keep_still_where_motion_is_off() -> None:
-    """The app background and reduced motion already stop every animation in the sky."""
-    assert ".appbg *{animation:none!important}" in INDEX
-    assert ".lp-deco *,.lp-sky *{animation:none!important}" in INDEX
+def test_the_ship_sits_in_the_water_not_on_a_hard_edge() -> None:
+    """The hull's bottom was a straight cut on the sea. Water in front of it, fading down,
+    with a moving foam line, puts the ship in the sea."""
+    ship = block("const SHIP_ART = (()=>{")
+    assert 'class="wl"' in ship and 'class="foam"' in ship and 'id="wlg"' in ship
+    assert "stop-color:var(--se1)" in ship, "the sea's own colour, in both themes"
+    assert ship.index("</g>") < ship.index('class="wl"'), "outside the bobbing hull, so the water stays level"
+    assert ".art .wl,.art .foam{animation:lpwave" in INDEX
+    assert '<g mask="url(#wlm)"><path class="wl"' in ship, "faded at both ends, so no box shows"
 
 
-def test_a_floating_document_sits_in_the_water_not_on_top_of_it() -> None:
-    """They looked like flat pictures pasted on the sea. Each now lies at an angle, its lower
-    edge hidden under a waterline, with a wave crest in front, a ripple, and a slow rock."""
-    scene = block("const SCENE = (()=>{")
-    assert '<clipPath id="flclip">' in scene and 'clip-path="url(#flclip)"' in scene
-    assert 'class="crest"' in scene and 'class="ripple"' in scene and 'class="rock"' in scene
-    assert "skewX(" in scene and "scale(1 .55)" in scene, "seen lying down, in perspective"
+def test_the_waterline_loops_seamlessly() -> None:
+    shift = int(re.search(r"@keyframes lpwave\{to\{transform:translateX\(-(\d+)px\)\}\}", INDEX).group(1))
+    assert '"q8-3 16 0t16 0"' in block("const SHIP_ART = (()=>{") and shift == 32
 
 
-def test_floating_documents_are_dimmer_at_night() -> None:
-    assert INDEX.count("--float:") >= 3, "a colour for day, and for night in both dark-mode rules"
+def test_the_ship_sails_at_a_calm_pace() -> None:
+    seconds = int(re.search(r"animation:lpsail (\d+)s linear infinite", INDEX).group(1))
+    assert seconds >= 60
+
+
+def test_the_birds_flap_and_glide() -> None:
+    assert re.search(r"\.lp-sky \.gull\{[^}]*animation:lpflap", INDEX)
+    assert ".lp-sky .gullg{animation:lpglide" in INDEX
+    assert ".lp-sky .gullg," in INDEX, "glide resumes from the page clock after a redraw"
+
+
+def test_all_of_it_holds_still_for_reduced_motion() -> None:
+    assert ".lp-deco *,.lp-sky *,.art *{animation:none!important}" in INDEX
