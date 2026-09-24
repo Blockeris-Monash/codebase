@@ -206,6 +206,12 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .doch{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:4px}
 .text{white-space:pre-wrap;background:var(--sunk);border-radius:10px;padding:12px;font-size:0.8125rem;overflow-wrap:anywhere;max-height:340px;overflow:auto}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.detail>.actions,.detail>.done,.detail>.reply{margin-bottom:16px}
+.tally{display:inline-flex;align-items:center;gap:8px;color:var(--mute)}
+.tally i{position:relative;width:90px;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.tally i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--ok);border-radius:inherit;transition:width .3s}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;gap:12px;align-items:center;background:var(--ink);color:var(--bg);border-radius:12px;padding:8px 8px 8px 16px;box-shadow:var(--card);font-weight:600;max-width:calc(100vw - 32px)}
+.toast .ghost{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 .done{margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600;color:var(--ok)}
 .live{margin-top:12px;font-size:0.8125rem}
 .reply{margin-top:16px;display:flex;flex-direction:column;gap:6px}
@@ -359,6 +365,9 @@ const FOLDERS = [
   {k:"GENERAL", n:T("General"), f:e=>e.category==="GENERAL"},
   {k:"SPAM", n:T("Spam"), f:e=>e.category==="SPAM"},
 ];
+const RANKED = ["MISMATCH","NEEDS_REVIEW"];
+/* The emails a person has to act on; the progress line counts how many are done. */
+const todo = e=>(e.status==="MISMATCH"||e.status==="NEEDS_REVIEW") && !e.awaiting;
 const MENU = ["all","MISMATCH","NEEDS_REVIEW","cmp","AWAIT","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
 const SUPPORT_EMAIL = (window.BLOCKERIS_SUPPORT_EMAIL || "").trim();
 const KINDS = {question:T("Question"), problem:T("Problem"), idea:T("Idea")};
@@ -454,7 +463,7 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -463,7 +472,10 @@ const items = ()=>{
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
-  return RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  const found = RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  // worst first puts the most fields to fix on top; sort is stable, so ties keep the saved order.
+  // Newest first is the saved inbox order (the demo data has no dates; a live mailbox brings them).
+  return RANKED.includes(S.f) && S.sort==="worst" ? found.sort((a,b)=>issues(b)-issues(a)) : found;
 };
 const who = e=>esc(e.from.replace(/<.*>/,"").trim()||e.from);
 /* Search highlight: wrap each match in <mark>. Every piece is escaped, so an email cannot inject HTML. */
@@ -604,39 +616,45 @@ function how(e){
 
 function canRecheck(e){ return API_BASE && e.docs && e.docs.SI && e.docs.BL && e.docs.SI.pairs.length && e.docs.BL.pairs.length; }
 
-function detail(e){
-  const live = S.live[e.id];
-  const view = live && live.result ? {...e, ...live.result} : e;
-  const fresh = live && live.fresh ? "fresh" : "";
-  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}`;
-  if(e.awaiting){
-    h += `<div class="banner plain">${t("Draft BL requested")}<span>${t("The sender asked for the draft BL and nothing is attached, so there is nothing to compare yet.")}</span></div>`;
-  } else if(view.status==="MISMATCH"){
-    const n = view.defect_fields.length;
-    h += `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${t(n>1?T("{n} fields differ"):T("{n} field differs"),{n})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div>${table(view.rows)}`;
-  } else if(view.status==="NEEDS_REVIEW"){
-    h += `<div class="banner NEEDS_REVIEW ${fresh}">${ICON.NEEDS_REVIEW}${t("Needs a person to look")}<span>${REASON[view.review_reason]?t(REASON[view.review_reason]):""}</span></div>`;
-    if(view.rows.length) h += table(view.rows);
-  } else if(view.status==="OK"){
-    h += `<div class="banner OK ${fresh}">${ICON.OK}${t("All 7 fields match")}<span>${t("Nothing to do.")}</span></div>${table(view.rows)}`;
-  } else {
-    h += `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by==="fallback"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
-  }
-  if(e.docs) h += docsHTML(e, view.rows||[]);
-  h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
-  const m = S.marks[e.id];
-  if(!e.awaiting && (e.status==="MISMATCH"||e.status==="NEEDS_REVIEW")){
-    const d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
-    if(m) h += `<div class="done"><span>${m==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
+/* Done and Reply sit under the banner, so the reviewer acts before scrolling through the evidence. */
+function actionsHTML(e){
+  if(e.awaiting || (e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW")) return "";
+  const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
+  if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button></div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
-    else if(d) h += `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
+  if(d) return `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">${t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div class="small mute" style="margin-top:8px">${t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
-    else h += `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
+  return `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
+}
+
+function detail(e){
+  const live = S.live[e.id];
+  const view = live && live.result ? {...e, ...live.result} : e;
+  const fresh = live && live.fresh ? "fresh" : "";
+  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${how(e)}`;
+  let banner, tbl = "";
+  if(e.awaiting){
+    banner = `<div class="banner plain">${t("Draft BL requested")}<span>${t("The sender asked for the draft BL and nothing is attached, so there is nothing to compare yet.")}</span></div>`;
+  } else if(view.status==="MISMATCH"){
+    const n = view.defect_fields.length;
+    banner = `<div class="banner MISMATCH ${fresh}">${ICON.MISMATCH}${t(n>1?T("{n} fields differ"):T("{n} field differs"),{n})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div>`;
+    tbl = table(view.rows);
+  } else if(view.status==="NEEDS_REVIEW"){
+    banner = `<div class="banner NEEDS_REVIEW ${fresh}">${ICON.NEEDS_REVIEW}${t("Needs a person to look")}<span>${REASON[view.review_reason]?t(REASON[view.review_reason]):""}</span></div>`;
+    if(view.rows.length) tbl = table(view.rows);
+  } else if(view.status==="OK"){
+    banner = `<div class="banner OK ${fresh}">${ICON.OK}${t("All 7 fields match")}<span>${t("Nothing to do.")}</span></div>`;
+    tbl = table(view.rows);
+  } else {
+    banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by==="fallback"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
+  h += banner + actionsHTML(e) + tbl;
+  if(e.docs) h += docsHTML(e, view.rows||[]);
+  h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
   if(canRecheck(e)){
     h += `<div class="live" aria-live="polite">${live&&live.busy
       ? `<div class="checking"><span class="spin"></span><span>${t("Checking with the AI")}<span class="mute"> \u00b7 <span id="elapsed">${Math.floor((Date.now()-live.t0)/1000)}</span>s</span></span></div><div class="prog"><i></i></div><div class="mute small">${t("The first check can take up to a minute while the server wakes up.")}</div>`
@@ -727,7 +745,7 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
+  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
@@ -735,9 +753,9 @@ function render(){
   document.getElementById("app").innerHTML =
     `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
      <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}</div>
-     <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
+     <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${RANKED.includes(S.f)?sortHTML():""}<span class="grow"></span>${tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -809,6 +827,7 @@ document.addEventListener("click", ev=>{
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
+  else if(a==="sort"){ S.sort=k; S.page=0; S.resetList=true; }
   else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
@@ -818,11 +837,11 @@ document.addEventListener("click", ev=>{
   else if(a==="allmail"){ S.f="all"; S.page=0; S.resetList=true; }
   else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
-  else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); }
-  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); }
+  else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); advance(id); }
+  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(byId[id]); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="discard"){ S.draft=null; }
-  else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); }
+  else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
   else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
   else if(a==="recheck") return recheck(id);
@@ -839,6 +858,31 @@ document.addEventListener("change", ev=>{
   if(ev.target.dataset.a==="foldersel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; render(); }
 
 });
+/* After Done or Send, open the next email in this folder so the reviewer keeps going. The Undo box
+   leaves with the email, so Undo moves to a bar at the bottom for a few seconds. */
+let toastTimer = null;
+function advance(id){
+  const list = items(), at = list.findIndex(e=>e.id===id), rest = list.filter(e=>e.id!==id);
+  const next = rest[at] || (RANKED.includes(S.f) ? rest[0] : null);
+  S.toast = {id, kind:S.marks[id]};
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ S.toast=null; render(); }, 6000);
+  S.draft=null; S.hl=null; S.docs=true; S.body=false; S.how=false; S.resetPane=true; S.fade=true;
+  if(!next){ S.sel=null; return; }
+  S.sel=next.id; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===next.id)/PAGE));
+}
+const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button></div>` : "";
+function sortHTML(){
+  return `<span class="seg sortseg" role="group" aria-label="${t("Sort")}">${[["worst",T("Worst first")],["new",T("Newest first")]].map(([k,n])=>`<button class="segb ${S.sort===k?"on":""}" data-a="sort" data-k="${k}" aria-pressed="${S.sort===k}">${t(n)}</button>`).join("")}</span>`;
+}
+function tallyHTML(){
+  const work = RESULTS.filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
+  return `<span class="tally small" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span class="num">${t("{done} of {total} done",{done,total})}</span><i style="--p:${total?Math.round(done*100/total):0}%"></i></span>`;
+}
+function allDoneHTML(){
+  const other = S.f==="MISMATCH" ? "NEEDS_REVIEW" : "MISMATCH";
+  return `<div class="empty">${ICON.OK}<b>${t("All done in this folder")}</b><span>${t("Every email here is marked as done or replied.")}</span>${count(other)?`<button class="btn" data-a="folder" data-k="${other}">${t(other==="NEEDS_REVIEW"?T("Go to Needs review"):T("Go to Action required"))}</button>`:""}</div>`;
+}
+
 function goTo(e){
   const at = items().indexOf(e);
   S.sel=e.id; S.page=Math.floor(at/PAGE); S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; S.fade=true; S.hl=null;
@@ -859,6 +903,7 @@ document.addEventListener("keydown", ev=>{
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);
+ONE_PANE.addEventListener("change", render);   // the All done note moves between list and pane
 render();
 
 /* Signed in, marks made on another device appear after the first paint.
