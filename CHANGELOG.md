@@ -39,6 +39,42 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **`cli/validate_contracts.py` now runs in CI.** It existed and was never
   executed, which made it documentation rather than a check.
 
+- **The scanned attachments are read, and what cannot be trusted is marked.**
+  Six of the eight attachments on the five `unreadable` emails are real scans —
+  about 20 KB each, one page image, no text layer at all. A vision model now
+  reads all six, seven of seven fields each, behind `SHIP_HAPPENS_VISION=1` and
+  off by default so the submitted numbers stay reproducible. The readings are
+  cached, so a demo never waits on a free tier.
+
+  The other two, `email_511_BL.pdf` and `email_515_BL.pdf`, are 775 and 765
+  bytes: a header and binary, no image, no font, no page. Nothing reads those,
+  and they stay `unreadable` because that is the correct answer rather than a
+  limitation.
+
+  **A value read from an image is never allowed to decide anything.** Comparing
+  the three readable pairs produced twelve differences across 42 fields, and
+  every one was the model rather than the document: a dropped space
+  (`AL GURG STATIONERYLLC`), an invented comma (`APRIL, FINE PAPER TRADING`), a
+  lost full stop (`PTE LTD.` for `PTE. LTD.`) and ports that lost their country
+  (`NHAVA SHEVA` for `NHAVA SHEVA, INDIA`). Reading the pages by eye confirmed
+  all twelve — including one this author had missed.
+
+  So each reading is checked against the values these documents actually use.
+  `cli/make_vocabulary.py` writes `results/vocabulary.json` from the 192 text
+  attachments — no model, no answer key — and six of the seven fields turn out
+  to draw on a small closed set: four shippers, seven loading ports, twenty
+  notify parties. Gross weight takes 104 distinct values, so it has no closed
+  set and is excluded rather than pretended. A reading outside the set is
+  reported as read and marked **not verified**; nothing is corrected towards a
+  near neighbour, because the entity pool holds deliberately near-identical
+  parties and any similarity threshold loose enough to merge a scanning
+  artefact would merge two real companies with it.
+
+  These five emails escalate exactly as they did before. What changes is what a
+  reviewer is handed: not "one attachment could not be read", but the seven
+  fields from both documents with the doubtful values marked — which is the
+  difference between opening the file yourself and not having to.
+
 - **The test suite runs on every pull request.** A green local run is not
   evidence: it passes on one machine that has a `.env`. GitHub Actions runs
   `pytest` on Python 3.11 and 3.12 for every pull request and every push to
@@ -89,7 +125,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 337 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to PENDING without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 

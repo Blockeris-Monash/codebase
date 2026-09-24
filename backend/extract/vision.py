@@ -32,6 +32,7 @@ from pathlib import Path
 
 from backend.contracts import ExtractedField
 from backend.extract.gemini import DEFAULT_MODEL, ModelFields, api_key
+from backend.extract.vocabulary import untrusted_fields
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def _cache_path(path: Path) -> Path:
     return CACHE_DIR / f"{path.stem}.json"
 
 
-def cached(path: Path) -> dict[str, ExtractedField] | None:
+def cached(path: Path) -> dict | None:
     """A demo must not depend on a free tier answering. Roughly 20 requests a
     day covers six files once, not six files on every rehearsal."""
     saved = _cache_path(path)
@@ -100,9 +101,9 @@ def cached(path: Path) -> dict[str, ExtractedField] | None:
         return None
 
 
-def remember(path: Path, fields: dict[str, ExtractedField]) -> None:
+def remember(path: Path, result: dict) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    _cache_path(path).write_text(json.dumps(fields, indent=2, ensure_ascii=False) + "\n",
+    _cache_path(path).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n",
                                 encoding="utf-8", newline="\n")
 
 
@@ -127,7 +128,17 @@ def gemini_vision(pdf: bytes) -> dict[str, ExtractedField]:
             for name, value in response.parsed}
 
 
-def read_scan(path: Path, call=gemini_vision) -> dict[str, ExtractedField] | None:
+def reading(fields: dict[str, ExtractedField]) -> dict:
+    """What was read, and which of it this corpus has never seen.
+
+    Kept beside the fields rather than inside them, so an ExtractedField stays
+    the same three keys everywhere else in the pipeline and nothing scanned can
+    leak a fourth into the submitted output.
+    """
+    return {"fields": fields, "untrusted": untrusted_fields(fields)}
+
+
+def read_scan(path: Path, call=gemini_vision) -> dict | None:
     """Seven fields from a scanned page, or None to leave it unreadable.
 
     None every time the answer is not trustworthy - the opt-in is off, there is
@@ -146,10 +157,10 @@ def read_scan(path: Path, call=gemini_vision) -> dict[str, ExtractedField] | Non
         return saved
 
     try:
-        fields = verbatim_only(call(path.read_bytes()))
+        result = reading(verbatim_only(call(path.read_bytes())))
     except Exception as error:  # a third-party client; any failure means unreadable
         log.warning("vision read of %s failed, leaving it unreadable: %s", path.name, error)
         return None
 
-    remember(path, fields)
-    return fields
+    remember(path, result)
+    return result
