@@ -787,7 +787,7 @@ function homePage(){
   return `<main class="home">${DECO}<section class="lp-hero">${SCENE}<div class="lp-sailer">${SHIP_ART}</div><div class="hx hero2"><span class="lp-pill">${ICON.NEXT}${t("Averis x Monash Hackathon 2026 · Top 10 finalist")}</span>
       <h1 class="wordmark">SHIP HAPPENS</h1><p class="lp-tag">${t("We catch it before it sails.")}</p>
       <p class="lp-sub">${t("Check every Bill of Lading before it ships")}</p>
-      <div class="actions"><button class="btn" data-a="inbox">${t("Open the demo inbox")}</button><button class="btn ghostlight" data-a="howto">${t("See how it works")}</button></div></div></section>
+      <div class="actions">${u?`<button class="btn" data-a="mymailbox">${t("Open my mailbox")}</button><button class="btn ghostlight" data-a="inbox">${t("Open the demo inbox")}</button>`:`<button class="btn" data-a="inbox">${t("Open the demo inbox")}</button>`}<button class="btn ghostlight" data-a="howto">${t("See how it works")}</button></div></div></section>
   <div class="hx">
     <div class="lp-strip ${rv("strip")}">${big("520",T("emails in the demo dataset"))}${big("7",T("fields compared in every check"))}${big("630/630",T("injected defects caught"))}${big("1.0000",T("on the organisers' own scorer"))}${big("3",T("languages on screen"))}</div>
 
