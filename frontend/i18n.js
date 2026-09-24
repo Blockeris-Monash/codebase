@@ -2,6 +2,9 @@
 // The Malay and Chinese here were written by an AI and should be checked by a native speaker before they are shown to customers.
 window.I18N = {
  "ms": {
+  "Dismiss": "Tutup",
+  "Sign-in did not finish: {reason}": "Log masuk tidak selesai: {reason}",
+  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "Akaun Google ini tiada dalam senarai penguji untuk aplikasi ini. Minta pasukan menambahkannya, kemudian cuba lagi.",
   "Shipper": "Penghantar",
   "Consignee": "Penerima barang",
   "Notify party": "Pihak untuk dimaklumkan",
@@ -197,6 +200,9 @@ window.I18N = {
   "Sign out": "Log keluar"
  },
  "zh": {
+  "Dismiss": "关闭",
+  "Sign-in did not finish: {reason}": "登录未完成：{reason}",
+  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "此 Google 帐号不在本应用的测试人员名单中。请请团队添加后重试。",
   "Shipper": "托运人",
   "Consignee": "收货人",
   "Notify party": "通知方",
