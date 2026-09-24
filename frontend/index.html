@@ -982,6 +982,9 @@ function docsHTML(e, rows){
 
 const line = r=>`- ${FIELDS[r.field]}: the SI says ${r.si_raw||"(blank)"}, the draft BL says ${r.bl_raw||"(blank)"}`;
 function draftFor(e){
+  if(e.draft_reply) {
+    return {id:e.id, to:e.from, subject:/^re[:_]/i.test(e.subject)?e.subject:"RE: "+e.subject, body: e.draft_reply};
+  }
   const rows = e.rows||[];
   let ask;
   if(e.status==="MISMATCH"){
@@ -1052,7 +1055,8 @@ function routeHTML(e){
 }
 
 function actionsHTML(e){
-  if(e.awaiting || (e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW")) return "";
+  if(e.awaiting) return "";
+  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply) return "";
   const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
   if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):sent&&sent.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${sent&&sent.real?"":`<button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button>`}</div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
