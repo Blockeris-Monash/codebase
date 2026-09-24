@@ -22,6 +22,7 @@ from backend.extract.ai import AiExtractor
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_model
 from backend.extract.qwen import qwen_model
+from backend.extract.circuit_breaker import CircuitBreaker
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
@@ -146,7 +147,8 @@ class PairedInput(BaseModel):
 # is set. With a second provider behind, two tries are enough. Each call gives up after 15 s,
 # and no retry starts after 45 s: a document the model cannot read in time goes to a person
 # rather than leaving the reviewer at a spinner for minutes (#111).
-extractor = AiExtractor(with_fallback(qwen_model, gemini_model, first_timeout=15,
+qwen_breaker = CircuitBreaker()
+extractor = AiExtractor(with_fallback(qwen_breaker.wrap(qwen_model), gemini_model, first_timeout=15,
                                       enabled=lambda: bool(gemini_key())),
                         tries=2, deadline=45)
 
