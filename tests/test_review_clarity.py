@@ -97,3 +97,11 @@ def test_clicking_a_dropdown_does_not_redraw_the_page() -> None:
     guard = [line for line in SCRIPT.splitlines() if 'a==="stay"' in line and "return" in line]
     assert len(guard) == 1
     assert 'a==="sortsel"' in guard[0] and 'a==="kindsel"' in guard[0]
+
+
+def test_switching_mailbox_lands_on_a_folder_that_exists() -> None:
+    """The mailbox switch reset the folder to "all", which Other mail replaced; folder() then found nothing."""
+    switch = block('else if(a==="switchbox"){', "\n  }\n")
+    target = re.search(r'S\.f = "(\w+)"', switch).group(1)
+    keys = re.findall(r'\{k:"(\w+)"', block("const FOLDERS = [", "\n];\n"))
+    assert target in keys

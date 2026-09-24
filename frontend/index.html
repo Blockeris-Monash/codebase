@@ -211,6 +211,7 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .text{white-space:pre-wrap;background:var(--sunk);border-radius:10px;padding:12px;font-size:0.8125rem;overflow-wrap:anywhere;max-height:340px;overflow:auto}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
 .detail>.actions,.detail>.done,.detail>.reply{margin-bottom:16px}
+.seg.mbox{flex-wrap:nowrap}.seg.mbox .segb{padding:5px 12px;font-size:0.875rem}
 .pick{display:inline-flex;align-items:center;gap:6px}.pick select{font-size:0.875rem;color:var(--ink)}
 .tally{display:inline-flex;align-items:center;gap:8px;color:var(--mute)}
 .tally i{position:relative;width:90px;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
@@ -537,18 +538,20 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
-const count = k=>RESULTS.filter(folder(k).f).length;
+const getEmail = id => (S.mailbox === "live" ? S.liveEmails.find(e=>e.id===id) : null) || byId[id];
+const count = k => (S.mailbox === "live" ? S.liveEmails : RESULTS).filter(folder(k).f).length;
 const items = ()=>{
+  const baseList = S.mailbox === "live" ? S.liveEmails : RESULTS;
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
   // a search looks through all mail, so nothing is hidden behind the folder you happen to be in
   const inView = term ? ()=>true : e=>folder(S.f).f(e) || stays(e);
-  const found = RESULTS.filter(inView).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  const found = baseList.filter(inView).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
   // Most issues puts the most fields to fix on top; sort is stable, so ties keep the saved order.
   // Most recent is the saved inbox order (the demo data has no dates; a live mailbox brings them).
   if(term || !RANKED.includes(S.f)) return found;
@@ -760,7 +763,7 @@ function detail(e){
 }
 
 async function recheck(id){
-  const e = byId[id];
+  const e = getEmail(id);
   S.live[id] = {busy:true, t0:Date.now()}; render();
   const tick = setInterval(()=>{ const el=document.getElementById("elapsed"); if(el) el.textContent=Math.floor((Date.now()-S.live[id].t0)/1000); }, 1000);
   const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 90000);
@@ -840,7 +843,7 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
+  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
@@ -848,7 +851,7 @@ function render(){
   document.getElementById("app").innerHTML =
     `${signInErrorHTML()}<div class="top"><span class="brand" data-a="home" role="link" tabindex="0" title="${t("Home")}"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb" data-a="settings" aria-haspopup="menu" aria-expanded="${S.langMenu}" aria-label="${t("Settings")}" title="${t("Settings")}">${ICON.GEAR}<span class="lbl">${t("Settings")}</span>${ICON.CHEV}</button>${S.langMenu?settingsHTML(isDark):""}</span></div>${onNext ? nextPage() : onHome ? homePage() : `
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
-     <div class="bar"><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${tallyHTML()}
+     <div class="bar"><div class="seg mbox"><button class="segb ${S.mailbox==='demo'?'on':''}" data-a="switchbox" data-k="demo">${t("Demo data")}</button><button class="segb ${S.mailbox==='live'?'on':''}" data-a="switchbox" data-k="live" ${!S.user?'disabled title="'+t("Sign in to see your mailbox")+'"':''}>${t("My mailbox")}</button></div><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${tallyHTML()}
        </div>
      <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
@@ -924,6 +927,13 @@ document.addEventListener("click", ev=>{
     }
   }
   else if(a==="report"){ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; }
+  else if(a==="switchbox"){
+    if (k==="live" && !S.user) return;
+    if (S.mailbox !== k) {
+      S.mailbox = k; S.sel = null; S.page = 0; S.q = ""; S.f = "MISMATCH";
+      if (k === "live" && !S.polling) startPolling();
+    }
+  }
   else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
@@ -934,7 +944,7 @@ document.addEventListener("click", ev=>{
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
-  else if(a==="draft"){ S.draft = draftFor(byId[id]); S.copied=null; S.scrollTo=".reply"; }
+  else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="discard"){ S.draft=null; }
   else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
@@ -983,7 +993,7 @@ function sortHTML(){
   return pick("sortsel", t("Sort by"), [["worst",T("Most issues")],["least",T("Fewest issues")],["new",T("Most recent")],["old",T("Oldest")]].map(([v,n])=>[v,t(n)]), S.sort);
 }
 function tallyHTML(){
-  const work = RESULTS.filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
+  const work = (S.mailbox==="live" ? S.liveEmails : RESULTS).filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
   return `<span class="tally small" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span class="num">${t("{done} of {total} done",{done,total})}</span><i style="--p:${total?Math.round(done*100/total):0}%"></i></span>`;
 }
 function allDoneHTML(){
@@ -1022,13 +1032,35 @@ Store?.pull(S.marks)?.then(function (merged) {
   S.marks = merged; saveMarks(); render();
 });
 
+let pollTimer = null;
+async function fetchLiveMailbox() {
+  if (S.mailbox !== "live" || !S.user) return;
+  try {
+    const res = await fetch(API_BASE + "/mailbox?user_id=" + encodeURIComponent(S.user.id));
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    S.liveEmails = data;
+    if (S.mailbox === "live") render();
+  } catch (err) {
+    console.warn("Could not fetch live mailbox:", err);
+  }
+}
+function startPolling() {
+  if (S.polling) return;
+  S.polling = true;
+  fetchLiveMailbox();
+  pollTimer = setInterval(fetchLiveMailbox, 10000);
+}
+
 /* The Supabase library is a module script, and module scripts run after this one
    but before DOMContentLoaded. So sign-in is wired here, not above. The callback
    fires at once with the saved session, then on every sign-in and sign-out. */
 document.addEventListener("DOMContentLoaded", ()=>{
   S.authErr = window.Store?.authError?.() || null;
   S.authReady = !!window.Store?.onUser?.((user, event)=>{
-    S.user = user; S.userMenu = false; render();
+    S.user = user; S.userMenu = false; 
+    if (!user && S.mailbox === "live") { S.mailbox = "demo"; S.polling = false; clearInterval(pollTimer); pollTimer = null; }
+    render();
     // Outside the callback: supabase-js must not be called from inside its own auth callback.
     if(user && (event==="INITIAL_SESSION"||event==="SIGNED_IN")) setTimeout(()=>{
       window.Store?.pull(S.marks)?.then(merged=>{ if(merged){ S.marks = merged; saveMarks(); render(); } });
