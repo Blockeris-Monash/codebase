@@ -12,4 +12,4 @@ window.BLOCKERIS_SUPPORT_EMAIL = "";
 // a leaked key reads nothing it should not. Leave both empty to keep everything
 // on the visitor's own device, exactly as before.
 window.SUPABASE_URL = "https://wcvvfiywelypxfkncpww.supabase.co";
-window.SUPABASE_ANON_KEY = "REPLACE_WITH_PUBLISHABLE_KEY";
+window.SUPABASE_ANON_KEY = "sb_publishable_DqF-xlPA8laGPWPY0iSA1g_rkerAglB";
