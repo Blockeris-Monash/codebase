@@ -7,27 +7,39 @@
 -- was harmless while nothing read the table. A page that lists every report is
 -- exactly the thing that makes it matter.
 --
--- So membership becomes explicit. `admins` holds the people who may read the
--- queue, managed here rather than from the app - there is deliberately no
--- insert policy, so no signed-in session can add itself.
+-- Membership is therefore explicit, and keyed on **email, not user id**. A row
+-- in `users` only exists after someone has signed in once, so a table keyed on
+-- user_id cannot grant access to a teammate who has not signed in yet - they
+-- would be silently excluded, and the fix would be invisible until they
+-- complained. Email is what the team is identified by anyway.
+--
+-- Membership itself is data, not schema, so the inserts are deliberately not in
+-- this file: addresses do not belong in a repository that may be made public.
 
 create table if not exists admins (
-    user_id  uuid primary key references users(id) on delete cascade,
+    email    text primary key,
     added_at timestamptz not null default now()
 );
 
 alter table admins enable row level security;
 
--- A session may see whether it is an admin, and nothing else about the table.
+-- A session may see its own membership and nothing else about the table. There
+-- is deliberately no insert, update or delete policy: RLS denies what no policy
+-- permits, so no signed-in session can add itself or anybody else.
 drop policy if exists read_own_admin_row on admins;
 create policy read_own_admin_row on admins for select
-    using (user_id = auth.uid());
+    using (lower(email) = lower(coalesce(auth.jwt() ->> 'email', '')));
 
--- security definer so the check itself is not subject to the policy above,
--- which would otherwise make it true only for the row the caller can see.
+-- security definer so the check is not itself subject to the policy above,
+-- which would otherwise make it answerable only for the row the caller can see.
+-- Compared case-insensitively: Google addresses are, and a capital letter
+-- pasted into the seed should not quietly remove someone's access.
 create or replace function is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-    select exists (select 1 from admins where user_id = auth.uid());
+    select exists (
+        select 1 from admins
+        where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+    );
 $$;
 
 -- ---------------------------------------------------------------- users

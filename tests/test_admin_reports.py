@@ -25,7 +25,32 @@ def test_nothing_can_add_itself_to_the_admins_table() -> None:
     signed-in session grant itself the queue, so there deliberately is none -
     RLS denies what no policy permits."""
     assert "alter table admins enable row level security" in MIGRATION
-    assert not re.search(r"create policy \w+ on admins for (insert|all)", MIGRATION)
+    assert not re.search(r"create policy \w+ on admins for (insert|update|delete|all)", MIGRATION)
+
+
+def test_membership_is_keyed_on_email_not_user_id() -> None:
+    """A `users` row only exists after a first sign-in, so keying on user_id
+    cannot grant access to a teammate who has not signed in yet - they would be
+    excluded with nothing on screen to say why."""
+    assert re.search(r"create table if not exists admins\s*\(\s*email\s+text primary key", MIGRATION)
+    assert "auth.jwt() ->> 'email'" in MIGRATION
+    sql = "\n".join(line for line in MIGRATION.splitlines() if not line.lstrip().startswith("--"))
+    assert "user_id" not in sql.split("create policy read_profiles")[0]
+
+
+def test_the_email_comparison_ignores_case() -> None:
+    """Google addresses are case-insensitive. A capital letter pasted into the
+    seed must not quietly remove someone's access."""
+    check = MIGRATION[MIGRATION.index("create or replace function is_admin"):]
+    assert check.count("lower(") >= 2
+
+
+def test_no_addresses_are_committed() -> None:
+    """Membership is data, not schema. The migration creates the table; who is
+    in it is pasted into the SQL editor, because a repository that may be made
+    public is no place for the team's personal addresses."""
+    assert "@" not in MIGRATION
+    assert "insert into admins" not in MIGRATION.lower()
 
 
 def test_the_admin_check_runs_as_definer() -> None:

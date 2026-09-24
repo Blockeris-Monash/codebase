@@ -20,7 +20,11 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   read its source, so hiding a link protects nothing. Migration 0004 adds an
   `admins` table with deliberately no insert policy - RLS denies what no policy
   permits, so no signed-in session can grant itself the queue - and membership
-  is managed in SQL.
+  is managed in SQL. It is keyed on **email, not user id**: a `users` row only
+  exists after a first sign-in, so an id would have silently excluded anyone who
+  had not signed in yet. Who is in it is pasted into the SQL editor rather than
+  committed, because addresses do not belong in a repository that may be made
+  public.
 
   It also closes something that was already there. `reports` shipped with
   `using (auth.uid() is not null)`, which reads as "the team" but means any
@@ -149,9 +153,69 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   escalation precision 0.180 on the diagnostic axis — rather than only what it
   buys.
 
+- **Sign in with Google.** Supabase carries the session, so a mark made on the
+  demo laptop is the same mark on a phone. The page still opens signed out and
+  works that way; signing in is what makes the state follow the person rather
+  than the browser.
+
+- **The live mailbox: real Gmail, read and replied to in the thread.**
+  `GET /mailbox` lists the newest inbox mail, last 14 days, up to 20, and puts
+  each new email through the same `/process-email` as the demo set — in the
+  background, two at a time, so the page never waits on a model.
+  `X-Mailbox-Pending` says how many are still being checked, and a second poll
+  returns the saved result rather than paying for a second call. `POST /reply`
+  sends from the reviewer's own Gmail into the original thread, to exactly one
+  address; a line break in an address or subject is refused, so no extra headers
+  can be smuggled in.
+
+  **The Google token is never stored on the server.** The browser sends it with
+  each request and the backend uses it for that request only — nothing in the
+  database, the logs or the repository. Whose mailbox is read comes from Google,
+  not from the caller: an earlier `?user_id=` form would have let anyone with a
+  user id ask for someone else's mail, and now answers 401. Neither requested
+  permission can delete or change mail.
+
+  Only live mail is really sent. The 520 demo emails carry real companies'
+  addresses, so their Send stays a demo.
+
+- **Replies drafted from the company guidelines.** A policy corpus is embedded
+  into `policies` (migration 0003) and retrieved to shape the wording of a
+  drafted reply. The retrieved text only affects wording — the comparator's
+  rules still decide the verdict, and nothing retrieved is treated as an
+  instruction.
+
+- **PII masking before anything reaches a model, and the OWASP LLM top ten.**
+  Presidio masks phone numbers, personal emails and bank details on the way out,
+  reversibly, so a translation can be put back together afterwards. Shipper,
+  consignee and notify party are deliberately preserved, because they are the
+  fields being compared. Alongside it: prompt-injection delimiters, input length
+  bounds, anti-hallucination validation and a CORS configuration, written up in
+  `docs/OWASP_TOP_10_COMPLIANCE.md`.
+
+- **31 edge-case emails shaped like real customer mail**, each with its expected
+  result and reason **written before the first run** — reply threads, forwards,
+  Malay and Chinese, signature logos, a revised draft BL, two shipments in one
+  email, an amendment, an out-of-office, phishing; and on the document side,
+  name and port variants, a one-letter typo, `TO ORDER`, `SAME AS CONSIGNEE`, a
+  wrapped name, a lying filename, empty, encrypted and photographed files. They
+  found two real defects, both fixed below. The gaps they exposed and did not
+  fix are recorded as strict expected failures, each with its reason, rather
+  than quietly left out.
+
+- **A landing page, and one look across the app.** The review screen became a
+  queue rather than a list to browse: it opens on Action required, sorted by
+  most issues first, the main button names the next step rather than saying
+  "reply", and marking done moves to the next email with six seconds of undo. A
+  progress voyage shows how far through the inbox the reviewer is.
+
+- **Plainer status words, from the mentor session.** Match became **Verified**,
+  Mismatch became **Action required**, Checked became **Done**, in all three
+  languages, and each row in the list carries the number of fields needing
+  attention so the worst email is the one opened first.
+
 ### Changed
 
-- **Test count: 231 to 525 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 547 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -229,6 +293,45 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The batch classifier stays Qwen only, because its saved results feed the quoted
   numbers and one model must have made all of them.
 
+- **A double space no longer cuts a name in half, and a different company no
+  longer passes as OK.** A name ended at any run of two or more spaces, so
+  `MOORIM  SP CO., LTD` and `MOORIM  PAPER CO., LTD` both reduced to `MOORIM`
+  and matched each other. A name or port now ends only at a pipe or a line
+  break. None of the 250 real attachments has two spaces inside a name, so
+  nothing depended on the old split. The rule had been written out three times,
+  in `app.py`, `normalise.py` and `cli/mutation_check.py`; the other two now
+  import it, so the next fix cannot miss a copy.
+
+- **Every shipment in an email is checked, not just the first.** With two SI and
+  BL pairs attached, only the first pair was read, so a wrong weight on the
+  second showed as OK. Files are now paired by name, each pair compared, and the
+  most severe result shown, with every shipment named in the evidence. It
+  applies only when there are two or more complete pairs; everything else takes
+  the old path unchanged.
+
+- **Drafting a reply no longer freezes the backend.** The retrieval-backed draft
+  waited on the model for up to 120 seconds inside an async handler, which
+  blocked every other request — mailbox polling, "Check again with AI", and
+  `/health`, which is what the uptime monitor asks. It now runs in a worker
+  thread like the extractor and classifier already did. The regression test asks
+  `/health` while a 1.5 second draft is in flight and requires an answer within
+  half a second.
+
+- **An error message could be emailed to a customer.** When drafting failed it
+  returned the sentence "An error occurred while generating the reply. Please
+  try again." — and the page uses the draft as the reply body, so from the live
+  mailbox Send would have sent exactly that to the customer. It now returns
+  nothing, and the page offers no reply for that email.
+
+- **Genuine mail is no longer filed as spam.** The classifier prompt had been
+  written for the shipping dataset alone, where anything not shipping work
+  looked like outside spam: GitHub notifications and bank statements were all
+  landing in Spam. SPAM now means mail that tries to deceive or that nobody
+  asked for; genuine mail that simply is not a shipping task is GENERAL, and
+  when unsure it is GENERAL, because hiding a real email is worse than showing
+  one piece of junk. Live mail carries one extra line noting that Gmail's own
+  filter already passed it. Demo emails never carry that line, so the saved
+  results do not move.
 
 ## [1.0.0] — 2026-09-22
 

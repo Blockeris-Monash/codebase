@@ -100,8 +100,10 @@
     const c = sb(), u = await user();
     if (!c || !u) return false;
     try {
-      const { data } = await c.from("admins").select("user_id").eq("user_id", u.id).maybeSingle();
-      return Boolean(data);
+      // Keyed on email, not id: a `users` row only exists after a first
+      // sign-in, so an id would exclude a teammate who has not signed in yet.
+      const { data } = await c.from("admins").select("email").limit(1);
+      return Boolean(data && data.length);
     } catch (error) {
       console.warn("could not check admin membership:", error);
       return false;                             // refuse rather than assume yes
