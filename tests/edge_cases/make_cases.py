@@ -173,13 +173,12 @@ CASES = [
                 "edge_a7_BL_REVISED.txt": bl_text(BASE)},
          known_gap="The service takes the first file with _BL. in its name, so the first draft is compared and "
                    "the revised one is ignored: a false mismatch."),
-    case("edge_a8", "Two shipments in one email, the second BL wrong", "BL_COMPARISON", review(None),
-         "One result cannot say both pairs are fine when the second weight differs; a person must look.",
+    case("edge_a8", "Two shipments in one email, the second BL wrong", "BL_COMPARISON", mismatch("gross_weight_kg"),
+         "Every shipment is checked and the most severe result shown, naming the shipment (team decision, "
+         "24 Sep; first written as needs review, before that decision).",
          body="Hi Najiha,\n\nSI and draft BL for OC 5RSG-00133 and OC 5RSG-00134 attached. Please check both.\n\nThanks,\nWilly",
          files={**pair("edge_a8", BASE, BASE),
-                "edge_a8_SI_2.txt": si_text(BASE), "edge_a8_BL_2.txt": bl_text(edit(gross_weight_kg="22,577 KG"))},
-         known_gap="Only the first SI and BL pair is read. The second pair, with the wrong weight, is never "
-                   "compared and the email shows OK: a missed defect."),
+                "edge_a8_SI_2.txt": si_text(BASE), "edge_a8_BL_2.txt": bl_text(edit(gross_weight_kg="22,577 KG"))}),
     case("edge_a9", "Amendment request, no documents", "SI_REQUEST", None,
          "Asks to change the shipping instruction; there is nothing to compare.",
          subject="AMENDMENT _ 5RSG-00133 _ CONSIGNEE",
@@ -217,8 +216,7 @@ CASES = [
     # --- Set B: what is inside the documents --------------------------------
     case("edge_b1a", "Consignee differs only in case and spacing", "BL_COMPARISON", OK,
          "Case and spaces are formatting (rules: collapse whitespace, uppercase).",
-         files=pair("edge_b1a", BASE, edit(consignee="Moorim  SP Co., Ltd")),
-         known_gap="clean_entity treats two spaces as the start of the address and cuts the name there, so 'Moorim  SP Co., Ltd' becomes MOORIM: a false mismatch."),
+         files=pair("edge_b1a", BASE, edit(consignee="Moorim  SP Co., Ltd"))),
     case("edge_b1b", "CO., LTD against COMPANY LIMITED", "BL_COMPARISON", mismatch("consignee"),
          "On a title document the legal name as written is the identity; a person confirms (rules: suffix is identity).",
          files=pair("edge_b1b", BASE, edit(consignee="MOORIM SP COMPANY LIMITED"))),
@@ -227,9 +225,7 @@ CASES = [
          files=pair("edge_b1c", BASE, edit(consignee="M/S MOORIM SP CO., LTD"))),
     case("edge_b1d", "Two spaces inside two different names", "BL_COMPARISON", mismatch("consignee"),
          "MOORIM SP and MOORIM PAPER are different companies, however many spaces the template puts in.",
-         files=pair("edge_b1d", edit(consignee="MOORIM  SP CO., LTD"), edit(consignee="MOORIM  PAPER CO., LTD")),
-         known_gap="Same cause as edge_b1a the other way round: both names are cut to MOORIM and match, so a "
-                   "different company passes as OK: a missed defect."),
+         files=pair("edge_b1d", edit(consignee="MOORIM  SP CO., LTD"), edit(consignee="MOORIM  PAPER CO., LTD"))),
     case("edge_b2", "Port with a country code against the locode", "BL_COMPARISON", OK,
          "SHANGHAI, CN and SHANGHAI (CNSHA) are the same port.",
          files=pair("edge_b2", edit(port_of_discharge="SHANGHAI, CN"), edit(port_of_discharge="SHANGHAI (CNSHA)"))),

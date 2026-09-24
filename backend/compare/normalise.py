@@ -14,7 +14,8 @@ LOCODE = re.compile(r"\s*\(([A-Z]{5})\)\s*$")
 SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
 NAME_FIELDS = frozenset({"shipper", "consignee", "notify_party"})
 PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
-NAME_SPLIT = r"\s*\|\s*|\s{2,}"
+# A pipe or a line break ends the name, never a run of spaces (tests/edge_cases, b1d).
+NAME_SPLIT = r"\s*\|\s*|\s*[\r\n]+\s*"
 LEADING_INTEGER = r"(\d+)"
 # Must start with a digit: "([\d,]+...)" also matches a bare "," and then
 # float("") raises out of the comparator.
@@ -23,7 +24,7 @@ DECIMAL_WITH_SEPARATORS = r"(\d[\d,]*(?:\.\d+)?)"
 
 def normalise_name(value: str) -> str:
     """Name only — Excel stores name and address in one cell."""
-    return re.split(NAME_SPLIT, value)[0].upper().strip(" ,")
+    return re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,")
 
 
 def normalise_port(value: str) -> str:
@@ -35,7 +36,7 @@ def normalise_port(value: str) -> str:
     """
     # Upper-case first: LOCODE is an [A-Z]{5} pattern, so stripping before
     # the fold leaves a lower-case "(sgsin)" in place.
-    first = re.split(NAME_SPLIT, value)[0].upper()
+    first = re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper()
 
     return LOCODE.sub("", first).rstrip(",").strip()
 

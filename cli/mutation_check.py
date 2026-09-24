@@ -44,7 +44,7 @@ def other_name(raw: str) -> str:
 
 def typo_name(raw: str) -> str:
     """Drop one letter from inside the name. (A trailing full stop is stripped by design.)"""
-    name = re.split(r"\s*\|\s*|\s{2,}", raw.strip())[0]
+    name = re.split(r"\s*\|\s*|\s*[\r\n]+\s*", raw.strip())[0]
     return name[:1] + name[2:] if len(name) > 3 else name + "X"
 
 

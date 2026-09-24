@@ -1,8 +1,8 @@
 """Edge-case emails shaped like real customer mail (task 23, issue #71).
 
 Each case in tests/edge_cases/ carries its expected result, written before it
-was run. The emails go through the service's own path: read_paired_attachments,
-run_pipeline, apply_cleaner, compare. Offline, the one stand-in is the model:
+was run. The emails go through the service's own path: compare_email (every
+shipment in the email), run_pipeline, apply_cleaner, compare. Offline, the one stand-in is the model:
 the repository's independent rules reader extracts the fields, so a result here
 is the pipeline's and not a model's. The category of each email needs the model,
 so that check is live only.
@@ -51,8 +51,7 @@ def pipeline(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(app_module, "extractor", RulesReader())
 
     def run(email_id: str) -> dict:
-        paired = app_module.read_paired_attachments(load_email(email_id))
-        report = asyncio.run(app_module.run_pipeline(paired, live=False))
+        report = asyncio.run(app_module.compare_email(load_email(email_id), live=False))
         return report.model_dump() if hasattr(report, "model_dump") else report
 
     return run
@@ -72,6 +71,24 @@ def test_edge_case_resent_gets_the_same_result(pipeline) -> None:
     first, again = pipeline(BY_CASE["edge_a4"]), pipeline(BY_CASE["edge_a10"])
 
     assert (first["status"], first["defect_fields"]) == (again["status"], again["defect_fields"])
+
+
+def test_two_shipments_name_the_one_that_differs(pipeline) -> None:
+    result = pipeline(BY_CASE["edge_a8"])
+
+    assert result["evidence"].startswith("2 shipments in this email (shipment 1 OK, shipment 2 MISMATCH)")
+    assert result["defect_fields"] == ["gross_weight_kg"]
+
+
+def test_shipments_pair_files_by_the_rest_of_their_name() -> None:
+    pair = lambda *names: app_module.shipments([f"attachments/{n}" for n in names])
+
+    assert pair("e_SI.txt", "e_BL.txt") == [("attachments/e_SI.txt", "attachments/e_BL.txt")]
+    assert pair("e_SI.txt", "e_BL.txt", "e_SI_2.pdf", "e_BL_2.xlsx") == [
+        ("attachments/e_SI.txt", "attachments/e_BL.txt"), ("attachments/e_SI_2.pdf", "attachments/e_BL_2.xlsx")]
+    # A revised BL has no SI of its own, and logos are not documents: still one shipment.
+    assert len(pair("image001.png", "e_SI.txt", "e_BL.txt", "e_BL_REVISED.txt")) == 1
+    assert pair("e_SI.txt") == [] and pair("notes.txt") == []
 
 
 def test_every_edge_case_has_its_files_and_a_reason() -> None:
@@ -99,7 +116,6 @@ def test_a_mailbox_email_id_does_not_crash_the_comparison(pipeline) -> None:
     email = load_email(BY_CASE["edge_a4"]).model_dump(by_alias=True)
     gmail = EmailInput(**{**email, "email_id": "18c2f4e9a1b3d5f7"})
 
-    paired = app_module.read_paired_attachments(gmail)
-    report = asyncio.run(app_module.run_pipeline(paired, live=False))
+    report = asyncio.run(app_module.compare_email(gmail, live=False))
 
     assert report.status == "OK"

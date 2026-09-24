@@ -126,12 +126,14 @@
     "title": "Two shipments in one email, the second BL wrong",
     "category": "BL_COMPARISON",
     "expected": {
-      "status": "NEEDS_REVIEW",
+      "status": "MISMATCH",
       "review_reason": null,
-      "defect_fields": []
+      "defect_fields": [
+        "gross_weight_kg"
+      ]
     },
-    "why": "One result cannot say both pairs are fine when the second weight differs; a person must look.",
-    "known_gap": "Only the first SI and BL pair is read. The second pair, with the wrong weight, is never compared and the email shows OK: a missed defect.",
+    "why": "Every shipment is checked and the most severe result shown, naming the shipment (team decision, 24 Sep; first written as needs review, before that decision).",
+    "known_gap": null,
     "category_gap": null
   },
   {
@@ -205,7 +207,7 @@
       "defect_fields": []
     },
     "why": "Case and spaces are formatting (rules: collapse whitespace, uppercase).",
-    "known_gap": "clean_entity treats two spaces as the start of the address and cuts the name there, so 'Moorim  SP Co., Ltd' becomes MOORIM: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {
@@ -256,7 +258,7 @@
       ]
     },
     "why": "MOORIM SP and MOORIM PAPER are different companies, however many spaces the template puts in.",
-    "known_gap": "Same cause as edge_b1a the other way round: both names are cut to MOORIM and match, so a different company passes as OK: a missed defect.",
+    "known_gap": null,
     "category_gap": null
   },
   {
