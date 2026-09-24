@@ -454,16 +454,18 @@ function helpHTML(){
    block above, or the JS and the CSS disagree about which layout is on. */
 const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
 
-const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null};
+const S = {q:"", f:"all", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  live:{}, marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:"demo", liveEmails:[], polling:false};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
-const count = k=>RESULTS.filter(folder(k).f).length;
+const getEmail = id => (S.mailbox === "live" ? S.liveEmails.find(e=>e.id===id) : null) || byId[id];
+const count = k => (S.mailbox === "live" ? S.liveEmails : RESULTS).filter(folder(k).f).length;
 const items = ()=>{
+  const baseList = S.mailbox === "live" ? S.liveEmails : RESULTS;
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
-  return RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  return baseList.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
 };
 const who = e=>esc(e.from.replace(/<.*>/,"").trim()||e.from);
 /* Search highlight: wrap each match in <mark>. Every piece is escaped, so an email cannot inject HTML. */
@@ -648,7 +650,7 @@ function detail(e){
 }
 
 async function recheck(id){
-  const e = byId[id];
+  const e = getEmail(id);
   S.live[id] = {busy:true, t0:Date.now()}; render();
   const tick = setInterval(()=>{ const el=document.getElementById("elapsed"); if(el) el.textContent=Math.floor((Date.now()-S.live[id].t0)/1000); }, 1000);
   const ctrl = new AbortController(); const timer = setTimeout(()=>ctrl.abort(), 90000);
@@ -727,16 +729,21 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(byId[S.sel])}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
+  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
   const brand = q(".brand");
   document.getElementById("app").innerHTML =
     `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
-     <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}</div>
-     <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
+     <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Mismatch")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Match")}${kp("CHECKED","Checked")}</div>
+     <div class="bar">
+       <div class="seg" style="margin-right:12px">
+         <button class="segb ${S.mailbox==='demo'?'on':''}" data-a="switchbox" data-k="demo">${t("Demo data")}</button>
+         <button class="segb ${S.mailbox==='live'?'on':''}" data-a="switchbox" data-k="live" ${!S.user?'disabled title="'+t("Sign in to see your mailbox")+'"':''}>${t("My mailbox")}</button>
        </div>
+       <label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span><span class="grow"></span>
+     </div>
      <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
@@ -809,6 +816,13 @@ document.addEventListener("click", ev=>{
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
+  else if(a==="switchbox"){
+    if (k==="live" && !S.user) return;
+    if (S.mailbox !== k) {
+      S.mailbox = k; S.sel = null; S.page = 0; S.q = ""; S.f = "all";
+      if (k === "live" && !S.polling) startPolling();
+    }
+  }
   else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
@@ -869,13 +883,35 @@ Store?.pull(S.marks)?.then(function (merged) {
   S.marks = merged; saveMarks(); render();
 });
 
+let pollTimer = null;
+async function fetchLiveMailbox() {
+  if (S.mailbox !== "live" || !S.user) return;
+  try {
+    const res = await fetch(API_BASE + "/mailbox?user_id=" + encodeURIComponent(S.user.id));
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    S.liveEmails = data;
+    if (S.mailbox === "live") render();
+  } catch (err) {
+    console.warn("Could not fetch live mailbox:", err);
+  }
+}
+function startPolling() {
+  if (S.polling) return;
+  S.polling = true;
+  fetchLiveMailbox();
+  pollTimer = setInterval(fetchLiveMailbox, 10000);
+}
+
 /* The Supabase library is a module script, and module scripts run after this one
    but before DOMContentLoaded. So sign-in is wired here, not above. The callback
    fires at once with the saved session, then on every sign-in and sign-out. */
 document.addEventListener("DOMContentLoaded", ()=>{
   S.authErr = window.Store?.authError?.() || null;
   S.authReady = !!window.Store?.onUser?.((user, event)=>{
-    S.user = user; S.userMenu = false; render();
+    S.user = user; S.userMenu = false; 
+    if (!user && S.mailbox === "live") { S.mailbox = "demo"; S.polling = false; clearInterval(pollTimer); pollTimer = null; }
+    render();
     // Outside the callback: supabase-js must not be called from inside its own auth callback.
     if(user && (event==="INITIAL_SESSION"||event==="SIGNED_IN")) setTimeout(()=>{
       window.Store?.pull(S.marks)?.then(merged=>{ if(merged){ S.marks = merged; saveMarks(); render(); } });
