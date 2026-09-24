@@ -19,6 +19,7 @@ from typing import Callable
 
 import backend.app as pipeline
 from backend.compare.comparator import CANONICAL_FIELDS, compare
+from backend.compare.normalise import NAME_SPLIT
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTRACTS = ROOT / "results" / "extracts"
@@ -44,7 +45,7 @@ def other_name(raw: str) -> str:
 
 def typo_name(raw: str) -> str:
     """Drop one letter from inside the name. (A trailing full stop is stripped by design.)"""
-    name = re.split(r"\s*\|\s*|\s*[\r\n]+\s*", raw.strip())[0]
+    name = re.split(NAME_SPLIT, raw.strip())[0]
     return name[:1] + name[2:] if len(name) > 3 else name + "X"
 
 

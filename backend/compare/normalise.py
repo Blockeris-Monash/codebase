@@ -14,7 +14,9 @@ LOCODE = re.compile(r"\s*\(([A-Z]{5})\)\s*$")
 SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
 NAME_FIELDS = frozenset({"shipper", "consignee", "notify_party"})
 PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
-# A pipe or a line break ends the name, never a run of spaces (tests/edge_cases, b1d).
+# Where a name or port ends: a pipe or a line break, never a run of spaces, which cut
+# "MOORIM  SP" and "MOORIM  PAPER" to the same MOORIM (tests/edge_cases, b1d).
+# The one copy: backend/app.py and cli/mutation_check.py import it from here.
 NAME_SPLIT = r"\s*\|\s*|\s*[\r\n]+\s*"
 LEADING_INTEGER = r"(\d+)"
 # Must start with a digit: "([\d,]+...)" also matches a bare "," and then

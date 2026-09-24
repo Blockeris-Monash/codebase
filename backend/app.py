@@ -24,6 +24,7 @@ from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
+from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
 from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
@@ -190,10 +191,6 @@ async def extract_document(
 # =====================================================================
 # 3. Normalization: contract 03 fields into comparable form (stage 4's front half)
 # =====================================================================
-
-# The name ends at an address pipe or a line break, never at a run of spaces: two spaces
-# inside a name cut "MOORIM  SP" and "MOORIM  PAPER" to the same MOORIM (tests/edge_cases, b1d).
-NAME_SPLIT = r"\s*\|\s*|\s*[\r\n]+\s*"
 
 def clean_entity(text: str) -> str:
     """Takes only the entity name before any address pipe ' | '."""
