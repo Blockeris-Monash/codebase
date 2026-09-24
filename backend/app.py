@@ -21,6 +21,8 @@ from backend.extract.ai import AiExtractor
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_model
 from backend.extract.qwen import qwen_model
+from backend.extract.circuit_breaker import CircuitBreaker
+from backend.extract.fallback import with_fallback
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
@@ -94,7 +96,9 @@ class PairedInput(BaseModel):
 # Qwen first. If it fails or stalls, Gemini answers (with_fallback), but only when a Gemini key
 # is set: without one, Qwen is used exactly as before, however slow it is. With a second
 # provider behind, two tries are enough.
-extractor = AiExtractor(with_fallback(qwen_model, gemini_model, enabled=lambda: bool(gemini_key())),
+qwen_breaker = CircuitBreaker()
+extractor = AiExtractor(with_fallback(qwen_breaker.wrap(qwen_model), gemini_model,
+                                      enabled=lambda: bool(gemini_key())),
                         tries=2)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
