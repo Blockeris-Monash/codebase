@@ -35,7 +35,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **Test count: 231 to 263 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 271 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
@@ -60,6 +60,17 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Consequences handled in the same change rather than left to be found:
   `fixtures/` and `frontend/results.js` both carry evidence strings and are
   regenerated here, so the screen and the API cannot disagree.
+
+### Fixed
+
+- **Gemini now stands behind Qwen for classification and translation, not only
+  extraction.** `/process-email` classifies before it extracts, so with Qwen down
+  it failed at classification and never reached the one stage that had the
+  backup. Classification and translation now use the same `with_fallback` as
+  extraction, on the same terms: only when a Gemini key is set, same prompt and
+  schema, and a Qwen reply that is not usable JSON also hands over to Gemini.
+  The batch classifier stays Qwen only, because its saved results feed the quoted
+  numbers and one model must have made all of them.
 
 
 ## [1.0.0] — 2026-09-22

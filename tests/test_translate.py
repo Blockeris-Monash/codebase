@@ -13,6 +13,26 @@ from backend import translate as tr
 @pytest.fixture(autouse=True)
 def fake_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("QWEN_API_KEY", "test-key")
+    # A Gemini key from a local .env would turn the backup on and reach the real Gemini.
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+
+@pytest.fixture
+def gemini_answers(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    calls: list[str] = []
+
+    def gemini_json(contents: str, system: str | None = None, schema: type | None = None) -> str:
+        calls.append(contents)
+        return json.dumps({"body": "Sila semak"})
+
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-gemini-key")
+    monkeypatch.setattr(tr, "gemini_json", gemini_json)
+    return calls
+
+
+def unreachable(url: str, headers: dict, body: dict) -> dict:
+    raise OSError("connection refused")
 
 
 def reply(text: str) -> dict:
@@ -92,3 +112,28 @@ def test_endpoint_maps_failures_to_http_errors(monkeypatch: pytest.MonkeyPatch) 
 
     monkeypatch.setattr(app_module, "translate_texts", lambda texts, target: (_ for _ in ()).throw(tr.TooMuchText("long")))
     assert client.post("/translate", json={"target": "Malay", "texts": {"body": "Hi"}}).status_code == 413
+
+
+def test_gemini_translates_when_qwen_is_down(gemini_answers: list[str]) -> None:
+    out = tr.translate_texts({"body": "Please check"}, "Malay", post=unreachable)
+
+    assert out == {"body": "Sila semak"}
+    assert "Malay" in gemini_answers[0] and "Please check" in gemini_answers[0]
+
+
+def test_gemini_translates_when_qwens_reply_is_not_json(gemini_answers: list[str]) -> None:
+    post = lambda url, headers, body: reply("Sorry, I cannot do that")
+
+    assert tr.translate_texts({"body": "Please check"}, "Malay", post=post) == {"body": "Sila semak"}
+
+
+def test_gemini_is_not_called_when_qwen_answers(gemini_answers: list[str]) -> None:
+    post = lambda url, headers, body: reply('{"body": "Dari Qwen"}')
+
+    assert tr.translate_texts({"body": "Please check"}, "Malay", post=post) == {"body": "Dari Qwen"}
+    assert gemini_answers == []
+
+
+def test_without_a_gemini_key_qwen_being_down_is_still_a_failure() -> None:
+    with pytest.raises(OSError):
+        tr.translate_texts({"body": "Hello"}, "Malay", post=unreachable)

@@ -47,6 +47,29 @@ def api_key() -> str | None:
     return next((os.environ[name] for name in KEY_NAMES if os.environ.get(name)), None)
 
 
+def gemini_json(contents: str, system: str | None = None,
+                schema: type[BaseModel] | None = None) -> str:
+    """The text of one Gemini reply in JSON, for the stages that stand Gemini behind Qwen."""
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(api_key=api_key())
+    response = client.models.generate_content(
+        model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
+        contents=contents,
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            temperature=0,
+            response_mime_type="application/json",
+            response_schema=schema,
+        ),
+    )
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty reply")
+
+    return response.text
+
+
 def gemini_model(text: str) -> dict[str, ExtractedField]:
     from google import genai
     from google.genai import types
