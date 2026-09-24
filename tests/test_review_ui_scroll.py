@@ -28,7 +28,7 @@ UI = Path(__file__).resolve().parents[1] / "frontend" / "index.html"
 # Actions that change only which email is shown. The list is untouched.
 SELECTION_ONLY = ("open", "first", "back")
 # Actions that change what the list holds. The list belongs back at the top.
-LIST_CHANGING = ("folder", "newer", "older", "clearq", "allmail")
+LIST_CHANGING = ("folder", "newer", "older", "clearq")
 
 
 def source() -> str:

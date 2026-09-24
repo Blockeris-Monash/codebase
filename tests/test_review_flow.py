@@ -60,10 +60,10 @@ def test_the_work_folders_put_the_worst_email_first() -> None:
 
 
 def test_ties_and_other_folders_keep_the_saved_order() -> None:
-    ids = [i for i, _ in folder_order("all")]
+    ids = [i for i, _ in folder_order("OTHER")]
     results = (FRONTEND / "results.js").read_text(encoding="utf-8")
     saved = re.findall(r'\{"id": "(email_\d+)"', results)
-    assert ids == saved
+    assert ids == [i for i in saved if i in ids]
     twos = [i for i, n in folder_order("MISMATCH") if n == 2]
     assert twos == [i for i in saved if i in twos]
 
@@ -77,11 +77,22 @@ def test_newest_first_keeps_the_inbox_order() -> None:
     assert ids != [i for i, _ in folder_order("MISMATCH")], "the two orders should differ"
 
 
-def test_worst_first_is_the_default_and_the_toggle_switches_it() -> None:
+def test_fewest_issues_puts_the_one_field_emails_first() -> None:
+    counts = [n for _, n in folder_order("MISMATCH", sort="least")]
+    assert counts == sorted(counts)
+
+
+def test_oldest_is_the_inbox_order_reversed() -> None:
+    newest = [i for i, _ in folder_order("MISMATCH", sort="new")]
+    assert [i for i, _ in folder_order("MISMATCH", sort="old")] == newest[::-1]
+
+
+def test_sort_by_is_a_dropdown_with_most_issues_first() -> None:
     state = re.search(r"const S = \{.*\};", SCRIPT).group(0)
     assert 'sort:"worst"' in state
-    assert "S.sort=k" in branch("sort")
-    assert 'T("Worst first")' in SCRIPT and 'T("Newest first")' in SCRIPT
+    assert 'pick("sortsel"' in SCRIPT and "S.sort=ev.target.value" in SCRIPT
+    for label in ("Sort by", "Most issues", "Fewest issues", "Most recent", "Oldest"):
+        assert f'T("{label}")' in SCRIPT or f't("{label}")' in SCRIPT, label
 
 
 def test_the_actions_come_before_the_fields_table() -> None:

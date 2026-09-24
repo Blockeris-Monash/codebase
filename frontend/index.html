@@ -182,6 +182,7 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .tbl tr:last-child td{border-bottom:0}
 .tbl td.f{color:var(--mute);white-space:nowrap}
 .tbl tr.src{cursor:pointer}.tbl tr.src:hover td{background:var(--accent-soft)}.tbl tr.src.sel td{background:var(--accent-soft)}.tbl tr.src.sel td.f{color:var(--ink);font-weight:600}
+.tbl tr.bad td{background:var(--bad-soft)}.tbl tr.gap td{background:var(--rev-soft)}.tbl tr.bad td.f,.tbl tr.gap td.f{color:var(--ink);font-weight:600}
 .tbl tr.src:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .text{position:relative}mark.srcline{background:var(--hl);color:var(--hl-ink);font-weight:600;box-shadow:0 0 0 3px var(--hl);border-left:4px solid var(--accent);border-radius:3px;padding-left:4px;margin-left:-8px}
 .tbl .diff{background:var(--bad-soft);font-weight:600}
@@ -207,11 +208,13 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .text{white-space:pre-wrap;background:var(--sunk);border-radius:10px;padding:12px;font-size:0.8125rem;overflow-wrap:anywhere;max-height:340px;overflow:auto}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
 .detail>.actions,.detail>.done,.detail>.reply{margin-bottom:16px}
+.pick{display:inline-flex;align-items:center;gap:6px}.pick select{font-size:0.875rem;color:var(--ink)}
 .tally{display:inline-flex;align-items:center;gap:8px;color:var(--mute)}
 .tally i{position:relative;width:90px;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
 .tally i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--ok);border-radius:inherit;transition:width .3s}
 .toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;gap:12px;align-items:center;background:var(--ink);color:var(--bg);border-radius:12px;padding:8px 8px 8px 16px;box-shadow:var(--card);font-weight:600;max-width:calc(100vw - 32px)}
 .toast .ghost{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
+.linkbtn.report{display:flex;align-items:center;gap:6px;margin-top:18px;color:var(--mute);font-weight:500}.linkbtn.report .ico{width:15px;height:15px}
 .done{margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600;color:var(--ok)}
 .live{margin-top:12px;font-size:0.8125rem}
 .reply{margin-top:16px;display:flex;flex-direction:column;gap:6px}
@@ -244,12 +247,13 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .rnum{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;display:grid;place-items:center}
 .rt{font-weight:600;margin-bottom:2px}.rt .pill{margin-left:8px}
 .hb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-.themesw{display:inline-flex;gap:4px}
 .langwrap{position:relative;display:inline-block}
 .acctwrap{position:relative;display:inline-block}
 .avatar{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.75rem;line-height:1}
 .mhead{padding:8px 10px;overflow-wrap:anywhere}
-.langbtn .ico{margin:0}.langbtn .lname{margin:0 6px 0 6px;font-weight:600}.langbtn .ico:last-child{width:.9em;height:.9em}
+.mh{display:flex;align-items:center;gap:6px;padding:8px 10px 4px;font-size:0.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}.mh .ico{width:14px;height:14px}
+.mi .ico{width:16px;height:16px}
+.langwrap .hb .ico:last-child{width:.9em;height:.9em}
 .menu{position:absolute;right:0;top:calc(100% + 8px);min-width:210px;display:flex;flex-direction:column;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--card);z-index:20}
 .mi{display:flex;align-items:center;gap:8px;background:none;border:0;border-radius:8px;padding:9px 10px;text-align:left;color:var(--ink)}
 .mi:hover,.mi:focus-visible{background:var(--accent-soft)}.mi.on{color:var(--accent);font-weight:600}
@@ -265,7 +269,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:28px;padding:16px 18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--card)}
 .cta .btn{margin-left:auto}
 @media (min-width:660px) and (min-height:600px){.nextpage{overflow-y:auto}}
-@media (max-width:560px){.hb .lbl{display:none}.langbtn .lname{display:none}}
+@media (max-width:560px){.hb .lbl{display:none}}
 .dlg ol{padding-left:20px;margin:0 0 16px;display:flex;flex-direction:column;gap:8px}
 @media (min-width:660px) and (min-height:600px){
   html,body{height:100%}
@@ -353,12 +357,11 @@ const REASON = {
 const LABEL = {MISMATCH:T("Action required"), NEEDS_REVIEW:T("Needs review"), OK:T("Verified")};
 const OTHER = {SI_REQUEST:T("SI request"), INVOICE_QUERY:T("Invoice"), GENERAL:T("General"), SPAM:T("Spam"), BL_COMPARISON:T("SI vs BL")};
 const FOLDERS = [
-  {k:"all", n:T("All mail"), f:()=>true},
   {k:"MISMATCH", n:T("Action required"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
   {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !e.awaiting && !S.marks[e.id]},
   {k:"OK", n:T("Verified"), f:e=>e.status==="OK"},
   {k:"CHECKED", n:T("Done"), f:e=>!!S.marks[e.id]},
-  {k:"cmp", n:T("SI vs BL checks"), f:e=>e.category==="BL_COMPARISON"},
+  {k:"OTHER", n:T("Other mail"), f:e=>!e.status || !!e.awaiting},
   {k:"AWAIT", n:T("Draft BL requests"), f:e=>!!e.awaiting},
   {k:"SI_REQUEST", n:T("SI requests"), f:e=>e.category==="SI_REQUEST"},
   {k:"INVOICE_QUERY", n:T("Invoice queries"), f:e=>e.category==="INVOICE_QUERY"},
@@ -366,9 +369,18 @@ const FOLDERS = [
   {k:"SPAM", n:T("Spam"), f:e=>e.category==="SPAM"},
 ];
 const RANKED = ["MISMATCH","NEEDS_REVIEW"];
+/* The main button names the next step; draftFor() already writes the reply for each case. */
+const NEXT_STEP = {
+  MISMATCH:T("Ask to fix the BL"),
+  missing_value:T("Ask for the missing values"),
+  unreadable:T("Ask for a clearer file"),
+  missing_attachment:T("Ask for the SI and BL"),
+  wrong_doc_type:T("Ask for the right documents")
+};
 /* The emails a person has to act on; the progress line counts how many are done. */
 const todo = e=>(e.status==="MISMATCH"||e.status==="NEEDS_REVIEW") && !e.awaiting;
-const MENU = ["all","MISMATCH","NEEDS_REVIEW","cmp","AWAIT","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
+/* Other mail is everything that is not a check result; its types are chips inside it. */
+const OTHER_KINDS = ["AWAIT","SI_REQUEST","INVOICE_QUERY","GENERAL","SPAM"];
 const SUPPORT_EMAIL = (window.BLOCKERIS_SUPPORT_EMAIL || "").trim();
 const KINDS = {question:T("Question"), problem:T("Problem"), idea:T("Idea")};
 const ROADMAP = [
@@ -390,14 +402,14 @@ function saveFeedback(list){ try{ localStorage.setItem("blockeris.feedback", JSO
 const kbd = t=>`<kbd>${t}</kbd>`;
 
 function guideHTML(){
-  const pills = [T("All mail"),T("Action required"),T("Needs review"),T("Verified"),T("Done")].map(n=>`<span class="pillx">${t(n)}</span>`).join("");
+  const pills = [T("Action required"),T("Needs review"),T("Verified"),T("Done"),T("Other mail")].map(n=>`<span class="pillx">${t(n)}</span>`).join("");
   const legend = [
     ["MISMATCH",T("Action required"),T("The Shipping Instruction and the Bill of Lading disagree. The different field is marked. Fix the Bill of Lading.")],
     ["NEEDS_REVIEW",T("Needs review"),T("A person needs to look. The reason is under the banner (blank field, unreadable file, wrong document).")],
     ["OK",T("Verified"),T("All 7 fields match. Nothing to do.")]
   ].map(([k,n,d])=>`<div class="lg"><span class="badge b-${k}">${ICON[k]}${t(n)}</span><span>${t(d)}</span></div>`).join("");
   return `<ol class="steps">` +
-    step(1,t("Pick a folder"),`<div class="pills">${pills}</div><div class="cap">${t("The boxes at the top filter the list. The Show menu has more folders, like invoices, SI requests and spam.")}</div>`) +
+    step(1,t("Pick a folder"),`<div class="pills">${pills}</div><div class="cap">${t("The boxes at the top filter the list. Other mail holds draft BL requests, SI requests, invoices, general mail and spam.")}</div>`) +
     step(2,t("Open an email"),`<div class="cap">${t("Click one in the list. Search by subject, sender or number, and press {esc} to clear it. Once an email is open, {left} {right} move to the previous or next email. On a phone, List takes you back.",{esc:kbd("Esc"),left:kbd("←"),right:kbd("→")})}</div>`) +
     step(3,t("Read the colour"),`<div class="legend">${legend}</div>`) +
     step(4,t("Check the details"),`<div class="cap">${t("Click a row in the table to highlight where that value sits in the original documents. Open {how} to see every step, from the cover email to the field by field check.",{how:"<b>"+t("How Ship Happens decided")+"</b>"})}</div>`) +
@@ -472,10 +484,15 @@ const items = ()=>{
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
-  const found = RESULTS.filter(e=>folder(S.f).f(e) || stays(e)).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
-  // worst first puts the most fields to fix on top; sort is stable, so ties keep the saved order.
-  // Newest first is the saved inbox order (the demo data has no dates; a live mailbox brings them).
-  return RANKED.includes(S.f) && S.sort==="worst" ? found.sort((a,b)=>issues(b)-issues(a)) : found;
+  // a search looks through all mail, so nothing is hidden behind the folder you happen to be in
+  const inView = term ? ()=>true : e=>folder(S.f).f(e) || stays(e);
+  const found = RESULTS.filter(inView).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  // Most issues puts the most fields to fix on top; sort is stable, so ties keep the saved order.
+  // Most recent is the saved inbox order (the demo data has no dates; a live mailbox brings them).
+  if(term || !RANKED.includes(S.f)) return found;
+  if(S.sort==="worst") return found.sort((a,b)=>issues(b)-issues(a));
+  if(S.sort==="least") return found.sort((a,b)=>issues(a)-issues(b));
+  return S.sort==="old" ? found.reverse() : found;
 };
 const who = e=>esc(e.from.replace(/<.*>/,"").trim()||e.from);
 /* Search highlight: wrap each match in <mark>. Every piece is escaped, so an email cannot inject HTML. */
@@ -509,17 +526,20 @@ const ICON = {
   GLOBE: ICO('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
   CHEV: ICO('<path d="M6 9l6 6 6-6"/>'),
   USER: ICO('<circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'),
+  FLAG: ICO('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'),
+  GEAR: ICO('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>'),
   MAIL: ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>')
 };
 /* Fields that differ or are blank, shown on the list badge so the worst emails are opened first. */
 const issues = e=>(e.rows||[]).filter(r=>r.verdict!=="match").length;
 const issuesTip = e=>{ const n = issues(e); return e.status==="MISMATCH" ? t(n>1?T("{n} fields differ"):T("{n} field differs"),{n}) : t(n>1?T("{n} fields are blank"):T("{n} field is blank"),{n}); };
+ICON.OTHER = ICON.MAIL;
 const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}" ${issues(e)?`title="${issuesTip(e)}"`:""}>${ICON[e.status]}${t(LABEL[e.status])}${issues(e)?`<span class="cnt num" aria-label="${issuesTip(e)}">${issues(e)}</span>`:""}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
 
 function rowsHTML(rows){
   return rows.map(r=>{
     const bad = r.verdict==="mismatch", gap = r.verdict==="missing";
-    return `<tr class="src ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="${t("Show where this is in the original documents")}"><td class="f">${fld(r.field)}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||t("(blank)")}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||t("(blank)")}</td></tr>`;
+    return `<tr class="src ${bad?"bad":gap?"gap":""} ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="${t("Show where this is in the original documents")}"><td class="f">${fld(r.field)}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||t("(blank)")}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||t("(blank)")}</td></tr>`;
   }).join("");
 }
 const table = rows=>`<div class="tblwrap"><table class="tbl"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead><tbody>${rowsHTML(rows)}</tbody></table></div>`;
@@ -628,7 +648,8 @@ function actionsHTML(e){
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       <div class="actions"><button class="btn" data-a="send" data-id="${e.id}">${t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button><button class="btn alt" data-a="mailto">${t("Open in your email app")}</button><button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div class="small mute" style="margin-top:8px">${t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
-  return `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button><button class="btn alt" data-a="draft" data-id="${e.id}">${t("Reply to sender")}</button></div>`;
+  const step = NEXT_STEP[e.status==="MISMATCH" ? "MISMATCH" : e.review_reason];
+  return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
 }
 
 function detail(e){
@@ -655,6 +676,7 @@ function detail(e){
   h += banner + actionsHTML(e) + tbl;
   if(e.docs) h += docsHTML(e, view.rows||[]);
   h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
+  h += `<button class="linkbtn report" data-a="report">${ICON.FLAG}${t("Report a problem with this result")}</button>`;
   if(canRecheck(e)){
     h += `<div class="live" aria-live="polite">${live&&live.busy
       ? `<div class="checking"><span class="spin"></span><span>${t("Checking with the AI")}<span class="mute"> \u00b7 <span id="elapsed">${Math.floor((Date.now()-live.t0)/1000)}</span>s</span></span></div><div class="prog"><i></i></div><div class="mute small">${t("The first check can take up to a minute while the server wakes up.")}</div>`
@@ -740,7 +762,7 @@ function render(){
   S.resetList = false; S.resetPane = false;
   const list = items(), total = list.length, from = total?S.page*PAGE+1:0, to = Math.min(total,(S.page+1)*PAGE);
   const pagerHTML = `<div class="pager small num"><span>${t("{from}\u2013{to} of {total}",{from,to,total})}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="${t("Newer emails")}" title="${t("Newer emails")}">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="${t("Older emails")}" title="${t("Older emails")}">${ICON.RIGHT}</button></span></div>`;
-  const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
+  const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k||(k==="OTHER"&&OTHER_KINDS.includes(S.f))?"on":""}" data-a="folder" data-k="${k}"><b class="num">${count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
@@ -751,11 +773,11 @@ function render(){
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
   const brand = q(".brand");
   document.getElementById("app").innerHTML =
-    `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb langbtn" data-a="langmenu" aria-haspopup="listbox" aria-expanded="${S.langMenu}" aria-label="${t("Language")}" title="${t("Language")}">${ICON.GLOBE}<span class="lname">${esc((allLangs().find(l=>l.code===LANG)||LANGS.en).name)}</span>${ICON.CHEV}</button>${S.langMenu?`<div class="menu" role="listbox" aria-label="${t("Language")}">${allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="option" aria-selected="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("")}<div class="msep"></div><button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button></div>`:""}</span><span class="themesw" role="group" aria-label="${t("Colour mode")}"><button class="ghost hb ${isDark?"":"on"}" data-a="theme" data-k="light" aria-pressed="${!isDark}" aria-label="${t("Light Mode")}">${ICON.SUN}<span class="lbl">${t("Light Mode")}</span></button><button class="ghost hb ${isDark?"on":""}" data-a="theme" data-k="dark" aria-pressed="${isDark}" aria-label="${t("Dark Mode")}">${ICON.MOON}<span class="lbl">${t("Dark Mode")}</span></button></span></div>${onNext ? nextPage() : `
-     <div class="kpis">${kp("all","All mail")}${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}</div>
-     <div class="bar"><label class="mute small" for="foldersel">${t("Show")}</label><select id="foldersel" data-a="foldersel">${MENU.includes(S.f)?"":`<option value="" selected disabled>${t("Other folders")}</option>`}${MENU.map(k=>`<option value="${k}" ${S.f===k?"selected":""}>${t(folder(k).n)} (${count(k)})</option>`).join("")}</select><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${RANKED.includes(S.f)?sortHTML():""}<span class="grow"></span>${tallyHTML()}
+    `${signInErrorHTML()}<div class="top"><span class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb" data-a="settings" aria-haspopup="menu" aria-expanded="${S.langMenu}" aria-label="${t("Settings")}" title="${t("Settings")}">${ICON.GEAR}<span class="lbl">${t("Settings")}</span>${ICON.CHEV}</button>${S.langMenu?settingsHTML(isDark):""}</span></div>${onNext ? nextPage() : `
+     <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
+     <div class="bar"><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d in this folder.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}${S.f!=="all"?`<button class="btn alt" data-a="allmail">${t("Show all mail")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${toastHTML()}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list">${rows||(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -799,12 +821,12 @@ document.addEventListener("click", ev=>{
   if(S.userMenu && !ev.target.closest(".acctwrap")){ S.userMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
   const el = ev.target.closest("[data-a]"); if(!el) return;
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
-  if(a==="stay"||a==="foldersel") return;
+  if(a==="stay"||a==="sortsel"||a==="kindsel") return;   // a redraw here would close the dropdown as it opens
   if(a==="theme") document.documentElement.dataset.theme = k;
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
-  else if(a==="langmenu") S.langMenu=!S.langMenu;
+  else if(a==="settings") S.langMenu=!S.langMenu;
   else if(a==="signin"){ window.Store?.signIn(); return; }
   else if(a==="usermenu") S.userMenu=!S.userMenu;
   else if(a==="dismisserr"){ S.authErr=null; }
@@ -827,14 +849,13 @@ document.addEventListener("click", ev=>{
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
-  else if(a==="sort"){ S.sort=k; S.page=0; S.resetList=true; }
+  else if(a==="report"){ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; }
   else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
   else if(a==="hl"){ S.hl = S.hl===k ? null : k; if(S.hl){ S.docs=true; S.markScroll=true; } }
   else if(a==="first"){ const f=items()[0]; if(f){ S.fade=true; S.hl=null; S.sel=f.id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; } }
   else if(a==="clearq"){ S.q=""; S.page=0; S.resetList=true; }
-  else if(a==="allmail"){ S.f="all"; S.page=0; S.resetList=true; }
   else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); advance(id); }
@@ -855,7 +876,9 @@ document.addEventListener("input", ev=>{
   if(f && S.draft) S.draft[f] = ev.target.value;   // no redraw while typing, or the cursor would jump
 });
 document.addEventListener("change", ev=>{
-  if(ev.target.dataset.a==="foldersel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; render(); }
+  const a = ev.target.dataset.a;
+  if(a==="sortsel"){ S.sort=ev.target.value; S.page=0; S.resetList=true; render(); }
+  if(a==="kindsel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; render(); }
 
 });
 /* After Done or Send, open the next email in this folder so the reviewer keeps going. The Undo box
@@ -871,8 +894,19 @@ function advance(id){
   S.sel=next.id; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===next.id)/PAGE));
 }
 const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):t("Reply sent (demo)")}</span><button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button></div>` : "";
+/* Language and colour mode share one menu, so the top bar keeps only Help, What's next and the account. */
+function settingsHTML(isDark){
+  const lang = allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="menuitemradio" aria-checked="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("");
+  const mode = [["light",T("Light Mode"),ICON.SUN,!isDark],["dark",T("Dark Mode"),ICON.MOON,isDark]].map(([k,n,ico,on])=>`<button class="mi ${on?"on":""}" role="menuitemradio" aria-checked="${on}" data-a="theme" data-k="${k}"><span class="mtick">${on?ICON.CHECKED:""}</span>${ico}${t(n)}</button>`).join("");
+  return `<div class="menu" role="menu" aria-label="${t("Settings")}"><div class="mh">${ICON.GLOBE}${t("Language")}</div>${lang}<button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button><div class="msep"></div><div class="mh">${ICON.SUN}${t("Colour mode")}</div>${mode}</div>`;
+}
+/* Labelled dropdowns, the usual pattern for sorting and filtering a list. */
+const pick = (a,label,opts,cur)=>`<label class="pick mute small">${label}<select data-a="${a}">${opts.map(([v,n])=>`<option value="${v}" ${v===cur?"selected":""}>${n}</option>`).join("")}</select></label>`;
+function kindsHTML(){
+  return pick("kindsel", t("Type"), ["OTHER",...OTHER_KINDS].map(k=>[k, `${k==="OTHER"?t("All"):t(folder(k).n)} (${count(k)})`]), S.f);
+}
 function sortHTML(){
-  return `<span class="seg sortseg" role="group" aria-label="${t("Sort")}">${[["worst",T("Worst first")],["new",T("Newest first")]].map(([k,n])=>`<button class="segb ${S.sort===k?"on":""}" data-a="sort" data-k="${k}" aria-pressed="${S.sort===k}">${t(n)}</button>`).join("")}</span>`;
+  return pick("sortsel", t("Sort by"), [["worst",T("Most issues")],["least",T("Fewest issues")],["new",T("Most recent")],["old",T("Oldest")]].map(([v,n])=>[v,t(n)]), S.sort);
 }
 function tallyHTML(){
   const work = RESULTS.filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
