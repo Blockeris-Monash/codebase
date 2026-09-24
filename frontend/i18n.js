@@ -202,7 +202,7 @@ window.I18N = {
  "zh": {
   "Dismiss": "关闭",
   "Sign-in did not finish: {reason}": "登录未完成：{reason}",
-  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "此 Google 帐号不在本应用的测试人员名单中。请请团队添加后重试。",
+  "This Google account is not on the tester list for this app. Ask the team to add it, then try again.": "此 Google 帐号不在本应用的测试人员名单中。请让团队添加后重试。",
   "Shipper": "托运人",
   "Consignee": "收货人",
   "Notify party": "通知方",
