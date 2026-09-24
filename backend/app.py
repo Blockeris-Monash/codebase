@@ -24,7 +24,8 @@ from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
-from backend.contracts import DocumentRoleType, ParseStatusType
+from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
+from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
@@ -193,11 +194,11 @@ async def extract_document(
 
 def clean_entity(text: str) -> str:
     """Takes only the entity name before any address pipe ' | '."""
-    first_segment = re.split(r"\s*\|\s*|\s{2,}", text)[0]
+    first_segment = re.split(NAME_SPLIT, text)[0]
     return re.sub(r"\s+", " ", first_segment).upper().strip(" ,.;:")
 
 def clean_port(text: str) -> str:
-    first_segment = re.split(r"\s*\|\s*|\s{2,}", text)[0]
+    first_segment = re.split(NAME_SPLIT, text)[0]
     # Remove UN/LOCODE in parentheses e.g. (MYPKG)
     text_no_locode = re.sub(r"\s*\(\s*[A-Z0-9]{5}\s*\)", "", first_segment, flags=re.I)
     return re.sub(r"\s+", " ", text_no_locode).upper().strip(" ,.;:")
@@ -352,6 +353,11 @@ def read_paired_attachments(email: EmailInput) -> PairedInput:
         None,
     )
 
+    return read_pair(email.email_id, si_path_str, bl_path_str)
+
+
+def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[str]) -> PairedInput:
+    """Reads one SI and one BL (either may be absent) into the pipeline's input."""
     si_file = resolve_attachment_path(si_path_str) if si_path_str else None
     bl_file = resolve_attachment_path(bl_path_str) if bl_path_str else None
 
@@ -370,7 +376,7 @@ def read_paired_attachments(email: EmailInput) -> PairedInput:
         bl_status, bl_pairs, bl_title = ParseStatusType.Missing, [], None
 
     return PairedInput(
-        email_id=email.email_id,
+        email_id=email_id,
         si_pairs=si_pairs,
         bl_pairs=bl_pairs,
         si_title=si_title,
@@ -378,6 +384,43 @@ def read_paired_attachments(email: EmailInput) -> PairedInput:
         si_parse_status=si_status,
         bl_parse_status=bl_status,
     )
+
+
+# One email can carry more than one shipment: email_SI.txt with email_BL.txt, and
+# email_SI_2.txt with email_BL_2.txt. Reading only the first pair let a defect in the
+# second pass as OK (tests/edge_cases, a8).
+ROLE_IN_NAME = re.compile(rf"_({DocumentRoleType.Si}|{DocumentRoleType.Bl})(?=[._])")
+# A gap outranks a mismatch, so the person sees it first; OK only when every shipment is.
+SEVERITY = {StatusType.Ok: 0, StatusType.Mismatch: 1, StatusType.NeedsReview: 2}
+
+
+def shipments(attachments: List[str]) -> List[tuple[str, str]]:
+    """(SI, BL) for every shipment that has both, matched by the rest of the file name."""
+    groups: Dict[str, Dict[str, str]] = {}
+    for path in attachments:
+        name = Path(path).name
+        role = ROLE_IN_NAME.search(name)
+        if role:
+            key = Path(ROLE_IN_NAME.sub("", name, count=1)).stem  # email_SI_2.txt -> email_2
+            groups.setdefault(key, {}).setdefault(role.group(1), path)
+    return [(g[DocumentRoleType.Si], g[DocumentRoleType.Bl])
+            for g in groups.values() if len(g) == 2]
+
+
+async def compare_email(email: EmailInput, live: bool = False):
+    """The comparison for one email. With two or more complete SI and BL pairs, each is
+    compared and the most severe result is returned, its evidence naming every shipment.
+    Anything else goes through read_paired_attachments exactly as before."""
+    pairs = shipments(email.attachments)
+    if len(pairs) < 2:
+        return await run_pipeline(read_paired_attachments(email), live=live)
+
+    results = [await run_pipeline(read_pair(email.email_id, si, bl), live=live) for si, bl in pairs]
+    worst = max(range(len(results)), key=lambda i: SEVERITY[results[i].status])
+    summary = ", ".join(f"shipment {i + 1} {r.status}" for i, r in enumerate(results))
+    evidence = f"{len(results)} shipments in this email ({summary}); showing shipment {worst + 1}."
+    detail = results[worst].evidence
+    return results[worst].model_copy(update={"evidence": f"{evidence} {detail}" if detail else evidence})
 
 
 # =====================================================================
@@ -427,8 +470,7 @@ async def process_email(
         }
 
     # 4. BL_COMPARISON branch: resolve attachments & run comparison pipeline
-    paired_input = read_paired_attachments(email)
-    comparison = await run_pipeline(paired_input, live=live)
+    comparison = await compare_email(email, live=live)
 
     comparison_dict = comparison.model_dump() if hasattr(comparison, "model_dump") else comparison
 

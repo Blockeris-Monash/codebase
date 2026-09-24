@@ -1,0 +1,465 @@
+[
+  {
+    "case": "edge_a1",
+    "email_id": "email_901",
+    "set": "A",
+    "title": "Reply thread, older request for another booking quoted below",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "The newest message asks for the check and both documents are attached; the quoted request is history.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a2",
+    "email_id": "email_902",
+    "set": "A",
+    "title": "Forwarded by a colleague",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "The colleague forwards the customer's request unchanged, with both documents.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a3",
+    "email_id": "email_903",
+    "set": "A",
+    "title": "Request only after a long forwarded header and disclaimer",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "The ask sits past the first 1,500 characters; the attachments still say what the email is for.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a4",
+    "email_id": "email_904",
+    "set": "A",
+    "title": "One-line body",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "SI and draft BL attached and the subject says to confirm the documents.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a5",
+    "email_id": "email_905",
+    "set": "A",
+    "title": "Body in Malay",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "Asks to check the attached SI and draft BL, in Malay.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a5b",
+    "email_id": "email_906",
+    "set": "A",
+    "title": "Body in Chinese",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "Asks to check the attached SI and draft BL, in Chinese.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a6",
+    "email_id": "email_907",
+    "set": "A",
+    "title": "Signature logos attached next to the SI and BL",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "image001.png and image002.png are the sender's signature, not documents.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a7",
+    "email_id": "email_908",
+    "set": "A",
+    "title": "Revised draft BL attached next to the first draft",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "The revised BL fixes the consignee; the check is against the latest draft.",
+    "known_gap": "The service takes the first file with _BL. in its name, so the first draft is compared and the revised one is ignored: a false mismatch.",
+    "category_gap": null
+  },
+  {
+    "case": "edge_a8",
+    "email_id": "email_909",
+    "set": "A",
+    "title": "Two shipments in one email, the second BL wrong",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "gross_weight_kg"
+      ]
+    },
+    "why": "Every shipment is checked and the most severe result shown, naming the shipment (team decision, 24 Sep; first written as needs review, before that decision).",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a9",
+    "email_id": "email_910",
+    "set": "A",
+    "title": "Amendment request, no documents",
+    "category": "SI_REQUEST",
+    "expected": null,
+    "why": "Asks to change the shipping instruction; there is nothing to compare.",
+    "known_gap": null,
+    "category_gap": "Qwen says BL_COMPARISON: the prompt rule that a request to send the draft BL is a comparison wins over the amendment. It still reaches a person as a missing attachment, but the amendment itself is not what they are shown."
+  },
+  {
+    "case": "edge_a10",
+    "email_id": "email_911",
+    "set": "A",
+    "title": "The same email sent again",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "A resend must give the same answer as the first time (edge_a4).",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_a11",
+    "email_id": "email_912",
+    "set": "A",
+    "title": "Out-of-office reply quoting a BL email",
+    "category": "GENERAL",
+    "expected": null,
+    "why": "An automatic reply asks for nothing.",
+    "known_gap": null,
+    "category_gap": "Qwen says BL_COMPARISON from the quoted subject and text, so an auto-reply becomes a missing-attachment task for staff."
+  },
+  {
+    "case": "edge_a12",
+    "email_id": "email_913",
+    "set": "A",
+    "title": "Phishing dressed as a draft BL",
+    "category": "SPAM",
+    "expected": null,
+    "why": "An unknown portal asks for a click and a sign-in to 'view' a BL; nothing is attached.",
+    "known_gap": null,
+    "category_gap": "Qwen says BL_COMPARISON: a phishing link asking for an email password is shown to staff as a genuine BL task instead of spam."
+  },
+  {
+    "case": "edge_a13",
+    "email_id": "email_914",
+    "set": "A",
+    "title": "Invoice query quoting a BL number",
+    "category": "INVOICE_QUERY",
+    "expected": null,
+    "why": "The BL number is a reference; the question is about charges.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b1a",
+    "email_id": "email_915",
+    "set": "B",
+    "title": "Consignee differs only in case and spacing",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "Case and spaces are formatting (rules: collapse whitespace, uppercase).",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b1b",
+    "email_id": "email_916",
+    "set": "B",
+    "title": "CO., LTD against COMPANY LIMITED",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "consignee"
+      ]
+    },
+    "why": "On a title document the legal name as written is the identity; a person confirms (rules: suffix is identity).",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b1c",
+    "email_id": "email_917",
+    "set": "B",
+    "title": "M/S in front of the consignee",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "consignee"
+      ]
+    },
+    "why": "Exact compare by the rules; a person confirms whether M/S is only a courtesy.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b1d",
+    "email_id": "email_918",
+    "set": "B",
+    "title": "Two spaces inside two different names",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "consignee"
+      ]
+    },
+    "why": "MOORIM SP and MOORIM PAPER are different companies, however many spaces the template puts in.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b2",
+    "email_id": "email_919",
+    "set": "B",
+    "title": "Port with a country code against the locode",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "SHANGHAI, CN and SHANGHAI (CNSHA) are the same port.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b3a",
+    "email_id": "email_920",
+    "set": "B",
+    "title": "Weight with decimals and KGS",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "21,577.00 KGS and 21,577 KG are the same weight.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b3b",
+    "email_id": "email_921",
+    "set": "B",
+    "title": "Weight in tonnes",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "21.577 MT is 21,577 kg.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b3c",
+    "email_id": "email_922",
+    "set": "B",
+    "title": "Weight with a European decimal comma",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "21.577,00 KG is 21,577 kg written the European way.",
+    "known_gap": "The weight is read as 21.577 kg instead of 21,577 kg: a false mismatch.",
+    "category_gap": null
+  },
+  {
+    "case": "edge_b4",
+    "email_id": "email_923",
+    "set": "B",
+    "title": "Container count written out",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "ONE (1) X 40' HIGH CUBE is 1 x 40'HC.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b5",
+    "email_id": "email_924",
+    "set": "B",
+    "title": "TO ORDER against TO THE ORDER OF a bank",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "consignee"
+      ]
+    },
+    "why": "A bank-order consignee is a different party from a plain order consignee.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b6",
+    "email_id": "email_925",
+    "set": "B",
+    "title": "Notify party SAME AS CONSIGNEE against the name",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "notify_party"
+      ]
+    },
+    "why": "Same party in meaning, different instruction on the BL; a person confirms.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b7",
+    "email_id": "email_926",
+    "set": "B",
+    "title": "One-letter defect: I against lowercase l",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "MISMATCH",
+      "review_reason": null,
+      "defect_fields": [
+        "consignee"
+      ]
+    },
+    "why": "MOORlM is a typo that looks right on screen; it must be caught.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b8",
+    "email_id": "email_927",
+    "set": "B",
+    "title": "Consignee name split across two lines",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "OK",
+      "review_reason": null,
+      "defect_fields": []
+    },
+    "why": "The name wraps onto the next line in the SI; it is the same name.",
+    "known_gap": "The reader keeps only the first line of a value, so a name wrapped onto the next line is cut to MOORIM SP: a false mismatch.",
+    "category_gap": null
+  },
+  {
+    "case": "edge_b9",
+    "email_id": "email_928",
+    "set": "B",
+    "title": "File named SI is actually a BL",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "NEEDS_REVIEW",
+      "review_reason": "wrong_doc_type",
+      "defect_fields": []
+    },
+    "why": "The filename lies; the document header decides (rules: verify document type first).",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b10a",
+    "email_id": "email_929",
+    "set": "B",
+    "title": "Empty SI file",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "NEEDS_REVIEW",
+      "review_reason": "unreadable",
+      "defect_fields": []
+    },
+    "why": "An empty file cannot be checked.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b10b",
+    "email_id": "email_930",
+    "set": "B",
+    "title": "Password-protected PDF",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "NEEDS_REVIEW",
+      "review_reason": "unreadable",
+      "defect_fields": []
+    },
+    "why": "The file will not open without the password.",
+    "known_gap": null,
+    "category_gap": null
+  },
+  {
+    "case": "edge_b10c",
+    "email_id": "email_931",
+    "set": "B",
+    "title": "SI sent as a photo",
+    "category": "BL_COMPARISON",
+    "expected": {
+      "status": "NEEDS_REVIEW",
+      "review_reason": "unreadable",
+      "defect_fields": []
+    },
+    "why": "A phone photo of the SI has no text to read.",
+    "known_gap": null,
+    "category_gap": null
+  }
+]
