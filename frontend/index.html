@@ -20,6 +20,9 @@
   --accent:#e8620c; --accent-ink:#ffffff; --accent-soft:#fdeadb; --hl:#ffd54a; --hl-ink:#211b16;
   --bad:#c62828; --bad-soft:#fde8e6; --rev:#8a5a00; --rev-soft:#fff0b8; --ok:#1f8a4c; --ok-soft:#e2f4e9;
   color-scheme:light;
+  --sk1:#7fbbe6; --sk2:#b9dcf2; --sk3:#ffe6c8; --sk4:#ffc796; --se1:#3f8fc4; --se2:#1d5a8a; --glint:#fff6dc; --wv:#d8eefb;
+  --night:0; --day:1; --tb:linear-gradient(100deg,#9fd0f0 0%,#c4e3f5 55%,#ffe2c2 100%); --tb-ink:#16263a; --tb-sub:#3b4f66; --tb-btn:rgba(255,255,255,.55); --tb-bd:rgba(22,38,58,.18); --tb-hover:rgba(255,255,255,.85); --tb-mark:#16263a; --tb-panel:#dff0fa; --sc-ink:#16263a; --sc-sub:#2e4257; --wm:#e8620c; --wm-glow:rgba(255,255,255,.7);
+  --pill-bg:rgba(255,255,255,.6); --pill-bd:rgba(22,38,58,.15); --pill-ink:#b4460a; --gl-bg:rgba(255,255,255,.6); --gl-bd:rgba(22,38,58,.2);
   --shadow:0 1px 2px rgba(33,27,22,.06),0 6px 20px rgba(33,27,22,.08);
   --card:0 1px 2px rgba(150,70,20,.06),0 8px 24px rgba(150,70,20,.10);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#ffd9b8 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#ffd3d6 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#fff0b5 0%,transparent 62%),#fff8f1;
@@ -29,6 +32,9 @@
   --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
   color-scheme:dark;
+  --sk1:#141a33; --sk2:#3b2c52; --sk3:#b8583a; --sk4:#f09a55; --se1:#1e2a4a; --se2:#0f1426; --glint:#f6b57a; --wv:#8fa3d8;
+  --night:1; --day:0; --tb:linear-gradient(100deg,#141a33 0%,#2a2446 55%,#3b2c52 100%); --tb-ink:#f4ece4; --tb-sub:#c9bbae; --tb-btn:rgba(255,255,255,.06); --tb-bd:rgba(255,255,255,.22); --tb-hover:rgba(255,255,255,.14); --tb-mark:#f4ece4; --tb-panel:#2a2446; --sc-ink:#fff4e8; --sc-sub:#e9d6c6; --wm:#ff8a3d; --wm-glow:rgba(255,138,61,.35);
+  --pill-bg:rgba(255,255,255,.1); --pill-bd:rgba(255,255,255,.25); --pill-ink:#ffd9ae; --gl-bg:rgba(255,255,255,.12); --gl-bd:rgba(255,255,255,.35);
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}}
@@ -37,6 +43,9 @@
   --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
   color-scheme:dark;
+  --sk1:#141a33; --sk2:#3b2c52; --sk3:#b8583a; --sk4:#f09a55; --se1:#1e2a4a; --se2:#0f1426; --glint:#f6b57a; --wv:#8fa3d8;
+  --night:1; --day:0; --tb:linear-gradient(100deg,#141a33 0%,#2a2446 55%,#3b2c52 100%); --tb-ink:#f4ece4; --tb-sub:#c9bbae; --tb-btn:rgba(255,255,255,.06); --tb-bd:rgba(255,255,255,.22); --tb-hover:rgba(255,255,255,.14); --tb-mark:#f4ece4; --tb-panel:#2a2446; --sc-ink:#fff4e8; --sc-sub:#e9d6c6; --wm:#ff8a3d; --wm-glow:rgba(255,138,61,.35);
+  --pill-bg:rgba(255,255,255,.1); --pill-bd:rgba(255,255,255,.25); --pill-ink:#ffd9ae; --gl-bg:rgba(255,255,255,.12); --gl-bd:rgba(255,255,255,.35);
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}
@@ -217,8 +226,6 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .seg.mbox{flex-wrap:nowrap}.seg.mbox .segb{padding:5px 12px;font-size:0.875rem}
 .pick{display:inline-flex;align-items:center;gap:6px}.pick select{font-size:0.875rem;color:var(--ink)}
 .tally{display:inline-flex;align-items:center;gap:8px;color:var(--mute)}
-.tally i{position:relative;width:90px;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden}
-.tally i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--ok);border-radius:inherit;transition:width .3s}
 .toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;gap:12px;align-items:center;background:var(--ink);color:var(--bg);border-radius:12px;padding:8px 8px 8px 16px;box-shadow:var(--card);font-weight:600;max-width:calc(100vw - 32px)}
 .toast .ghost{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 .linkbtn.report{display:flex;align-items:center;gap:6px;margin-top:18px;color:var(--mute);font-weight:500}.linkbtn.report .ico{width:15px;height:15px}
@@ -456,6 +463,51 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 @media (max-width:1180px){.lp-deco{display:none}}
 @media (max-width:659px){.lp-hero{min-height:520px}.hero2{padding-bottom:150px}.lp-hero .lp-sailer{bottom:62px;width:150px}.lp-hero .lp-sailer .art{width:150px}.lp-route{margin:0 25%}.lp-pipe[data-step] .lp-boat{display:none}.lp-paper{width:46vw;padding:10px}.lp-lens{display:none}}
 @media (prefers-reduced-motion:reduce){.lp-hero .lp-sailer{animation:none;left:50%;transform:translateX(-50%)}.lp-deco *,.lp-sky *{animation:none!important}.lp-lens{animation:none}}
+
+/* the app in the landing page's night-voyage look; reading areas stay light */
+.top{background:var(--tb);border-bottom:3px solid transparent;border-image:linear-gradient(90deg,#b8583a,#f09a55 50%,#b8583a) 1;box-shadow:0 6px 18px rgba(20,26,51,.18)}
+.top::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.2px 1.2px at 22% 30%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 38% 70%,#fff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 55% 25%,#ffd9ae 50%,transparent 51%),radial-gradient(1px 1px at 63% 62%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 47% 48%,#fff 50%,transparent 51%);opacity:calc(var(--night) * .7)}
+.top>*{position:relative;z-index:1}.top .brand{--ink:var(--tb-mark);--panel:var(--tb-panel)}
+.top .logo{font-family:"Big Shoulders Stencil Display","Big Shoulders Stencil",Impact,"Arial Black",sans-serif;font-size:1.6rem;letter-spacing:.04em;color:var(--wm)}
+.top>.mute{color:var(--tb-sub)}
+.top .ghost{color:var(--tb-ink);border-color:var(--tb-bd);background:var(--tb-btn)}.top .ghost:hover{background:var(--tb-hover)}
+.top .hb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.top .menu{color:var(--ink)}
+.kpi b{font-family:"Big Shoulders Stencil Display","Big Shoulders Stencil",Impact,"Arial Black",sans-serif;font-size:2.2rem;letter-spacing:.03em;font-weight:800}
+.tally{display:inline-flex;align-items:center;gap:10px;color:var(--mute)}
+.tally .voy{position:relative;width:150px;height:24px;flex:none;margin-left:12px}
+.tally .voy::before{content:"";position:absolute;left:0;right:14px;top:50%;border-top:2px dashed color-mix(in srgb,var(--accent) 45%,transparent)}
+.tally .voy::after{content:"";position:absolute;left:0;top:calc(50% - 1px);height:3px;width:calc((100% - 14px) * var(--p) / 100);border-radius:2px;background:var(--ok);transition:width .4s}
+.tally .boat{position:absolute;top:50%;left:calc((100% - 14px) * var(--p) / 100);transform:translate(-50%,-55%);width:22px;height:22px;border-radius:50%;background:var(--accent);display:grid;place-items:center;transition:left .4s}
+.tally .boat .ico{width:13px;height:13px;color:var(--accent-ink);margin:0}
+.tally .port{position:absolute;right:0;top:50%;transform:translateY(-60%)}.tally .port .ico{width:15px;height:15px;color:var(--ok);margin:0}
+.scard{position:relative;overflow:hidden;border-radius:16px;min-height:360px;height:100%;display:flex;justify-content:center;color:#fff4e8;text-align:center}
+.scard .lp-sky{position:absolute;inset:0;width:100%;height:100%}
+.scard-txt{position:relative;z-index:2;padding:44px 20px;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:44ch}
+.scard-txt b{font-size:1.25rem}.scard-txt span{color:#e9d6c6;line-height:1.45}.scard-txt .btn{margin-top:8px}
+.scard-ship{position:absolute;z-index:1;bottom:16%;left:50%;width:150px;transform:translateX(-50%)}
+.scard-ship .art{width:150px;-webkit-mask-image:none;mask-image:none}.scard-ship .sea1,.scard-ship .sea2{display:none}
+.scard.arrived .scard-ship{left:58%}
+.scard .lh{position:absolute;z-index:1;right:12%;bottom:15%;width:46px;overflow:visible}
+.scard .lh .beam{fill:#ffd27a;opacity:.18;transform-origin:30px 24px;animation:lpbeam 6s ease-in-out infinite}
+@keyframes lpbeam{50%{transform:scaleX(-1)}}
+.pane:has(> .scard){padding:0;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.scard *{animation:none!important}}
+
+/* morning in light mode, night in dark mode */
+.lp-sky .sk1{stop-color:var(--sk1)}.lp-sky .sk2{stop-color:var(--sk2)}.lp-sky .sk3{stop-color:var(--sk3)}.lp-sky .sk4{stop-color:var(--sk4)}
+.lp-sky .se1{stop-color:var(--se1)}.lp-sky .se2{stop-color:var(--se2)}
+.lp-sky .night{opacity:var(--night);transition:opacity .6s}.lp-sky .day{opacity:var(--day);transition:opacity .6s}
+.lp-sky .sun{fill:#ffd27a}
+.lp-sky .cloud path{fill:#fff;opacity:.9}.lp-sky .cloud{animation:lpcloud var(--d) ease-in-out infinite alternate}
+@keyframes lpcloud{to{transform:translateX(60px)}}
+.lp-sky .gull{fill:none;stroke:#2e4257;stroke-width:1.6;stroke-linecap:round;opacity:.7}
+.lp-sky .glint{stroke:var(--glint)}.lp-sky .wv{stroke:var(--wv)}
+.lp-hero{color:var(--sc-ink)}.lp-tag{color:var(--sc-ink)}.lp-hero .lp-sub{color:var(--sc-sub)}
+.wordmark{color:var(--wm);text-shadow:0 0 40px var(--wm-glow)}
+.lp-pill{background:var(--pill-bg);border-color:var(--pill-bd);color:var(--pill-ink)}
+.btn.ghostlight{background:var(--gl-bg);color:var(--sc-ink);border-color:var(--gl-bd)}
+.scard{color:var(--sc-ink)}.scard-txt span{color:var(--sc-sub)}
 </style>
 </head>
 <body>
@@ -679,14 +731,17 @@ const SCENE = (()=>{
   const stars = Array.from({length:110},()=>{ const x=rnd()*1440, y=rnd()*230, r=rnd()*1.4+.4, tw=rnd()<.35; if(x>330&&x<1110&&y>30) return ""; return `<circle class="${tw?"tw":""}" cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" style="animation-delay:${(rnd()*4).toFixed(1)}s"/>`; }).join("");
   const cons = [[1060,70],[1110,52],[1162,78],[1140,120],[1090,128],[1060,70]];
   return `<svg class="lp-sky" viewBox="0 0 1440 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141a33"/><stop offset=".55" stop-color="#3b2c52"/><stop offset=".82" stop-color="#b8583a"/><stop offset="1" stop-color="#f09a55"/></linearGradient>
-      <linearGradient id="seag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e2a4a"/><stop offset="1" stop-color="#0f1426"/></linearGradient>
-      <mask id="moonm"><circle cx="250" cy="90" r="30" fill="#fff"/><circle cx="264" cy="80" r="27" fill="#000"/></mask></defs>
+    <defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="sk1"/><stop offset=".55" class="sk2"/><stop offset=".82" class="sk3"/><stop offset="1" class="sk4"/></linearGradient>
+      <linearGradient id="seag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="se1"/><stop offset="1" class="se2"/></linearGradient>
+      <radialGradient id="sung"><stop offset="0" stop-color="#fff1c2" stop-opacity=".9"/><stop offset="1" stop-color="#fff1c2" stop-opacity="0"/></radialGradient><mask id="moonm"><circle cx="250" cy="90" r="30" fill="#fff"/><circle cx="264" cy="80" r="27" fill="#000"/></mask></defs>
     <rect width="1440" height="420" fill="url(#skyg)"/>
-    <g class="stars">${stars}</g>
+    <g class="day"><circle cx="1130" cy="300" r="150" fill="url(#sung)"/><circle class="sun" cx="1130" cy="300" r="46"/>
+      ${[[140,70,1],[420,40,.8],[930,90,1.1],[1260,60,.9],[640,150,.7]].map(([x,y,k])=>`<g class="cloud" style="--d:${(x%7)+30}s"><path transform="translate(${x} ${y}) scale(${k})" d="M0 30a18 18 0 0118-18 26 26 0 0148-6 20 20 0 0130 24z"/></g>`).join("")}
+      ${[[300,120],[330,105],[1010,150],[1040,138],[1065,160]].map(([x,y])=>`<path class="gull" d="M${x-9} ${y}q5-6 9 0q4-6 9 0"/>`).join("")}</g>
+    <g class="night"><g class="stars">${stars}</g>
     <g class="cons"><path d="${cons.map((p,k)=>(k?"L":"M")+p.join(" ")).join("")}"/>${cons.slice(0,5).map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6"/>`).join("")}</g>
     <circle cx="250" cy="90" r="30" fill="#fbe7c6" mask="url(#moonm)"/>
-    <path class="shoot" d="M1300 40l-120 60"/>
+    <path class="shoot" d="M1300 40l-120 60"/></g>
     <path fill="url(#seag)" d="M0 330C200 318 380 342 560 330S940 316 1120 330 1360 340 1440 332V420H0Z"/>
     <path class="glint" d="M640 350h160M690 368h60M600 388h110M760 382h90"/>
     <path class="wv w1" d="M0 352C120 344 240 360 360 352S600 344 720 352 960 360 1080 352 1320 344 1440 352 1680 360 1800 352"/>
@@ -1095,7 +1150,7 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : `<div class="empty big">${ICON.MAIL}<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}</div>`;
+  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
@@ -1250,11 +1305,17 @@ function sortHTML(){
 }
 function tallyHTML(){
   const work = (S.mailbox==="live" ? S.liveEmails : RESULTS).filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
-  return `<span class="tally small" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span class="num">${t("{done} of {total} done",{done,total})}</span><i style="--p:${total?Math.round(done*100/total):0}%"></i></span>`;
+  const p = total ? Math.round(done*100/total) : 0;
+  return `<span class="tally small" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span class="num">${t("{done} of {total} done",{done,total})}</span><span class="voy" style="--p:${p}"><span class="boat">${ICON.SHIP}</span><span class="port">${ICON.FLAG}</span></span></span>`;
+}
+/* A small night-sea scene behind an empty state; arrived puts the ship by the lighthouse. */
+const LIGHTHOUSE = `<svg class="lh" viewBox="0 0 60 120" aria-hidden="true"><path class="beam" d="M30 18L-140 -10V46Z"/><path d="M20 112L24 30H36L40 112Z" fill="#f4ece4"/><path d="M22.4 80H37.6L38.3 96H21.7ZM23.6 50H36.4L37 64H23Z" fill="#c62828"/><rect x="21" y="18" width="18" height="12" rx="2" fill="#2a2446"/><rect x="24" y="21" width="12" height="6" fill="#ffd27a"/><path d="M18 18L30 8L42 18Z" fill="#c62828"/></svg>`;
+function sceneCard(inner, arrived){
+  return `<div class="scard ${arrived?"arrived":""}">${SCENE}${arrived?LIGHTHOUSE:""}<div class="scard-ship" aria-hidden="true">${SHIP_ART}</div><div class="scard-txt">${inner}</div></div>`;
 }
 function allDoneHTML(){
   const other = S.f==="MISMATCH" ? "NEEDS_REVIEW" : "MISMATCH";
-  return `<div class="empty">${ICON.OK}<b>${t("All done in this folder")}</b><span>${t("Every email here is marked as done or replied.")}</span>${count(other)?`<button class="btn" data-a="folder" data-k="${other}">${t(other==="NEEDS_REVIEW"?T("Go to Needs review"):T("Go to Action required"))}</button>`:""}</div>`;
+  return sceneCard(`<b>${t("All done in this folder")}</b><span>${t("Every email here is marked as done or replied.")}</span>${count(other)?`<button class="btn" data-a="folder" data-k="${other}">${t(other==="NEEDS_REVIEW"?T("Go to Needs review"):T("Go to Action required"))}</button>`:""}`, true);
 }
 
 function goTo(e){
