@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import FastAPI, Header, HTTPException, Query, Response
+from pydantic import BaseModel, Field
 
 # Import Milk's Extractor and Model
 from backend.classify import ClassificationFailed, ClassificationResult, EmailInput, classify_email
@@ -24,6 +24,7 @@ from backend.extract.qwen import qwen_model
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
+from backend import gmail
 from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
 from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
@@ -49,6 +50,8 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    # The page is on another site, so the browser hides any response header not named here.
+    expose_headers=["X-Mailbox-Pending"],
 )
 
 @app.api_route("/health", methods=["GET", "HEAD"])
@@ -487,3 +490,164 @@ async def process_email(
             "defect_fields": comparison_dict.get("defect_fields", []),
         },
     }
+
+
+# =====================================================================
+# 7. Live mailbox (task 2): read the signed-in person's Gmail, reply from it
+# =====================================================================
+#
+# Both routes take the person's Google access token as `Authorization: Bearer`,
+# use it for that request and keep nothing of it (backend/gmail.py says why).
+# Whose mailbox it is comes from Google, from the token itself, never from a
+# user id the caller supplies: a caller cannot ask for anyone else's mail.
+
+MAILBOX_DIR = Path(os.environ.get("MAILBOX_DIR", "/tmp/shiphappens-mailbox"))
+MAILBOXES: Dict[str, Dict[str, Dict[str, Any]]] = {}   # address -> gmail id -> inbox entry
+ORIGINALS: Dict[str, Dict[str, gmail.Message]] = {}    # address -> gmail id -> what a reply threads under
+WORKING: Dict[tuple[str, str], asyncio.Task] = {}       # (address, gmail id) being checked now
+FAILURES: Dict[tuple[str, str], int] = {}
+GIVE_UP_AFTER = 2
+# Two at a time: the model proxy slows to a crawl under more, and the page polls every 10 s.
+CHECKS = asyncio.Semaphore(2)
+
+
+def bearer(authorization: Optional[str]) -> str:
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    if not token or token == authorization:
+        raise HTTPException(status_code=401, detail="Sign in with Google to use your mailbox.")
+    return token
+
+
+def gmail_failure(error: gmail.GmailError) -> HTTPException:
+    if error.status in (401, 403):
+        # 401: the hour is up. 403: signed in before the app asked for Gmail access.
+        return HTTPException(status_code=401, detail="Sign in with Google again to use your mailbox.")
+    if error.status == 404:
+        return HTTPException(status_code=404, detail="That email is not in your mailbox.")
+    return HTTPException(status_code=502, detail=str(error))
+
+
+def folder_for(address: str, gmail_id: str) -> Path:
+    import hashlib
+    return MAILBOX_DIR / hashlib.sha256(address.encode()).hexdigest()[:16] / gmail_id
+
+
+async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, Any]:
+    """One live email as the page draws it: the same fields cli/make_results.py
+    writes for a demo email, from the same /process-email the demo button calls."""
+    from cli.make_results import clean_body, document, shipment_ref  # cli imports this module
+
+    email_id = gmail.mailbox_id(message.gmail_id)
+    email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
+                       body=message.body[:100_000], attachments=paths[:50])
+    checked = await process_email(email, live=True)
+    found = checked["ClassificationResult"]
+
+    entry = {"id": email_id, "from": message.sender, "subject": message.subject,
+             "body": clean_body(message.body), "n_attachments": len(paths), "received_at": message.date,
+             "category": found["category"], "decided_by": found["decided_by"],
+             "class_confidence": found["confidence"], "class_evidence": found["evidence"]}
+    ref = shipment_ref(message.subject, message.body)
+    if ref:
+        entry["ref"] = ref
+
+    result = checked["ComparisonResult"]
+    if result:
+        docs = {}
+        for path in map(Path, paths):
+            for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
+                if path.stem == f"{email_id}_{role}":
+                    docs[role] = document(path, email_id, role)
+        entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
+                     defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
+    return entry
+
+
+async def check_message(token: str, address: str, gmail_id: str) -> None:
+    """Fetch one message and its attachments, put it through /process-email, and
+    keep the result. Runs behind the request, so the page never waits on a model."""
+    key = (address, gmail_id)
+    try:
+        async with CHECKS:
+            async with gmail.Gmail(token) as box:
+                message = await box.message(gmail_id)
+                files = await box.attachment_files(message)
+            email_id = gmail.mailbox_id(gmail_id)
+            paths = gmail.save_attachments(email_id, files, folder_for(address, gmail_id))
+            entry = await mailbox_entry(message, paths)
+        message.attachments = []  # a reply needs the headers, not the files
+        ORIGINALS.setdefault(address, {})[gmail_id] = message
+        MAILBOXES.setdefault(address, {})[gmail_id] = entry
+    except Exception as error:  # a model, Gmail or a file: any of them, and the next poll retries
+        FAILURES[key] = FAILURES.get(key, 0) + 1
+        log.warning("Mailbox message %s not checked (try %d): %s", gmail_id, FAILURES[key], error)
+        if FAILURES[key] >= GIVE_UP_AFTER:
+            # Shown under Other mail rather than retried forever, one model bill per poll.
+            MAILBOXES.setdefault(address, {})[gmail_id] = {
+                "id": gmail.mailbox_id(gmail_id), "from": "", "subject": "(could not be checked)",
+                "body": "This email could not be read or checked. Open it in Gmail.",
+                "n_attachments": 0, "check_failed": True}
+    finally:
+        WORKING.pop(key, None)
+
+
+@app.get("/mailbox")
+async def mailbox(response: Response, authorization: Optional[str] = Header(None)) -> List[Dict[str, Any]]:
+    """The newest emails in the signed-in person's inbox, each already checked, newest
+    first. A message not yet checked is started in the background and appears on a
+    later poll; `X-Mailbox-Pending` says how many are still being checked. A message
+    is checked once: a second poll returns the saved result, not a second copy."""
+    token = bearer(authorization)
+    try:
+        async with gmail.Gmail(token) as box:
+            address = await box.address()
+            ids = await box.recent_ids()
+    except gmail.GmailError as error:
+        raise gmail_failure(error) from error
+
+    done = MAILBOXES.setdefault(address, {})
+    for gmail_id in ids:
+        key = (address, gmail_id)
+        if gmail_id not in done and key not in WORKING:
+            WORKING[key] = asyncio.create_task(check_message(token, address, gmail_id))
+
+    response.headers["X-Mailbox-Pending"] = str(sum(1 for a, _ in WORKING if a == address))
+    return [done[g] for g in ids if g in done]
+
+
+class ReplyRequest(BaseModel):
+    email_id: str = Field(..., max_length=100)
+    to: str = Field(..., max_length=320)
+    subject: str = Field(..., max_length=1000, pattern=r"^[^\r\n]*$")  # a line break would start a new header
+    body: str = Field(..., min_length=1, max_length=20_000)
+
+
+def one_address(to: str) -> str:
+    """Exactly one recipient, as typed or as "Name <address>". The page drafts the
+    reply to the sender; anything else here is a mistake, not a mailing list."""
+    from email.utils import getaddresses
+    found = getaddresses([to])
+    if "\r" in to or "\n" in to or len(found) != 1 or "@" not in found[0][1]:
+        raise HTTPException(status_code=422, detail="Send to one email address.")
+    return to.strip()
+
+
+@app.post("/reply")
+async def reply(request: ReplyRequest, authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+    """Send the reviewer's reply from their own Gmail, in the same thread as the email
+    it answers. Only a person pressing Send reaches this: nothing is sent on its own."""
+    token = bearer(authorization)
+    gmail_id = gmail.gmail_id_of(request.email_id)
+    if gmail_id is None:
+        raise HTTPException(status_code=404, detail="Only emails from your own mailbox can be answered from here.")
+    to = one_address(request.to)
+    try:
+        async with gmail.Gmail(token) as box:
+            address = await box.address()
+            # Fetched again when not seen here: that also proves the email is in THIS mailbox.
+            original = ORIGINALS.get(address, {}).get(gmail_id) or await box.message(gmail_id)
+            raw = gmail.build_reply(original, address, to, request.subject, request.body)
+            sent = await box.send(raw, original.thread_id)
+    except gmail.GmailError as error:
+        raise gmail_failure(error) from error
+    return {"sent": True, "gmail_id": sent.get("id"), "thread_id": sent.get("threadId")}

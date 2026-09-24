@@ -56,7 +56,8 @@ def test_any_other_failure_still_says_something() -> None:
 
 
 def test_the_banner_is_rendered_where_it_cannot_be_missed() -> None:
-    assert "${signInErrorHTML()}<div class=\"top\">" in INDEX
+    # The mailbox bar (task 2) sits between them, above the top bar all the same.
+    assert "${signInErrorHTML()}${mailboxBarHTML()}<div class=\"top\">" in INDEX
     assert 'role="alert"' in INDEX[INDEX.index("function signInErrorHTML"):][:900]
 
 

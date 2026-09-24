@@ -40,6 +40,7 @@ REPORT_AREAS: list[tuple[str, str, str]] = [
     ("sign_in_error", "Sign-in", "say why a sign-in did not finish"),
     ("phone_and_fold", "Any screen", "flip, fold, landscape and high contrast"),
     ("edge_case", "Edge cases", "real-world email shapes, expected result written first"),
+    ("gmail_mailbox", "Live mailbox", "Gmail read into the pipeline, replies sent in the thread"),
     ("mailbox_email_id", "Edge cases", "real-world email shapes, expected result written first"),
     ("google_sign_in", "Sign in", "Google sign-in through Supabase"),
     ("review_state_store", "Saved state", "a mark survives a change of browser"),
