@@ -1266,7 +1266,7 @@ document.addEventListener("click", ev=>{
   const el = ev.target.closest("[data-a]"); if(!el) return;
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="sortsel"||a==="kindsel") return;   // a redraw here would close the dropdown as it opens
-  if(a==="theme") document.documentElement.dataset.theme = k;
+  if(a==="theme"){ document.documentElement.dataset.theme = k; S.langMenu=false; }
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; S.nextFrom=location.hash; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); }
   else if(a==="nextback"){ location.hash = fromHomeHash() ? "#/" : "#/inbox"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
