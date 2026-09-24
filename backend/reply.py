@@ -142,5 +142,7 @@ GLOBETRANS POLICY CONTEXT:
         reply_text = generate_fn(prompt)
         return strip_dangerous_tags(reply_text)
     except Exception as e:
+        # None, not a sentence: the page shows draft_reply as the reply itself, and from
+        # My mailbox Send reply would email an error message to the customer (#96).
         print(f"Error generating RAG reply: {e}")
-        return "An error occurred while generating the reply. Please try again."
+        return None
