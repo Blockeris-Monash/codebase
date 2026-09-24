@@ -311,6 +311,14 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   numbers are untouched — `cli.evidence` prints exactly what it did before, 630
   of 630 defects caught and 1,690 of 1,694 fields agreeing.
 
+  **`python -m cli.rules_first_check` proves both halves on demand.** Without a
+  key it runs both extractors through the same comparator over every comparison
+  email and reports where the verdict differs — the check that matters, since a
+  faster answer that disagrees is a regression with a stopwatch attached. With
+  `--timed` it runs one real email twice against an empty cache, once forced
+  through the model and once not: **8.8 s against 1.3 s, same MISMATCH, same two
+  defect fields**.
+
   The model has not been demoted; it has been pointed at the job it was brought
   in for. A label table cannot read wording it has never seen, and that is
   precisely when the model now runs. `SHIP_HAPPENS_RULES_FIRST=0` turns the whole
@@ -327,7 +335,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through the live pipeline. Its state, spinner, progress bar and glow went too,
   along with seven strings that no longer had anywhere to appear.
 
-- **Test count: 231 to 570 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 632 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
