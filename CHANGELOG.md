@@ -33,6 +33,29 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `"Level NONSENSE"` for anything it does not recognise, and setting that as a
   level turns logging off without saying so.
 
+- **A second opinion on how an email was sorted, when there is a reason to
+  doubt it.** Sorting is the one step with no safety net behind it: a BL check
+  filed as GENERAL is never compared, and nobody is told. The live service now
+  checks each answer against four signals that cost nothing: the model said it
+  was unsure (0.65 or 0.50), an SI and a BL are attached but it was not filed as
+  a BL check, it asks for a password or login next to a link, or it reads like an
+  automatic reply but was filed as a BL check. Only then is Gemini asked the same
+  question, so two tries at most, and never Gemini checking Gemini when Qwen was
+  down.
+
+  The second answer wins only when it confirms the doubt that was raised, or the
+  first was unsure and the second is surer; otherwise the first stands at 0.50.
+  Measured on the 520 saved answers, it asks about 5 emails (1.0%), all of them
+  Qwen at 0.65; none of the wording rules fires on real mail. On the edge cases it
+  catches the phishing email shown to staff as a BL task (a12) and the
+  out-of-office filed as one (a11). The amendment request (a9) gives it nothing
+  to go on, and a test says so.
+
+  Every second opinion is a technical report, agreed or not. Off unless asked
+  for, so the batch run that made the saved results is still Qwen alone. It can
+  run on its own Gemini key and model (`GEMINI_CRITIC_API_KEY`,
+  `GEMINI_CRITIC_MODEL`), because limits are per project and per model.
+
 - **The pipeline files its own reports when the AI struggles.** The reports
   queue had an Automatic tab and nothing that wrote to it. Now every step that
   calls a model (sorting an email, reading its SI, reading its BL, drafting a

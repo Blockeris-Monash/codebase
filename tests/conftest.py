@@ -45,6 +45,7 @@ def no_reports_reach_the_real_queue(monkeypatch: pytest.MonkeyPatch) -> None:
 # reader nothing about coverage. Matched against the test's node id, first
 # match wins, so order matters.
 REPORT_AREAS: list[tuple[str, str, str]] = [
+    ("classification_critic", "Critic", "a second opinion only when there is a reason, and reported"),
     ("technical_report", "Technical reports", "every retry reaches the admin queue, most tries first"),
     ("vision", "Scans", "read the scans, and say what cannot be trusted"),
     ("sign_in_error", "Sign-in", "say why a sign-in did not finish"),

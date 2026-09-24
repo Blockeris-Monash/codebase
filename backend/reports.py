@@ -55,6 +55,7 @@ class Step:
     email_id: Optional[str]
     if_no_answer: str  # what happens to the email when no model answers
     attempts: list[Attempt] = field(default_factory=list)
+    note: Optional[tuple[str, str]] = None  # (title, outcome) when the step explains itself
 
 
 # A ContextVar, not a global: SI and BL are read at the same time for one email,
@@ -71,6 +72,23 @@ def record(model: str, result: str, seconds: float) -> None:
         step.attempts.append(Attempt(model, result[:MAX_RESULT_CHARS], round(seconds, 1)))
 
 
+def answered_by() -> Optional[str]:
+    """The model whose answer the watched step is using so far, or None."""
+    step = _step.get()
+    answered = [a.model for a in step.attempts if a.result == ANSWERED] if step else []
+
+    return answered[-1] if answered else None
+
+
+def note(title: str, outcome: str) -> None:
+    """Say what the watched step decided, in place of the default wording. A step
+    that explains itself is always reported: the critic uses this for every
+    second opinion it asks for, agreed or not."""
+    step = _step.get()
+    if step is not None:
+        step.note = (title, outcome)
+
+
 @contextmanager
 def watching(name: str, email_id: Optional[str], if_no_answer: str) -> Iterator[None]:
     """Collect the model calls made inside, and file one report if they struggled."""
@@ -85,15 +103,17 @@ def watching(name: str, email_id: Optional[str], if_no_answer: str) -> Iterator[
 
 
 def struggled(step: Step) -> bool:
-    return len(step.attempts) > 1 or bool(step.attempts and step.attempts[-1].result != ANSWERED)
+    return (step.note is not None or len(step.attempts) > 1
+            or bool(step.attempts and step.attempts[-1].result != ANSWERED))
 
 
 def as_row(step: Step) -> dict[str, Any]:
     tries = len(step.attempts)
-    last = step.attempts[-1]
-    if last.result == ANSWERED:
-        title = f"{step.name}: answered on try {tries}, by {last.model}"
-        outcome = f"Answered by {last.model}, so the check went ahead."
+    if step.note:
+        title, outcome = f"{step.name}: {step.note[0]}", step.note[1]
+    elif step.attempts[-1].result == ANSWERED:
+        title = f"{step.name}: answered on try {tries}, by {step.attempts[-1].model}"
+        outcome = f"Answered by {step.attempts[-1].model}, so the check went ahead."
     else:
         title = f"{step.name}: no AI answer after {tries} {'try' if tries == 1 else 'tries'}"
         outcome = step.if_no_answer

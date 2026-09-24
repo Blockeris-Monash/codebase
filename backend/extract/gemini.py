@@ -48,14 +48,17 @@ def api_key() -> str | None:
 
 
 def gemini_json(contents: str, system: str | None = None,
-                schema: type[BaseModel] | None = None) -> str:
-    """The text of one Gemini reply in JSON, for the stages that stand Gemini behind Qwen."""
+                schema: type[BaseModel] | None = None,
+                key: str | None = None, model: str | None = None) -> str:
+    """The text of one Gemini reply in JSON, for the stages that stand Gemini behind Qwen.
+    `key` and `model` replace the defaults, so the classification critic can spend its
+    own quota rather than the backup's."""
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=api_key())
+    client = genai.Client(api_key=key or api_key())
     response = client.models.generate_content(
-        model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
+        model=model or os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system,
