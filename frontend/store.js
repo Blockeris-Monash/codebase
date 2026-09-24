@@ -149,5 +149,31 @@
     return true;
   }
 
-  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, MARK_OK, MARK_BACK };
+
+  // Why a sign-in did not finish.
+  //
+  // Google hands its refusal back through Supabase as query or fragment
+  // parameters on the return URL, and nothing was reading them: the page
+  // simply reappeared signed out, with the reason sitting in the address bar.
+  // The commonest one is an account that is not on the OAuth consent screen's
+  // test-user list, which Google rejects AFTER the account chooser - so from
+  // the outside it looks like the button did nothing.
+  const ACCESS_DENIED = "access_denied";
+
+  function authError() {
+    const search = new URLSearchParams(location.search);
+    const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const code = search.get("error") || hash.get("error");
+    if (!code) return null;
+
+    const detail = search.get("error_description") || hash.get("error_description") || "";
+    // Read once. Leaving it in the address bar means a reload shows it again,
+    // and a shared link carries someone else's failure.
+    history.replaceState(null, "", location.pathname);
+
+    return { code: code, detail: detail.replace(/\+/g, " ") };
+  }
+
+  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError,
+                   ACCESS_DENIED, MARK_OK, MARK_BACK };
 })();
