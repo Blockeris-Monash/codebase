@@ -87,6 +87,31 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The page no longer scrolls sideways on a narrow screen.** Rendered across ten
+  geometries in English and Malay, every width under 500px scrolled horizontally —
+  `scrollWidth` 493 against a 360px viewport, and the same 493 at 320 and at 260,
+  because the figure had nothing to do with the screen. The header was a flex row
+  of brand, search, language and theme controls with no `flex-wrap`.
+
+  With that fixed, the rest of the layout stopped being sized for one handset. The
+  status tiles take as many columns as fit rather than a fixed three, which is what
+  the Malay labels need — *Ditandakan selesai* is eighteen characters where
+  *Checked* is seven. Two panes now appear when there is room in **both**
+  directions: a folding phone open is 673x841 and was getting the one-column phone
+  layout, while a phone in landscape is 800x360 and was getting the desktop one,
+  where `body{overflow:hidden}` left almost nothing on screen.
+
+  `viewport-fit=cover` was set with no `safe-area-inset` anywhere, so the installed
+  iOS app drew its header under the notch — and the README tells judges to install
+  it on iOS. Font sizes moved from px to rem so a reader on large text or at 200%
+  zoom is respected, anything you tap clears 44px, and Windows high contrast keeps
+  the card edges instead of flattening the screen into undifferentiated text.
+
+  The CSS breakpoint and the JavaScript that depends on it had already drifted: the
+  script still asked about 820px after the stylesheet moved, so searching on an
+  unfolded phone cleared the selection while both panes were on screen. They now
+  share one definition, with a test that fails if they diverge again.
+
 - **`/health` answers `HEAD`, not only `GET`.** The uptime monitor checks with
   `HEAD` and was getting 405, so the dashboard showed the backend as down while it
   was up and sent false alerts. The checks still kept Render awake; only the status
