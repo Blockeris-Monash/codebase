@@ -76,7 +76,7 @@ def test_the_committed_key_is_a_publishable_one_not_a_secret() -> None:
 def test_the_shell_changed_so_the_service_worker_version_moved() -> None:
     """sw.js caches the shell. Ship a new index.html on the old version and
     returning visitors keep the old page."""
-    assert "ship-happens-v3" in SW
+    assert "ship-happens-v4" in SW
 
 
 def test_the_demo_source_matches_the_database_constraint() -> None:

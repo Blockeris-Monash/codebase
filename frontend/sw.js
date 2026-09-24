@@ -10,7 +10,7 @@
 // the cache is only a fallback for offline.
 //
 // Bump CACHE_VERSION on any deploy that changes the shell.
-const CACHE_VERSION = 'ship-happens-v3';
+const CACHE_VERSION = 'ship-happens-v4';
 const SHELL = ['./', './index.html', './config.js', './results.js', './manifest.json'];
 
 self.addEventListener('install', (event) => {
