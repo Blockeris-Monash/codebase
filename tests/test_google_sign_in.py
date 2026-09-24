@@ -48,7 +48,7 @@ def test_the_button_stays_hidden_until_sign_in_is_available() -> None:
     """Offline or unconfigured, the top bar is exactly as before."""
     helper = INDEX[INDEX.index("function accountHTML(){"):INDEX.index("\nfunction render(){")]
 
-    assert 'if(!S.authReady) return "";' in helper
+    assert 'if(!S.authReady || (!S.user && signInReturn)) return "";' in helper
     assert "S.authReady = !!window.Store?.onUser?.(" in INDEX
 
 
