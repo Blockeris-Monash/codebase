@@ -11,3 +11,5 @@ httpx>=0.27  # Gmail calls for the live mailbox (backend/gmail.py)
 
 # Development
 pytest>=8.0
+supabase>=2.0
+langchain-text-splitters>=0.2.0

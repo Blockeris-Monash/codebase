@@ -458,6 +458,11 @@ async def process_email(
 
     # 3. Non-comparison branch (SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM)
     if classification.category != "BL_COMPARISON":
+        draft_reply = None
+        if classification.category in ("INVOICE_QUERY", "GENERAL"):
+            from backend.reply import generate_rag_reply
+            draft_reply = generate_rag_reply(email, classification.category)
+
         return {
             "email_id": email.email_id,
             "EmailRecord": email_record,
@@ -469,6 +474,7 @@ async def process_email(
                 "review_reason": None,
                 "has_defect": False,
                 "defect_fields": [],
+                "draft_reply": draft_reply,
             },
         }
 
@@ -546,7 +552,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     entry = {"id": email_id, "from": message.sender, "subject": message.subject,
              "body": clean_body(message.body), "n_attachments": len(paths), "received_at": message.date,
              "category": found["category"], "decided_by": found["decided_by"],
-             "class_confidence": found["confidence"], "class_evidence": found["evidence"]}
+             "class_confidence": found["confidence"], "class_evidence": found["evidence"],
+             "draft_reply": checked.get("SubmissionEntry", {}).get("draft_reply")}
     ref = shipment_ref(message.subject, message.body)
     if ref:
         entry["ref"] = ref
