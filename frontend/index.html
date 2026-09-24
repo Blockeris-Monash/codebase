@@ -287,6 +287,13 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <script src="config.js"></script>
 <script src="results.js"></script>
 <script src="i18n.js"></script>
+<script type="module">
+  // Loaded from a CDN because this page has no build step. Only the auth and
+  // REST helpers are used; the page still renders if this never arrives.
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  window.supabase = { createClient };
+</script>
+<script src="store.js"></script>
 <script>
 const API_BASE = (window.BLOCKERIS_API_BASE || "").replace(/\/$/, "");
 const PAGE = 30;
@@ -747,6 +754,7 @@ document.addEventListener("click", ev=>{
     if(!S.fb.msg.trim()) S.fb.err=true;
     else{
       const list = loadFeedback(); list.push({...S.fb, about:S.sel, at:new Date().toISOString(), sent:undefined, err:undefined, copied:undefined}); saveFeedback(list);
+      Store?.pushReport({...S.fb, about:S.sel});
       S.fb.sent = SUPPORT_EMAIL ? "mailto" : "saved";
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
@@ -760,11 +768,11 @@ document.addEventListener("click", ev=>{
   else if(a==="allmail"){ S.f="all"; S.page=0; S.resetList=true; }
   else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
-  else if(a==="mark"){ S.marks[id]=k; saveMarks(); }
-  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); }
+  else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); }
+  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); }
   else if(a==="draft"){ S.draft = draftFor(byId[id]); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="discard"){ S.draft=null; }
-  else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); }
+  else if(a==="send"){ S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
   else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
   else if(a==="recheck") return recheck(id);
@@ -802,6 +810,14 @@ document.addEventListener("keydown", ev=>{
 });
 window.addEventListener("hashchange", render);
 render();
+
+/* Signed in, marks made on another device appear after the first paint.
+   Signed out this resolves to null and nothing happens. Deliberately after
+   render(), so a slow or paused database never delays the page. */
+Store?.pull(S.marks)?.then(function (merged) {
+  if (!merged) return;
+  S.marks = merged; saveMarks(); render();
+});
 </script>
 <script>
 /* Installability: Chrome only offers "Install" when a worker with a fetch
