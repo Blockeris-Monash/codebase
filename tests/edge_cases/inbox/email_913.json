@@ -1,0 +1,7 @@
+{
+  "email_id": "email_913",
+  "from": "no-reply@bl-docs-portal.example",
+  "subject": "Your Draft BL MEDUUD104332 is ready to approve",
+  "body": "Your draft Bill of Lading is ready. Click here to view and approve before cut-off: http://bl-docs-portal.example/login?ref=MEDUUD104332\n\nYou will need to sign in with your email password.",
+  "attachments": []
+}

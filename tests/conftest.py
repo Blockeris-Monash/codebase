@@ -38,6 +38,8 @@ def attachments(data_dir: Path) -> Path:
 # match wins, so order matters.
 REPORT_AREAS: list[tuple[str, str, str]] = [
     ("phone_and_fold", "Any screen", "flip, fold, landscape and high contrast"),
+    ("edge_case", "Edge cases", "real-world email shapes, expected result written first"),
+    ("mailbox_email_id", "Edge cases", "real-world email shapes, expected result written first"),
     ("google_sign_in", "Sign in", "Google sign-in through Supabase"),
     ("review_state_store", "Saved state", "a mark survives a change of browser"),
     ("store", "Saved state", "a mark survives a change of browser"),
