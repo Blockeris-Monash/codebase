@@ -7,6 +7,8 @@ from supabase import create_client, Client
 from google import genai
 from dotenv import load_dotenv
 
+from backend.embeddings import EmbeddingTask, embed
+
 load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -56,11 +58,7 @@ def ingest():
     # 3. Embed and store
     print("Embedding and storing in Supabase...")
     for i, chunk in enumerate(chunks):
-        response = client.models.embed_content(
-            model='gemini-embedding-001',
-            contents=chunk,
-        )
-        embedding = response.embeddings[0].values
+        embedding = embed(client, chunk, EmbeddingTask.Document)
         
         # Insert into Supabase
         data, count = supabase.table('policies').insert({

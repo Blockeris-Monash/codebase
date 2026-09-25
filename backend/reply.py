@@ -6,6 +6,7 @@ from supabase import create_client, Client
 from google import genai
 from backend import reports, settings
 from backend.classify import EmailInput
+from backend.embeddings import EmbeddingTask, embed
 from backend.extract.fallback import with_fallback
 from backend.extract.circuit_breaker import CircuitBreaker
 
@@ -49,12 +50,7 @@ def retrieve_policies(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         return []
 
     try:
-        # Embed the query
-        embed_response = client.models.embed_content(
-            model='gemini-embedding-001',
-            contents=query,
-        )
-        query_embedding = embed_response.embeddings[0].values
+        query_embedding = embed(client, query, EmbeddingTask.Query)
 
         # Call the Supabase rpc matching function
         response = supabase.rpc(
