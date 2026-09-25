@@ -357,7 +357,11 @@ window.I18N = {
   "How Ship Happens performs": "Prestasi Ship Happens",
   "Gmail access lasts an hour. Reconnect Gmail to see your mailbox.": "Akses Gmail bertahan sejam. Sambung semula Gmail untuk melihat peti mel anda.",
   "Reconnect Gmail": "Sambung semula Gmail",
-  "Checking {n} emails. Each one shows here as soon as it is checked.": "Menyemak {n} e-mel. Setiap satu dipaparkan di sini sebaik sahaja disemak."
+  "Checking {n} emails. Each one shows here as soon as it is checked.": "Menyemak {n} e-mel. Setiap satu dipaparkan di sini sebaik sahaja disemak.",
+  "Draft a reply": "Draf balasan",
+  "Drafting...": "Sedang mendraf...",
+  "Sign in with Google again to draft a reply.": "Log masuk dengan Google sekali lagi untuk mendraf balasan.",
+  "No draft: {reason}": "Tiada draf: {reason}"
  },
  "zh": {
   "What the scan says": "扫描件上的内容",
@@ -715,6 +719,10 @@ window.I18N = {
   "How Ship Happens performs": "Ship Happens 的表现",
   "Gmail access lasts an hour. Reconnect Gmail to see your mailbox.": "Gmail 访问权限有效期为一小时。请重新连接 Gmail 以查看您的邮箱。",
   "Reconnect Gmail": "重新连接 Gmail",
-  "Checking {n} emails. Each one shows here as soon as it is checked.": "正在检查 {n} 封邮件。每封检查完毕后会立即显示在这里。"
+  "Checking {n} emails. Each one shows here as soon as it is checked.": "正在检查 {n} 封邮件。每封检查完毕后会立即显示在这里。",
+  "Draft a reply": "起草回复",
+  "Drafting...": "正在起草...",
+  "Sign in with Google again to draft a reply.": "请重新使用 Google 登录以起草回复。",
+  "No draft: {reason}": "未能起草：{reason}"
  }
 };

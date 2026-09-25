@@ -1222,10 +1222,13 @@ function routeHTML(e){
 
 function actionsHTML(e){
   if(e.awaiting) return "";
-  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply) return "";
+  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply && !e.can_draft) return "";
   const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
   if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):sent&&sent.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${sent&&sent.real?"":`<button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button>`}</div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
+  /* Live General and Invoice mail: the AI drafts only when asked, since each draft is paid for (#149). */
+  if(e.can_draft && !e.draft_reply) return `<div class="actions"><button class="btn" data-a="aidraft" data-id="${e.id}" ${S.drafting?"disabled":""}>${S.drafting===e.id?t("Drafting..."):t("Draft a reply")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>` +
+      (S.draftErr&&S.draftErr.id===e.id?`<div class="small" role="alert" style="margin-top:8px">${esc(S.draftErr.msg)}</div>`:"");
   if(d) return `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
@@ -1469,6 +1472,7 @@ document.addEventListener("click", ev=>{
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
+  else if(a==="aidraft"){ draftLive(id); return; }
   else if(a==="discard"){ S.draft=null; }
   else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
@@ -1609,6 +1613,20 @@ async function sendLive(id){
     S.sent[id]={to:d.to, subject:d.subject, body:d.body, real:true}; S.marks[id]="back"; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id);
   }catch(err){ S.sendErr = t("Not sent: {reason}", {reason: err.message}); }
   S.sending = false; render();
+}
+async function draftLive(id){
+  const e = getEmail(id), token = window.Store?.googleToken?.();
+  if(!e || S.drafting) return;
+  if(!token){ S.draftErr = {id, msg:t("Sign in with Google again to draft a reply.")}; render(); return; }
+  S.drafting = id; S.draftErr = null; render();
+  try{
+    const res = await fetch(API_BASE + "/draft-reply", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+                                                        body: JSON.stringify({email_id:id})});
+    if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
+    e.draft_reply = (await res.json()).draft_reply;
+    if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; }
+  }catch(err){ S.draftErr = {id, msg:t("No draft: {reason}", {reason: err.message})}; }
+  S.drafting = null; render();
 }
 /* Under the top bar in My mailbox: why nothing shows, or how many are still being checked. */
 function mailboxBarHTML(){
