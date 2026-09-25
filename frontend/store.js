@@ -77,17 +77,30 @@
     }
   }
 
+  // True when the row reached the queue, false when it did not. The page tells
+  // the reviewer which, so "Thank you, we got it" is only said when it is true.
+  //
+  // supabase-js does not throw when the database refuses a row, it resolves with
+  // an `error` - so the old version caught nothing, reported nothing, and the
+  // page thanked the reviewer for a report that had been rejected.
   async function pushReport(entry) {
     const c = sb(), u = await user();
-    if (!c || !u) return;
+    if (!c || !u) return false;
     try {
-      await c.from("reports").insert({
+      // The title is what the admin queue lists, so "problem" three times over
+      // is a queue nobody can triage. Name the email it is about.
+      const kind = entry.kind || "note";
+      const title = entry.about ? `${kind} about ${entry.about}` : kind;
+      const { error } = await c.from("reports").insert({
         user_id: u.id, kind: "human", email_ref: entry.about || null,
-        title: entry.kind || "note", detail: entry.msg || "",
+        title: title, detail: entry.msg || "",
         rating: entry.rating || null,
       });
+      if (error) throw error;
+      return true;
     } catch (error) {
       console.warn("report not mirrored to the database:", error);
+      return false;
     }
   }
 

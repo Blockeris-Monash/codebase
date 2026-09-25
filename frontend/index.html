@@ -681,7 +681,7 @@ function guideHTML(){
 
 function supportHTML(){
   const f = S.fb;
-  if(f.sent) return `<div class="thanks">${ICON.OK}<b>${t("Thank you, we got it.")}</b><span>${f.sent==="mailto"?t("Your email app should have opened with the message ready to send."):t("It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.")}</span><button class="btn alt" data-a="fbagain">${t("Write another")}</button></div>`;
+  if(f.sent) return `<div class="thanks">${ICON.OK}<b>${t("Thank you, we got it.")}</b><span>${f.sent==="mailto"?t("Your email app should have opened with the message ready to send."):f.sent==="queued"?t("It is in the team's reports queue."):f.sent==="failed"?t("We could not reach the reports queue, so it is saved on this device. Please tell the team."):t("It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.")}</span><button class="btn alt" data-a="fbagain">${t("Write another")}</button></div>`;
   const about = S.sel ? `<div class="small mute">${t("This note will mention email {id}.",{id:esc(S.sel.replace("email_","#"))})}</div>` : "";
   const kinds = Object.entries(KINDS).map(([k,n])=>`<button class="segb ${f.kind===k?"on":""}" data-a="kind" data-k="${k}" aria-pressed="${f.kind===k}">${t(n)}</button>`).join("");
   const stars = [1,2,3,4,5].map(n=>`<button class="star ${f.rating>=n?"on":""}" data-a="rate" data-k="${n}" aria-label="${t("{n} out of 5",{n})}">${f.rating>=n?"★":"☆"}</button>`).join("");
@@ -1428,8 +1428,12 @@ document.addEventListener("click", ev=>{
     if(!S.fb.msg.trim()) S.fb.err=true;
     else{
       const list = loadFeedback(); list.push({...S.fb, about:S.sel, at:new Date().toISOString(), sent:undefined, err:undefined, copied:undefined}); saveFeedback(list);
-      Store?.pushReport({...S.fb, about:S.sel});
+      // Wait for the answer rather than assume it: the queue can refuse a row,
+      // and thanking somebody for a report that was rejected is worse than
+      // saying so. Signed out it resolves false and nothing changes.
+      const filed = window.Store?.pushReport({...S.fb, about:S.sel});
       S.fb.sent = SUPPORT_EMAIL ? "mailto" : "saved";
+      if(filed) filed.then(ok=>{ if(S.fb.sent!=="mailto"){ S.fb.sent = ok ? "queued" : "failed"; render(); } });
       if(SUPPORT_EMAIL){ location.href = "mailto:"+encodeURIComponent(SUPPORT_EMAIL)+"?subject="+encodeURIComponent("Ship Happens "+KINDS[S.fb.kind].toLowerCase())+"&body="+encodeURIComponent(feedbackText()); }
     }
   }
@@ -1444,11 +1448,11 @@ document.addEventListener("click", ev=>{
   else if(a==="clearq"){ S.q=""; S.page=0; S.resetList=true; }
   else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
-  else if(a==="mark"){ S.marks[id]=k; saveMarks(); Store?.pushMark(id, k); advance(id); }
-  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
+  else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
+  else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="discard"){ S.draft=null; }
-  else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); Store?.pushReply(id, S.sent[id]); advance(id); }
+  else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
   else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
   render();
@@ -1546,7 +1550,7 @@ render();
 /* Signed in, marks made on another device appear after the first paint.
    Signed out this resolves to null and nothing happens. Deliberately after
    render(), so a slow or paused database never delays the page. */
-Store?.pull(S.marks)?.then(function (merged) {
+window.Store?.pull(S.marks)?.then(function (merged) {
   if (!merged) return;
   S.marks = merged; saveMarks(); render();
 });
