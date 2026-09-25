@@ -4,6 +4,8 @@ window.I18N = {
  "ms": {
   "What the scan says": "Apa yang tertulis pada imbasan",
   "not verified": "belum disahkan",
+  "Could not be checked": "Tidak dapat disemak",
+  "This email could not be read or checked. Open it in Gmail.": "E-mel ini tidak dapat dibaca atau disemak. Bukanya dalam Gmail.",
   "This exact value does not appear anywhere in these documents, so it is probably a misreading.": "Nilai tepat ini tidak muncul di mana-mana dalam dokumen ini, jadi kemungkinan besar ia tersalah baca.",
   "Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.": "Dibaca daripada imej halaman, kerana fail ini tiada teks. Tiada apa-apa di sini menentukan keputusan: {n} nilai tidak muncul di mana-mana lain dalam dokumen ini, jadi e-mel ini tetap dihantar kepada seseorang.",
   "Dismiss": "Tutup",
@@ -363,6 +365,8 @@ window.I18N = {
   "Colour-blind friendly": "Mesra buta warna"
  },
  "zh": {
+  "Could not be checked": "无法检查",
+  "This email could not be read or checked. Open it in Gmail.": "无法读取或检查此邮件。请在 Gmail 中打开。",
   "What the scan says": "扫描件上的内容",
   "not verified": "未核实",
   "This exact value does not appear anywhere in these documents, so it is probably a misreading.": "这个值在本批文件中从未出现过，因此很可能是误读。",

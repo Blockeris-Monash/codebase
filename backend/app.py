@@ -29,7 +29,7 @@ from backend.intent import about, email_intent
 from backend.compare.comparator import ComparisonResult, compare
 from backend import gmail, reports
 from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
-from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
+from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
@@ -814,7 +814,8 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
             MAILBOXES.setdefault(address, {})[gmail_id] = {
                 "id": gmail.mailbox_id(gmail_id), "from": "", "subject": "(could not be checked)",
                 "body": "This email could not be read or checked. Open it in Gmail.",
-                "n_attachments": 0, "check_failed": True}
+                # A category like every other entry, so nothing on the page meets an email without one.
+                "category": CategoryType.General, "n_attachments": 0, "check_failed": True}
     finally:
         WORKING.pop(key, None)
 
