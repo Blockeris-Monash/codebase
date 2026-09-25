@@ -705,9 +705,17 @@ const ROADMAP = [
   [T("Translate an email"), T("Translate an email and its documents into the reviewer's language with one click, for people who do not read English.")],
   [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")]
 ];
+/* An email as a person names it: a demo email by its number, live or uploaded mail by its title.
+   A Gmail id means nothing on screen; the report keeps the id itself, for the admin queue. */
+const LABEL_CHARS = 60;
+function emailLabel(id){
+  if(String(id).startsWith("email_")) return "#" + String(id).slice(6);
+  const e = getEmail(id), words = e ? title(e, true) : "";
+  return words ? `"${words.length > LABEL_CHARS ? words.slice(0, LABEL_CHARS - 1) + "\u2026" : words}"` : "#" + id;
+}
 function feedbackText(){
   const f = S.fb;
-  return `${KINDS[f.kind]}${S.sel?" about email "+S.sel.replace("email_","#"):""}\n\n${f.msg.trim()}\n\n${f.rating?"Rating: "+f.rating+" out of 5\n":""}${f.from.trim()?"Reply to: "+f.from.trim():""}`.trim();
+  return `${KINDS[f.kind]}${S.sel?" about email "+emailLabel(S.sel):""}\n\n${f.msg.trim()}\n\n${f.rating?"Rating: "+f.rating+" out of 5\n":""}${f.from.trim()?"Reply to: "+f.from.trim():""}`.trim();
 }
 function loadFeedback(){ try{ return JSON.parse(localStorage.getItem("blockeris.feedback")||"[]"); }catch(_){ return []; } }
 function saveFeedback(list){ try{ localStorage.setItem("blockeris.feedback", JSON.stringify(list)); }catch(_){} }
@@ -732,7 +740,7 @@ function guideHTML(){
 function supportHTML(){
   const f = S.fb;
   if(f.sent) return `<div class="thanks">${ICON.OK}<b>${t("Thank you, we got it.")}</b><span>${f.sent==="mailto"?t("Your email app should have opened with the message ready to send."):f.sent==="queued"?t("It is in the team's reports queue."):f.sent==="failed"?t("We could not reach the reports queue, so it is saved on this device. Please tell the team."):t("It is saved on this device. Email to the support team is not switched on in this demo yet, so it has not been sent.")}</span><button class="btn alt" data-a="fbagain">${t("Write another")}</button></div>`;
-  const about = S.sel ? `<div class="small mute">${t("This note will mention email {id}.",{id:esc(S.sel.replace("email_","#"))})}</div>` : "";
+  const about = S.sel ? `<div class="small mute">${t("This note will mention email {id}.",{id:esc(emailLabel(S.sel))})}</div>` : "";
   const kinds = Object.entries(KINDS).map(([k,n])=>`<button class="segb ${f.kind===k?"on":""}" data-a="kind" data-k="${k}" aria-pressed="${f.kind===k}">${t(n)}</button>`).join("");
   const stars = [1,2,3,4,5].map(n=>`<button class="star ${f.rating>=n?"on":""}" data-a="rate" data-k="${n}" aria-label="${t("{n} out of 5",{n})}">${f.rating>=n?"★":"☆"}</button>`).join("");
   return `<div class="fb"><h3>${t("Need a hand?")}</h3><p class="mute small">${t("Ask the support team a question, report a problem or share an idea. Every note helps us improve the next version.")}</p>
