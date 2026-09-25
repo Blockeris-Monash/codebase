@@ -51,3 +51,26 @@ def test_the_cleaner_treats_a_null_field_as_absent() -> None:
 
 def test_the_cleaner_treats_null_fields_as_all_absent() -> None:
     assert all(field["norm"] is None for field in app_module.apply_cleaner(None).values())
+
+
+# --- B3.11 -----------------------------------------------------------------
+
+def test_the_startup_line_does_not_claim_vision_the_service_never_uses(monkeypatch, caplog) -> None:
+    """Nothing in the service calls read_scan, yet SHIP_HAPPENS_VISION=1 printed vision=on."""
+    monkeypatch.setenv("SHIP_HAPPENS_VISION", "1")
+
+    with caplog.at_level("INFO", logger="backend.app"):
+        app_module.say_what_is_switched_on()
+
+    said = [record for record in caplog.records if record.name == "backend.app"]
+    assert not any("vision=" in record.getMessage() for record in said)
+    assert any(record.levelname == "WARNING" and "SHIP_HAPPENS_VISION" in record.getMessage() for record in said)
+
+
+def test_the_startup_line_stays_quiet_about_vision_when_it_is_not_asked_for(monkeypatch, caplog) -> None:
+    monkeypatch.delenv("SHIP_HAPPENS_VISION", raising=False)
+
+    with caplog.at_level("INFO", logger="backend.app"):
+        app_module.say_what_is_switched_on()
+
+    assert not any("SHIP_HAPPENS_VISION" in record.getMessage() for record in caplog.records)
