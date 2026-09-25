@@ -23,6 +23,7 @@ from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_model
 from backend.extract.qwen import qwen_model
 from backend.extract.circuit_breaker import CircuitBreaker
+from backend.intent import about, email_intent
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
@@ -698,7 +699,7 @@ def folder_for(address: str, gmail_id: str) -> Path:
 async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, Any]:
     """One live email as the page draws it: the same fields cli/make_results.py
     writes for a demo email, from the same /process-email the demo button calls."""
-    from cli.make_results import clean_body, document, shipment_ref  # cli imports this module
+    from cli.make_results import DRAFT_REQUEST, clean_body, document, shipment_ref  # cli imports this module
 
     email_id = gmail.mailbox_id(message.gmail_id)
     email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
@@ -714,6 +715,14 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     ref = shipment_ref(message.subject, message.body)
     if ref:
         entry["ref"] = ref
+
+    # The same rules as the demo (backend/intent.py). A real subject rarely has the dataset's
+    # shape, so when no customer or port is found the subject itself follows the label.
+    awaiting = not paths and bool(DRAFT_REQUEST.search(message.body))
+    intent = email_intent(found["category"], message.subject, message.body, awaiting=awaiting)
+    if intent:
+        entry["intent"] = intent
+        entry["about"] = about(intent, message.subject, message.body) or [message.subject]
 
     result = checked["ComparisonResult"]
     if result:
