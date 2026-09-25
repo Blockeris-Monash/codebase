@@ -25,6 +25,7 @@ httpx==0.28.1            # also the Gmail calls for the live mailbox (backend/gm
 # version past the floor, so the floor was never describing what CI ran.
 supabase==2.31.0
 langchain-text-splitters==1.1.2
+fpdf2==2.8.8
 
 # Development
 pytest==9.1.1
