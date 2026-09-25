@@ -50,6 +50,16 @@
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}
+/* Colours (Settings). Colour-blind friendly: Action required magenta and Verified blue instead of red and
+   green, so the statuses stay apart for red-green colour blindness; Needs review keeps its amber. */
+:root[data-palette="cb"]{--bad:#b0145f; --bad-soft:#fbe4ef; --ok:#1f5fd6; --ok-soft:#e3edfc;}
+@media (prefers-color-scheme:dark){:root[data-palette="cb"]:not([data-theme="light"]){--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}}
+:root[data-palette="cb"][data-theme="dark"]{--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}
+/* Monotone: the whole page in greys, for people who see no colour. The statuses become three greys, darkest
+   for Action required, told apart by lightness and by their icons (cross, eye, tick). */
+:root[data-palette="mono"]{filter:grayscale(1); --bad:#1c1c1c; --bad-soft:#d4d4d4; --rev:#4d4d4d; --rev-soft:#e8e8e8; --ok:#6e6e6e; --ok-soft:#f7f7f7;}
+@media (prefers-color-scheme:dark){:root[data-palette="mono"]:not([data-theme="light"]){--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;}}
+:root[data-palette="mono"][data-theme="dark"]{--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg-grad,var(--bg));background-attachment:fixed;min-height:100vh;color:var(--ink);font:0.9375rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -213,6 +223,10 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .scanbox{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card)}
 .scanbox h3{margin:0 0 4px;font-size:0.9375rem}
 .scanbox .cap{margin:0 0 10px}
+.scanpages{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.scanpage{display:block;text-decoration:none;color:inherit}
+.scanpage img{display:block;width:100%;max-height:320px;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:8px;background:#fff}
+.scanpage .cap{margin:4px 0 0}
 .docs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .doc{min-width:0}
 .doch{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:4px}
@@ -567,6 +581,11 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 /* the hero's sea fades into the page instead of stopping at a hard edge */
 .lp-hero .lp-sky{-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)}
 </style>
+<script>try{
+  // "blockeris.cb" is the Colour-blind friendly switch from before Monotone existed
+  const palette = localStorage.getItem("blockeris.palette") ?? (localStorage.getItem("blockeris.cb")==="on" ? "cb" : "");
+  if(palette==="cb" || palette==="mono") document.documentElement.dataset.palette = palette;
+}catch(_){}</script>
 </head>
 <body>
 <div id="app"></div>
@@ -666,8 +685,7 @@ const ROADMAP = [
   [T("Read scanned and cut-off files"), T("Scanned PDFs are sent to review today. OCR would read most of them, so fewer emails need a person.")],
   [T("Shared review queue for a team"), T("Several reviewers work the same queue, with who checked what and when.")],
   [T("Translate an email"), T("Translate an email and its documents into the reviewer's language with one click, for people who do not read English.")],
-  [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")],
-  [T("Colour-blind friendly themes"), T("Extra colour themes for people with colour blindness, so Action required, Needs review and Verified can be told apart without relying on red and green.")]
+  [T("Add more languages"), T("Load a language pack file, or let the AI translate the page into any language you choose.")]
 ];
 function feedbackText(){
   const f = S.fb;
@@ -1009,6 +1027,9 @@ const folder = k=>FOLDERS.find(x=>x.k===k);
 /* The emails of the mailbox on show: the demo data, My mailbox, or the files uploaded here. */
 const mailList = ()=>S.mailbox==="live" ? S.liveEmails : S.mailbox==="upload" ? S.uploads : RESULTS;
 const getEmail = id => (S.mailbox !== "demo" ? mailList().find(e=>e.id===id) : null) || byId[id];
+/* The open email, or null. A live email can leave the list between polls (newer mail pushed it out,
+   it was archived in Gmail, the backend restarted), so a selection that no longer resolves is dropped. */
+const selectedEmail = ()=>{ const e = S.sel ? getEmail(S.sel) : null; if(!e) S.sel = null; return e || null; };
 const count = k => mailList().filter(folder(k).f).length;
 /* My mailbox before its first answer, or before its first email is checked: show that it
    is loading, not a row of zeros and "All done". Right after sign-in the backend answers
@@ -1130,7 +1151,20 @@ function scanHTML(e){
   return `<div class="scanbox"><h3>${t("What the scan says")}</h3>` +
     `<p class="cap">${t("Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.",{n:doubted})}</p>` +
     `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead>` +
-    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div></div>`;
+    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div>` +
+    scanPagesHTML(scan) + `</div>`;
+}
+
+/* The scanned pages themselves (cli/make_scans.py), so a value marked "not verified" can be
+   checked against the page rather than trusted or reopened from the attachment. */
+const SCAN_PAGES = [{role:"SI", name:T("Shipping Instruction"), alt:T("The scanned Shipping Instruction page")},
+                    {role:"BL", name:T("Draft Bill of Lading"), alt:T("The scanned draft Bill of Lading page")}];
+function scanPagesHTML(scan){
+  const pages = SCAN_PAGES.filter(p=>scan[p.role]?.page);
+  if(!pages.length) return "";
+  return `<p class="cap">${t("The pages themselves. Tap one to open it full size.")}</p><div class="scanpages">` +
+    pages.map(p=>`<a class="scanpage" href="${esc(scan[p.role].page)}" target="_blank" rel="noopener"><img src="${esc(scan[p.role].page)}" loading="lazy" alt="${t(p.alt)}"><span class="cap">${t(p.name)}</span></a>`).join("") +
+    `</div>`;
 }
 
 function docsHTML(e, rows){
@@ -1223,10 +1257,13 @@ function routeHTML(e){
 
 function actionsHTML(e){
   if(e.awaiting) return "";
-  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply) return "";
+  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply && !e.can_draft) return "";
   const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
   if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):sent&&sent.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${sent&&sent.real?"":`<button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button>`}</div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
+  /* Live General and Invoice mail: the AI drafts only when asked, since each draft is paid for (#149). */
+  if(e.can_draft && !e.draft_reply) return `<div class="actions"><button class="btn" data-a="aidraft" data-id="${e.id}" ${S.drafting?"disabled":""}>${S.drafting===e.id?t("Drafting..."):t("Draft a reply")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>` +
+      (S.draftErr&&S.draftErr.id===e.id?`<div class="small" role="alert" style="margin-top:8px">${esc(S.draftErr.msg)}</div>`:"");
   if(d) return `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
@@ -1244,7 +1281,16 @@ function actionsHTML(e){
   return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
 }
 
+/* An email the backend gave up on (backend/app.py check_message): nothing was sorted or compared,
+   so none of the result sections apply. The person opens it in Gmail instead. */
+function failedHTML(e){
+  return `<div class="detail"><h2>${esc(e.subject)}</h2>` +
+    `<div class="banner NEEDS_REVIEW">${ICON.NEEDS_REVIEW}${t("Could not be checked")}<span>${t("This email could not be read or checked. Open it in Gmail.")}</span></div>` +
+    `<div class="actions"><a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a></div></div>`;
+}
+
 function detail(e){
+  if(e.check_failed) return failedHTML(e);
   const view = e;
   let h = `<div class="detail"><h2>${esc(title(e))}</h2>${e.intent&&!(e.about||[]).includes(e.subject)?`<div class="mute small subj">${esc(e.subject)}</div>`:""}<div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
   let banner, tbl = "";
@@ -1347,7 +1393,8 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(title(e,true))}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
+  const open = selectedEmail();
+  const pane = open ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(open)}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
@@ -1420,6 +1467,7 @@ document.addEventListener("click", ev=>{
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="sortsel"||a==="kindsel") return;   // a redraw here would close the dropdown as it opens
   if(a==="theme"){ document.documentElement.dataset.theme = k; S.langMenu=false; }
+  if(a==="palette"){ setPalette(k); S.langMenu=false; }
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; S.nextFrom=location.hash; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); }
   else if(a==="nextback"){ location.hash = fromHomeHash() ? "#/" : "#/inbox"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
@@ -1474,6 +1522,7 @@ document.addEventListener("click", ev=>{
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
+  else if(a==="aidraft"){ draftLive(id); return; }
   else if(a==="discard"){ S.draft=null; }
   else if(a==="refine"){ if(!S.refining) refineDraft(id); }
   else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
@@ -1515,11 +1564,17 @@ function advance(id){
   S.sel=next.id; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===next.id)/PAGE));
 }
 const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):S.toast.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${S.toast.real?"":`<button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button>`}</div>` : "";
+function setPalette(k){
+  if(k) document.documentElement.dataset.palette = k; else delete document.documentElement.dataset.palette;
+  try{ localStorage.setItem("blockeris.palette", k); }catch(_){}
+}
 /* Language and colour mode share one menu, so the top bar keeps only Help, What's next and the account. */
 function settingsHTML(isDark){
   const lang = allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="menuitemradio" aria-checked="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("");
   const mode = [["light",T("Light Mode"),ICON.SUN,!isDark],["dark",T("Dark Mode"),ICON.MOON,isDark]].map(([k,n,ico,on])=>`<button class="mi ${on?"on":""}" role="menuitemradio" aria-checked="${on}" data-a="theme" data-k="${k}"><span class="mtick">${on?ICON.CHECKED:""}</span>${ico}${t(n)}</button>`).join("");
-  return `<div class="menu" role="menu" aria-label="${t("Settings")}"><div class="mh">${ICON.GLOBE}${t("Language")}</div>${lang}<button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button><div class="msep"></div><div class="mh">${ICON.SUN}${t("Colour mode")}</div>${mode}</div>`;
+  const now = document.documentElement.dataset.palette || "";
+  const palettes = [["",T("Standard colours")],["cb",T("Colour-blind friendly")],["mono",T("Monotone")]].map(([k,n])=>`<button class="mi ${k===now?"on":""}" role="menuitemradio" aria-checked="${k===now}" data-a="palette" data-k="${k}"><span class="mtick">${k===now?ICON.CHECKED:""}</span>${t(n)}</button>`).join("");
+  return `<div class="menu" role="menu" aria-label="${t("Settings")}"><div class="mh">${ICON.GLOBE}${t("Language")}</div>${lang}<button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button><div class="msep"></div><div class="mh">${ICON.SUN}${t("Colour mode")}</div>${mode}<div class="msep"></div><div class="mh">${ICON.NEEDS_REVIEW}${t("Colours")}</div>${palettes}</div>`;
 }
 /* Labelled dropdowns, the usual pattern for sorting and filtering a list. */
 const pick = (a,label,opts,cur)=>`<label class="pick mute small">${label}<select data-a="${a}">${opts.map(([v,n])=>`<option value="${v}" ${v===cur?"selected":""}>${n}</option>`).join("")}</select></label>`;
@@ -1642,6 +1697,20 @@ async function sendLive(id){
     S.sent[id]={to:d.to, subject:d.subject, body:d.body, real:true}; S.marks[id]="back"; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id);
   }catch(err){ S.sendErr = t("Not sent: {reason}", {reason: err.message}); }
   S.sending = false; render();
+}
+async function draftLive(id){
+  const e = getEmail(id), token = window.Store?.googleToken?.();
+  if(!e || S.drafting) return;
+  if(!token){ S.draftErr = {id, msg:t("Sign in with Google again to draft a reply.")}; render(); return; }
+  S.drafting = id; S.draftErr = null; render();
+  try{
+    const res = await fetch(API_BASE + "/draft-reply", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+                                                        body: JSON.stringify({email_id:id})});
+    if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
+    e.draft_reply = (await res.json()).draft_reply;
+    if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; }
+  }catch(err){ S.draftErr = {id, msg:t("No draft: {reason}", {reason: err.message})}; }
+  S.drafting = null; render();
 }
 /* Under the top bar in My mailbox: why nothing shows, or how many are still being checked. */
 function mailboxBarHTML(){

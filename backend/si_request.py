@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from fpdf import FPDF
 from typing import Dict, Any, Tuple
@@ -13,6 +14,24 @@ extractor = AiExtractor(with_fallback(qwen_model, gemini_model, enabled=lambda: 
 
 RESULTS_DIR = Path("results/generated_bls")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+# fpdf2's core fonts cover Latin-1 only, and a curly quote or a dash raised out of the
+# whole /process-email call as a 500 (#147). Common punctuation is swapped for its plain
+# form; anything else outside Latin-1 becomes "?", which the reviewer sees in the PDF.
+PLAIN_PUNCTUATION = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+                                   "\u2013": "-", "\u2014": "-", "\u2026": "...", "\u00a0": " "})
+# The email id becomes a file name: "../x" or an absolute id used to write outside RESULTS_DIR.
+UNSAFE_FILE_CHARACTERS = re.compile(r"[^A-Za-z0-9_-]")
+
+
+def pdf_text(text: str) -> str:
+    """Text the PDF's font can draw."""
+    return text.translate(PLAIN_PUNCTUATION).encode("latin-1", "replace").decode("latin-1")
+
+
+def pdf_name(email_id: str) -> str:
+    return UNSAFE_FILE_CHARACTERS.sub("_", Path(email_id).name)[:100] or "email"
+
 
 def generate_pdf(fields: Dict[str, Any], email_id: str) -> str:
     """Generates a PDF Draft BL from extracted fields and returns the file path."""
@@ -45,14 +64,14 @@ def generate_pdf(fields: Dict[str, Any], email_id: str) -> str:
         raw_text = raw_text.replace("<script>", "").replace("</script>", "")
         
         # Use multi_cell for wrapping long text
-        pdf.multi_cell(0, 10, txt=raw_text)
+        pdf.multi_cell(0, 10, txt=pdf_text(raw_text))
         pdf.ln(2)
 
     pdf.ln(10)
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(200, 10, txt="Please review all fields carefully. Reply to confirm or request changes.", ln=True)
     
-    output_path = RESULTS_DIR / f"{email_id}_Draft_BL.pdf"
+    output_path = RESULTS_DIR / f"{pdf_name(email_id)}_Draft_BL.pdf"
     pdf.output(str(output_path))
     return str(output_path)
 
@@ -99,8 +118,8 @@ GlobeTrans Support Team"""
 
 Thank you for your Shipping Instruction. 
 
-Please find your Draft Bill of Lading attached for your review. 
-Kindly check all details carefully and let us know if everything is correct, or if any changes are required.
+We have prepared your Draft Bill of Lading from these details and will send it to you for review.
+Kindly check all details carefully when it arrives and let us know if everything is correct, or if any changes are required.
 
 Best regards,
 GlobeTrans Support Team"""

@@ -240,3 +240,13 @@ def reports_start_with_nothing_held_back():
     reports.forget()
     yield
     reports.forget()
+
+
+@pytest.fixture(autouse=True)
+def fresh_rate_limit_window() -> None:
+    """Every test starts with nobody counted by the rate limiter. The tests share one
+    mailbox token, so without this /mailbox calls from earlier tests pile into one
+    budget and a later test gets 429 depending on the order the suite runs in."""
+    from backend import middleware
+
+    middleware._seen.clear()

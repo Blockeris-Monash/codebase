@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 716 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,10 +108,10 @@ python -m pytest -q          # 716 passed, 80 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 716 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
 ```
 
-If the tests print 716 passed, you are done — that is the whole system checked
+If the tests print 932 passed, you are done — that is the whole system checked
 offline, with no key and no network. The 80 skips are the tests that reach a
 model over the network; they stay skipped unless you ask for them by name.
 
@@ -412,25 +412,26 @@ shipment, which this dataset does not carry — a connected mailbox would supply
 it. Until then the list can be ordered by age in the inbox, which is the useful
 half.
 
-**2. Read the scanned documents.** Six of the eight unreadable attachments are
-image-only PDFs — the organisers rasterised them deliberately, watermark and
-all, to force the choice between reading them and escalating them. We escalate,
-honestly, but the use case names OCR and vision models as an advanced challenge
-and we did not attempt it. Those six currently yield no fields at all, so this is
-the one item here that would move a score.
+**2. Read scanned documents live.** The three scanned pairs in the demo (#512–514)
+show what a vision model read, beside the page itself, and still go to a person:
+a value read from an image never decides a verdict. A scan that arrives by Gmail
+or upload goes to a person with the reason and no reading yet. Reading those
+live, with a low-confidence read landing on `missing_value` rather than a forced
+verdict, is next.
 
-A low-confidence read must land on `missing_value` rather than a forced verdict,
-so that a missing field still outranks a mismatch and an OCR guess never
-masquerades as a value read from the page.
-
-**3. Connect a real mailbox.** OAuth against Outlook, Gmail or IMAP, several at
-once, so the inbox is live rather than a fixed dataset. Send the reply from the
-product; today the drafted reply is shown and the send is a demo. It is also the
-enabler under item 1 — it supplies the date of shipment that makes the deadline
-countable.
+**3. More mailboxes.** Gmail is connected and replies send from it. Outlook and
+IMAP next, several at once. A connected mailbox also supplies the date of
+shipment that makes the item 1 deadline countable.
 
 *Finding a shipment by its reference was item 3 here and is now built; see
 **How it works** above.*
+
+**Hardening before real customer mail.** Listed with owners in #147, section B:
+masking and a timeout on the drafted reply, a content security policy, clearing
+a person's data from the browser on sign-out, a service worker that never caches
+an error, state that survives a restart, a migration runner, and the pipeline
+gaps the edge cases found (a name wrapped onto a second line, a revised BL in the
+same email, decimal-comma weights).
 
 **Later — reliability and intake.** A confidence score on the extraction, retried
 before escalating. More intake channels: the X12 304 reader already exists, and

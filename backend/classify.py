@@ -319,6 +319,9 @@ def gemini_second_opinion(prompt: str) -> ClassificationSchema:
                     key=key, model=os.environ.get("GEMINI_CRITIC_MODEL")))
 
 
+MASKED_BODY_CHARS = 5000  # the prompt takes 1,500; the margin keeps PII at the cut masked
+
+
 async def classify_email(
     email: EmailInput,
     model: Callable[[str], ClassificationSchema] = classification_model,
@@ -327,8 +330,11 @@ async def classify_email(
     """One email, sorted. With `second_opinion`, the answer is checked by the critic
     first. Off unless asked for: the saved results were made by Qwen alone."""
     masker = get_pii_masker()
-    masked_from, masked_subject, masked_body = masker.mask_email_metadata(
-        email.from_email, email.subject, email.body
+    # Only the first 1,500 characters reach the prompt, so only a margin past that is
+    # masked, and off the event loop: masking a 100k body took 6 s and stalled every
+    # other request, /health included (#147).
+    masked_from, masked_subject, masked_body = await asyncio.to_thread(
+        masker.mask_email_metadata, email.from_email, email.subject, email.body[:MASKED_BODY_CHARS]
     )
 
     prompt = (
