@@ -70,11 +70,12 @@ def test_a_token_refresh_does_not_pull_you_off_the_demo() -> None:
     assert 'if (user && !wasSignedIn && S.mailbox !== "live")' in wiring
 
 
-def test_signed_in_the_landing_page_offers_no_demo_inbox() -> None:
+def test_signed_in_the_landing_page_leads_with_my_mailbox() -> None:
     page = home()
     hero = page[page.index('<section class="lp-hero">'):page.index("</section>")]
     assert 'u?`<button class="btn" data-a="mymailbox">${t("Open my mailbox")}</button>`' in hero
-    assert '${u?"":`<div class="opt main top-acc">' in page
+    # Get started shows the demo card to everyone, so the section looks the same signed in or not.
+    assert '      <div class="opt main top-acc">' in page
     foot = page[page.index('<div class="lp-links">'):]
     assert 'u?`<button class="ghost" data-a="mymailbox">${t("Open my mailbox")}</button>`' in foot
 
