@@ -31,6 +31,25 @@ without it.
   SI and BL pages of #512–514 now sit under the reading: greyscale, cropped to
   the printed part, about 20 KB each, loaded only when the email is opened.
   `cli/make_scans.py` writes them.
+- **A reviewer can confirm, dismiss or fix any field the check flagged.** Each
+  differing or blank row has a Review button. *Confirm difference* agrees with
+  the check. *Not a real difference* counts the field as a match. *Fix the
+  reading* is for when the AI misread one document: the reviewer types what it
+  says, and the new `POST /recompare` compares that field again with the same
+  cleaning and rule as the full check, with no model call (it gives the saved
+  verdict on all 798 demo rows). The email's status, folder, counts and reply
+  draft follow the corrected fields, and "How Ship Happens decided" still shows
+  what the pipeline did.
+
+  Corrections are kept on the device first. Signed in, each one is also written
+  to `corrections`, and a dismiss or a fix (or undoing one) files a human report
+  to the admin queue, with the old and new values and the status change, because
+  the result on screen no longer matches what the pipeline decided. A plain
+  confirm files none. The report is sent first and on its own, so it does not
+  depend on the corrections table accepting the row. **Run
+  `backend/db/migrations/0007_correction_kind.sql` in Supabase** to add the
+  `kind` and `side` columns. Until then the report still arrives, but the page
+  says the correction was not sent.
 
 ### Changed
 

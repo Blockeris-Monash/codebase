@@ -1,9 +1,11 @@
-"""Reply drafts on the demo account, written in advance and labelled as samples.
+"""Reply drafts on the demo account: written by Claude in advance, shown when asked for.
 
-Live mail gets its draft from the AI (backend/reply.py). The demo account calls no model, so
-until now its invoice and general emails had no draft at all. These drafts are written by
-hand for the demo (by Claude, on 25 Sep), one per kind of email, filled in from each email.
-They are not Ship Happens' output, so the page says so wherever one is shown.
+Live mail gets its draft from the AI (backend/reply.py) when the person presses Draft a reply
+(#152). The demo account calls no model, so each of its invoice and general emails carries a
+draft written in advance by Claude (on 25 Sep, one per email, from that email alone), and the
+page shows it the same way: behind Draft a reply, labelled as written by Claude for the demo.
+
+These replaced one template per kind of email (#151).
 """
 from __future__ import annotations
 
@@ -11,9 +13,7 @@ import json
 import re
 from pathlib import Path
 
-import pytest
-
-from cli.demo_replies import sample_reply, sender_name
+from cli.demo_replies import DRAFTS, demo_draft
 from cli.make_results import build_email
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,71 +26,104 @@ def saved_results() -> list[dict]:
     return json.loads(src[src.index("["): src.rindex("]") + 1])
 
 
-def test_every_demo_invoice_and_general_email_has_a_sample_draft() -> None:
-    """All but the 15 automated notices: nobody replies to an automated sender."""
-    results = saved_results()
-    wanted = [e for e in results if e["category"] in ("INVOICE_QUERY", "GENERAL") and e.get("intent") != "system_notice"]
-
-    assert len(wanted) == 120
-    assert all(e.get("draft_reply") and e.get("draft_by") == "sample" for e in wanted)
+def wanted(e: dict) -> bool:
+    """All invoice and general mail but the 15 automated notices: nobody replies to those."""
+    return e["category"] in ("INVOICE_QUERY", "GENERAL") and e.get("intent") != "system_notice"
 
 
-def test_no_other_demo_email_has_a_sample_draft() -> None:
+def test_every_demo_invoice_and_general_email_can_be_drafted_on_request() -> None:
+    results = [e for e in saved_results() if wanted(e)]
+
+    assert len(results) == 120
+    for e in results:
+        assert e["can_draft"] is True and e["draft_by"] == "claude" and e["demo_draft"], e["id"]
+        assert "draft_reply" not in e, f"{e['id']} would show its reply before Draft a reply is pressed"
+
+
+def test_no_other_demo_email_has_a_draft() -> None:
     """SI vs BL replies come from the page's own template; SI requests and spam get none,
     as in live mail, where only INVOICE_QUERY and GENERAL are drafted."""
-    others = [e for e in saved_results()
-              if e["category"] not in ("INVOICE_QUERY", "GENERAL") or e.get("intent") == "system_notice"]
-    assert not [e["id"] for e in others if "draft_reply" in e or "draft_by" in e]
+    others = [e for e in saved_results() if not wanted(e)]
+    assert not [e["id"] for e in others if {"draft_reply", "demo_draft", "draft_by", "can_draft"} & set(e)]
 
 
-@pytest.mark.parametrize("email_id,must_say", [
-    ("email_500", ["Dear", "5250078299", "ROXCEL TRADING GMBH", "cancel"]),
-    ("email_497", ["Dear Arlene Yamomo,", "5250076025", "THC"]),
-    ("email_490", ["5250076684", "GR"]),
-    ("email_473", ["I283337218", "D&D"]),
-    ("email_464", ["Dear Team,", "NAP 914 V.BS007"]),
-    ("email_415", ["Dear Team,", "New Year"]),
-    ("email_488", ["Dear Team,", "outstanding"]),
-])
-def test_a_draft_answers_the_email_it_belongs_to(email_id: str, must_say: list[str]) -> None:
-    entry = build_email(DATA / "inbox" / f"{email_id}.json", DATA, CLASSIFICATIONS)
-
-    for words in must_say:
-        assert words.lower() in entry["draft_reply"].lower(), (email_id, words)
+def test_each_draft_belongs_to_its_own_email() -> None:
+    """Written from each email: its own invoice, BL, vessel or customer, and the name it was signed with."""
+    for email_id, draft in DRAFTS.items():
+        body = json.loads((DATA / "inbox" / f"{email_id}.json").read_text(encoding="utf-8"))["body"]
+        key = re.search(r"invoice (\d{10})|charges for (\S+?)\.|Vessel (.+?) berthed|summary for (.+?)\. ", body)
+        if key:
+            assert [g for g in key.groups() if g][0] in draft, email_id
+        signed = re.search(r"Best Regards,\s*\n\s*([^\n]+)", body)
+        if signed:
+            assert draft.startswith(f"Dear {signed.group(1).strip()},"), email_id
+        assert draft.endswith("\n\nBest regards,\nGlobeTrans Support Team"), email_id
 
 
 def test_a_draft_invents_no_amount_or_date() -> None:
-    """Like the live drafter, a sample never states a charge, a total or a date the email
+    """Like the live drafter, a draft never states a charge, a total or a date the email
     did not give: it acknowledges and says what happens next."""
-    for e in saved_results():
-        if "draft_reply" not in e:
-            continue
-        numbers = set(re.findall(r"\d+(?:[.,]\d+)*", e["draft_reply"]))
-        assert numbers <= set(re.findall(r"\d+(?:[.,]\d+)*", e["subject"] + " " + e["body"])), e["id"]
+    for email_id, draft in DRAFTS.items():
+        email = json.loads((DATA / "inbox" / f"{email_id}.json").read_text(encoding="utf-8"))
+        numbers = set(re.findall(r"\d+(?:[.,]\d+)*", draft))
+        assert numbers <= set(re.findall(r"\d+(?:[.,]\d+)*", email["subject"] + " " + email["body"])), email_id
 
 
-@pytest.mark.parametrize("body,expected", [
-    ("Hi,\nQuery.\n\nBest Regards,\nTeo Ei Leen\nShipping Documentation", "Teo Ei Leen"),
-    ("Dear Team,\nList attached.\n\nRegards,\nDocumentation", None),
-    ("Warm regards,\nManagement", None),
-    ("No sign-off at all", None),
-])
-def test_the_greeting_uses_the_senders_full_name_or_team(body: str, expected: str | None) -> None:
-    assert sender_name(body) == expected
+def test_the_builder_attaches_the_draft_to_its_email() -> None:
+    entry = build_email(DATA / "inbox" / "email_500.json", DATA, CLASSIFICATIONS)
 
-
-def test_an_intent_with_no_sample_gets_no_draft() -> None:
-    assert sample_reply("system_notice", [], "This is an automated notification.") is None
-    assert sample_reply(None, [], "Lunch at 1?") is None
+    assert entry["demo_draft"] == demo_draft("email_500")
+    assert "5250078299" in entry["demo_draft"] and "ROXCEL TRADING GMBH" in entry["demo_draft"]
+    assert demo_draft("email_001") is None
 
 
 # ---- the page ----------------------------------------------------------------------------
 
 INDEX = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
 I18N = (ROOT / "frontend" / "i18n.js").read_text(encoding="utf-8")
-LABEL = "Sample reply written for the demo, not drafted by Ship Happens' AI."
+LABEL = "Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply."
 
 
-def test_the_reply_box_says_a_sample_is_a_sample() -> None:
-    assert f'e.draft_by==="sample"?`<div class="small mute sample">${{t("{LABEL}")}}</div>`:""' in INDEX
+def function(name: str) -> str:
+    body = INDEX[INDEX.index(f"function {name}("):]
+    return body[:body.index("\n}")]
+
+
+def test_a_demo_draft_opens_on_draft_a_reply_without_calling_the_backend() -> None:
+    draft = function("draftLive")
+
+    assert "e.demo_draft" in draft
+    # the demo branch comes before any sign-in check or fetch, so the demo never calls the AI
+    assert draft.index("e.demo_draft") < draft.index('fetch(')
+    assert draft.index("e.demo_draft") < draft.index("if(!token)")
+
+
+def test_the_reply_box_says_who_wrote_a_demo_draft() -> None:
+    assert f'e.draft_by==="claude"?`<div class="small mute sample">${{t("{LABEL}")}}</div>`:""' in INDEX
     assert I18N.count(f'"{LABEL}":') == 2
+    assert "Sample reply written for the demo" not in INDEX + I18N
+
+
+# ---- Open in your email app, on a demo email ---------------------------------------------
+#
+# The demo's emails carry real companies' addresses, and on a computer with no mail app set up
+# the mailto: link did nothing at all, so the button looked dead. On a demo email it now opens
+# a popup saying nothing is opened or sent, with the reply ready to copy. Live mail keeps its
+# real Open in Gmail link.
+
+
+def test_open_in_your_email_app_shows_a_demo_popup_instead_of_a_mailto_link() -> None:
+    assert '"mailto:"+encodeURIComponent(S.draft.to)' not in INDEX   # the Help page's feedback link keeps its own
+    assert re.search(r'a==="mailto"\)\{ S\.mailDlg=true;', INDEX)
+    popup = function("mailDlgHTML")
+    assert 'role="dialog"' in popup and 'data-a="mailclose"' in popup and 'data-a="copy"' in popup
+    assert "S.mailDlg?mailDlgHTML()" in INDEX
+
+
+def test_the_popup_closes_like_the_others() -> None:
+    assert "S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.mailDlg" in INDEX       # page stays put under it
+    assert re.search(r'ev\.key==="Escape"&&\([^)]*S\.mailDlg', INDEX)
+
+
+def test_the_demo_note_never_suggests_sending_demo_mail_for_real() -> None:
+    assert "send it for real" not in INDEX + I18N

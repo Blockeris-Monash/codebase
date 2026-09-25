@@ -30,7 +30,7 @@ from backend.extract.circuit_breaker import CircuitBreaker
 from backend.intent import about, email_intent
 
 # Import JJ's Deterministic Comparator
-from backend.compare.comparator import ComparisonResult, compare
+from backend.compare.comparator import ComparisonResult, FieldType, Row, compare, compare_single_field
 from backend import gmail, reports
 from backend.compare.normalise import NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, parse_number  # one rule each, shared with the reference
 from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
@@ -485,6 +485,27 @@ async def run_pipeline(
     report = compare(payload.email_id, si_doc, bl_doc)
 
     return report
+
+
+class RecompareRequest(BaseModel):
+    field: FieldType
+    si_raw: Optional[str] = Field(None, max_length=2000)
+    bl_raw: Optional[str] = Field(None, max_length=2000)
+
+
+@app.post("/recompare", response_model=Row)
+def recompare(request: RecompareRequest) -> Row:
+    """One field checked again after a reviewer corrects what was read.
+
+    The same cleaning and the same rule as the full check, so a corrected value
+    is judged exactly as the original was. No model is called.
+    """
+    si = apply_cleaner({request.field: {"present": bool(request.si_raw), "raw": request.si_raw}})[request.field]
+    bl = apply_cleaner({request.field: {"present": bool(request.bl_raw), "raw": request.bl_raw}})[request.field]
+
+    return Row(field=request.field, si_raw=request.si_raw, bl_raw=request.bl_raw,
+               si_norm=si["norm"], bl_norm=bl["norm"],
+               verdict=compare_single_field(request.field, si["norm"], bl["norm"]))
 
 
 # --- classification (Hanif's, lifted out of its own server) -------------

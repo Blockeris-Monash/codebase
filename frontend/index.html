@@ -257,6 +257,12 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .reply{margin-top:16px;display:flex;flex-direction:column;gap:6px}
 .reply input,.reply textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 .reply textarea{resize:vertical;line-height:1.5}
+.rvbtn{display:block;background:none;border:0;color:var(--accent);padding:6px 0 0;font-weight:600;font-size:0.8125rem}
+.tbl td.f .pill{display:table;margin:6px 0 0}
+.review{scroll-margin-bottom:16px;margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card);display:flex;flex-direction:column;gap:6px}
+.review .actions{margin-top:6px}
+.review input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.review .btn.alt.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .ov{position:fixed;inset:0;background:rgba(20,26,51,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30;overflow:auto;overscroll-behavior:contain}
 /* a popup holds the page still behind it, so a scroll never moves the inbox */
 html:has(.ov){overflow:hidden}
@@ -678,13 +684,14 @@ const FOLDERS = [
   {k:"SPAM", n:T("Spam"), f:e=>e.category==="SPAM"},
 ];
 const RANKED = ["MISMATCH","NEEDS_REVIEW"];
-/* The main button names the next step; draftFor() already writes the reply for each case. */
-const NEXT_STEP = {
-  MISMATCH:T("Ask to fix the BL"),
-  missing_value:T("Ask for the missing values"),
-  unreadable:T("Ask for a clearer file"),
-  missing_attachment:T("Ask for the SI and BL"),
-  wrong_doc_type:T("Ask for the right documents")
+/* The button is Draft a reply on every email; the reply box heading says what the reply asks
+   for, and draftFor() writes it for each case. */
+const REPLY_ASKS = {
+  MISMATCH:T("Reply: ask the sender to correct the Bill of Lading"),
+  missing_value:T("Reply: ask the sender for the missing values"),
+  unreadable:T("Reply: ask the sender for a clearer file"),
+  missing_attachment:T("Reply: ask the sender for the missing documents"),
+  wrong_doc_type:T("Reply: ask the sender for the right documents")
 };
 /* The emails a person has to act on; the progress line counts how many are done. */
 const todo = e=>(e.status==="MISMATCH"||e.status==="NEEDS_REVIEW") && !e.awaiting;
@@ -720,7 +727,7 @@ function guideHTML(){
     step(2,t("Open an email"),`<div class="cap">${t("Click one in the list. Search by subject, sender or number, and press {esc} to clear it. Once an email is open, {left} {right} move to the previous or next email. On a phone, List takes you back.",{esc:kbd("Esc"),left:kbd("←"),right:kbd("→")})}</div>`) +
     step(3,t("Read the colour"),`<div class="legend">${legend}</div>`) +
     step(4,t("Check the details"),`<div class="cap">${t("Click a row in the table to highlight where that value sits in the original documents. Open {how} to see every step, from the cover email to the field by field check.",{how:"<b>"+t("How Ship Happens decided")+"</b>"})}</div>`) +
-    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as done")}</span><span class="btn alt">${t("Reply to sender")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.",{reply:"<b>"+t("Reply to sender")+"</b>"})}</div>`) +
+    step(5,t("Finish"),`<div class="mockbtns"><span class="btn">${t("Mark as done")}</span><span class="btn alt">${t("Draft a reply")}</span></div><div class="cap">${t("{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.",{reply:"<b>"+t("Draft a reply")+"</b>"})}</div>`) +
     `</ol>`;
 }
 
@@ -790,7 +797,7 @@ function pipeHTML(){
   const doc = (name,key)=>`<div class="lp-doc"><div class="doch">${name}</div>${e.rows.map(r=>`<div class="lp-kv"><span class="mute">${fld(r.field)}</span><b>${esc(r[key])}</b></div>`).join("")}</div>`;
   const p2 = `<div class="lp-docs">${doc(t("Shipping Instruction"),"si_raw")}${doc(t("Draft Bill of Lading"),"bl_raw")}</div>`;
   const p3 = `<div class="tblwrap"><table class="tbl"><thead><tr><th>${t("Field")}</th><th>SI</th><th>BL</th></tr></thead><tbody>${e.rows.map(r=>{ const bad=r.verdict==="mismatch"; return `<tr class="${bad?"bad":""}"><td class="f">${bad?ICON.MISMATCH:ICON.OK} ${fld(r.field)}</td><td>${esc(r.si_raw)}</td><td class="${bad?"diff":""}">${esc(r.bl_raw)}</td></tr>`; }).join("")}</tbody></table></div>`;
-  const p4 = `<div class="banner MISMATCH">${ICON.MISMATCH}${t("{n} field differs",{n:1})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div><div class="actions"><span class="btn">${t("Ask to fix the BL")}</span><span class="btn alt">${t("Mark as done")}</span></div>`;
+  const p4 = `<div class="banner MISMATCH">${ICON.MISMATCH}${t("{n} field differs",{n:1})}<span>${t("Fix the Bill of Lading before it is released.")}</span></div><div class="actions"><span class="btn">${t("Draft a reply")}</span><span class="btn alt">${t("Mark as done")}</span></div>`;
   const caps = [T("The AI sorts every email into one of five types. Only SI against BL checks go on."),
                 T("A reader for each file format, then the AI maps every label to one of the seven fields. Each value must appear word for word in the file."),
                 T("Plain rules compare the values: 40176 and 40,176 are the same weight, but 2 and 4 containers are not."),
@@ -972,6 +979,15 @@ function startSignIn(){
   going.then(ok=>{ if(ok===false) busy(null); });
 }
 
+/* Open in your email app, on a demo email: its address belongs to a real company, so nothing is
+   opened or sent. The reply stays ready to copy. Live mail has a real Open in Gmail link instead. */
+function mailDlgHTML(){
+  return `<div class="ov" data-a="mailclose"><div class="dlg wide" role="dialog" aria-label="${t("Open in your email app")}" data-a="stay">
+    <div class="dlgh"><h2>${t("Open in your email app")}</h2><button class="ghost" data-a="mailclose" aria-label="${t("Close")}">${t("Close")}</button></div>
+    <div class="dlgb"><div class="thanks">${ICON.MAIL}<span>${t("This is a demo email, so nothing is opened or sent. In your own mailbox, this button opens the reply in Gmail, in the same thread, ready to send.")}</span>
+      <div class="actions" style="justify-content:center"><button class="btn" data-a="copy">${S.draft&&S.copied===S.draft.id?t("Copied"):t("Copy the reply")}</button><button class="btn alt" data-a="mailclose">${t("Close")}</button></div></div></div></div></div>`;
+}
+
 // Signed out, a report only reaches this browser: the reports queue takes rows from signed-in accounts.
 function reportSignInHTML(){
   return `<div class="ov" data-a="reportclose"><div class="dlg wide" role="dialog" aria-label="${t("Sign in to report a problem")}" data-a="stay">
@@ -1033,13 +1049,34 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), corr:loadCorr(), rev:null, draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
 /* The emails of the mailbox on show: the demo data, My mailbox, or the files uploaded here. */
-const mailList = ()=>S.mailbox==="live" ? S.liveEmails : S.mailbox==="upload" ? S.uploads : RESULTS;
-const getEmail = id => (S.mailbox !== "demo" ? mailList().find(e=>e.id===id) : null) || byId[id];
+const rawList = ()=>S.mailbox==="live" ? S.liveEmails : S.mailbox==="upload" ? S.uploads : RESULTS;
+/* The same emails with the reviewer's corrections, so the folders and counts follow what a person decided. */
+const mailList = ()=>rawList().map(withCorrections);
+/* The email as the pipeline left it. detail() lays the corrections over it, and keeps it for "How Ship Happens decided". */
+const getEmail = id => (S.mailbox !== "demo" ? rawList().find(e=>e.id===id) : null) || byId[id];
+/* A reviewer's call on a flagged field, laid over what the check decided: a confirmed difference stays,
+   a dismissed one counts as a match, and a fixed reading takes the verdict the backend gave when it
+   compared it again. The status then follows the comparator's own order (backend/compare/comparator.py):
+   any blank needs review, then any difference, else all clear. */
+function withCorrections(e){
+  const mine = S.corr[e.id];
+  if(!mine || !(e.rows||[]).length) return e;
+  const rows = e.rows.map(r=>{
+    const c = mine[r.field];
+    if(!c) return r;
+    if(c.kind==="confirm") return {...r, reviewed:"confirm"};
+    if(c.kind==="dismiss") return {...r, verdict:"match", reviewed:"dismiss"};
+    return {...r, ...c.row, reviewed:"fix"};
+  });
+  const blank = rows.some(r=>r.verdict==="missing"), differ = rows.filter(r=>r.verdict==="mismatch").map(r=>r.field);
+  return {...e, rows, was_status:e.status, status: blank ? "NEEDS_REVIEW" : differ.length ? "MISMATCH" : "OK",
+          review_reason: blank ? "missing_value" : null, defect_fields: blank ? [] : differ};
+}
 /* The open email, or null. A live email can leave the list between polls (newer mail pushed it out,
    it was archived in Gmail, the backend restarted), so a selection that no longer resolves is dropped. */
 const selectedEmail = ()=>{ const e = S.sel ? getEmail(S.sel) : null; if(!e) S.sel = null; return e || null; };
@@ -1056,7 +1093,8 @@ const items = ()=>{
   const baseList = mailList();
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
-  const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
+  // (a correction that moves it to another folder counts too: it stays where it was until you move on)
+  const stays = e=>e.id===S.sel && (S.marks[e.id] || e.was_status) && (e.was_status||e.status)===S.f;
   // a search looks through all mail, so nothing is hidden behind the folder you happen to be in
   const inView = term ? ()=>true : e=>folder(S.f).f(e) || stays(e);
   const found = baseList.filter(inView).filter(e=>!term || (e.subject+" "+title(e)+" "+title(e,true)+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
@@ -1082,6 +1120,8 @@ function loadMarks(){ try{ return JSON.parse(localStorage.getItem("blockeris.mar
 function loadSent(){ try{ return JSON.parse(localStorage.getItem("blockeris.sent")||"{}"); }catch(_){ return {}; } }
 function saveSent(){ try{ localStorage.setItem("blockeris.sent", JSON.stringify(S.sent)); }catch(_){} }
 function saveMarks(){ try{ localStorage.setItem("blockeris.marks", JSON.stringify(S.marks)); }catch(_){} }
+function loadCorr(){ try{ return JSON.parse(localStorage.getItem("blockeris.corrections")||"{}"); }catch(_){ return {}; } }
+function saveCorr(){ try{ localStorage.setItem("blockeris.corrections", JSON.stringify(S.corr)); }catch(_){} }
 
 const ICO = p=>`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
 const ICON = {
@@ -1114,10 +1154,14 @@ const issuesTip = e=>{ const n = issues(e); return e.status==="MISMATCH" ? t(n>1
 ICON.OTHER = ICON.MAIL;
 const badge = e=>e.awaiting?`<span class="badge b-none">${t("Draft BL requested")}</span>`:e.status?`<span class="badge b-${e.status}" ${issues(e)?`title="${issuesTip(e)}"`:""}>${ICON[e.status]}${t(LABEL[e.status])}${issues(e)?`<span class="cnt num" aria-label="${issuesTip(e)}">${issues(e)}</span>`:""}</span>`:`<span class="badge b-none">${OTHER[e.category]?t(OTHER[e.category]):esc(e.category)}</span>`;
 
+const REVIEWED = {confirm:T("Confirmed by you"), dismiss:T("Dismissed by you"), fix:T("Fixed by you")};
 function rowsHTML(rows){
   return rows.map(r=>{
     const bad = r.verdict==="mismatch", gap = r.verdict==="missing";
-    return `<tr class="src ${bad?"bad":gap?"gap":""} ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="${t("Show where this is in the original documents")}"><td class="f">${fld(r.field)}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||t("(blank)")}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||t("(blank)")}</td></tr>`;
+    // A flagged field, or one already reviewed, can be confirmed, dismissed or fixed (reviewHTML).
+    const rv = (r.reviewed ? `<span class="pill">${t(REVIEWED[r.reviewed])}</span>` : "") +
+      (bad||gap||r.reviewed ? `<button class="rvbtn" data-a="rev" data-k="${r.field}" title="${t("Confirm, dismiss or fix this field")}">${t("Review")}</button>` : "");
+    return `<tr class="src ${bad?"bad":gap?"gap":""} ${S.hl===r.field?"sel":""}" data-a="hl" data-k="${r.field}" tabindex="0" title="${t("Show where this is in the original documents")}"><td class="f">${fld(r.field)}${rv}</td><td class="${gap&&!r.si_raw?"gap":""}">${gap&&!r.si_raw?ICON.GAP:""}${esc(r.si_raw)||t("(blank)")}</td><td class="${bad?"diff":""} ${gap&&!r.bl_raw?"gap":""}">${bad?ICON.MISMATCH:gap&&!r.bl_raw?ICON.GAP:""}${esc(r.bl_raw)||t("(blank)")}</td></tr>`;
   }).join("");
 }
 const table = rows=>`<div class="tblwrap"><table class="tbl"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead><tbody>${rowsHTML(rows)}</tbody></table></div>`;
@@ -1277,12 +1321,13 @@ function actionsHTML(e){
   /* Live General and Invoice mail: the AI drafts only when asked, since each draft is paid for (#149). */
   if(e.can_draft && !e.draft_reply) return `<div class="actions"><button class="btn" data-a="aidraft" data-id="${e.id}" ${S.drafting?"disabled":""}>${S.drafting===e.id?t("Drafting..."):t("Draft a reply")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>` +
       (S.draftErr&&S.draftErr.id===e.id?`<div class="small" role="alert" style="margin-top:8px">${esc(S.draftErr.msg)}</div>`:"");
-  if(d) return `<div class="reply"><div class="doch">${t("Reply to the sender")}</div>
+  const asks = REPLY_ASKS[e.status==="MISMATCH" ? "MISMATCH" : e.review_reason];
+  if(d) return `<div class="reply"><div class="doch">${asks?t(asks):t("Reply to the sender")}</div>
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       ${d.grounded===false?`<div class="small mute ungrounded">${t("No company policy matched this email. Check the facts before sending.")}</div>`:""}
-      ${d.refined?"":(e.draft_by==="sample"?`<div class="small mute sample">${t("Sample reply written for the demo, not drafted by Ship Happens' AI.")}</div>`:"")}
+      ${d.refined?"":(e.draft_by==="claude"?`<div class="small mute sample">${t("Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.")}</div>`:"")}
       <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
         <input type="text" id="r-refine" data-f="instruction" maxlength="500" value="${esc(d.instruction||"")}" placeholder="${t("Refine draft...")}" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 10px; background:var(--panel); color:var(--ink); font:inherit;">
@@ -1290,10 +1335,92 @@ function actionsHTML(e){
       </div>
       ${S.refineErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.refineErr)}</div>`:""}
       ${S.sendErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.sendErr)}</div>`:""}
-      <div class="small mute" style="margin-top:8px">${isLive(e.id)?t("Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back."):t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
+      <div class="small mute" style="margin-top:8px">${isLive(e.id)?t("Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back."):t("Demo: Send reply only marks this email as replied. Nothing is emailed.")}</div></div>`;
   if(e.uploaded) return `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
-  const step = NEXT_STEP[e.status==="MISMATCH" ? "MISMATCH" : e.review_reason];
-  return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
+  return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${t("Draft a reply")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
+}
+
+/* Review one flagged field: agree with the check, say it is not a real difference, or fix what the AI
+   read and have the backend compare it again. The call is kept on this device; signed in, it also goes
+   to the team's database, and a change (anything but a plain confirm) files a report for the admin. */
+const SIDE = {SI:T("Shipping Instruction"), BL:T("Draft Bill of Lading")};
+const NOW = {match:T("now matches"), mismatch:T("still differs"), missing:T("still blank")};
+const SENT = {sending:T("Sending to the team..."), sent:T("Sent to the team."), local:T("Saved on this device. Sign in to send it to the team."),
+  failed:T("Saved on this device, but it could not be sent to the team.")};
+function reviewHTML(e, view){
+  const R = S.rev;
+  if(!R || R.id!==e.id) return "";
+  const r = view.rows.find(x=>x.field===R.field), c = (S.corr[e.id]||{})[R.field];
+  if(!r) return "";
+  let body;
+  if(c){
+    const said = c.kind==="confirm" ? t("You confirmed this difference.") : c.kind==="dismiss" ? t("You marked this as not a real difference.")
+      : t("You fixed the reading of the {doc}. Checked again, it {now}.", {doc:t(SIDE[c.side]), now:t(NOW[c.row.verdict])});
+    body = `<div>${said}</div><div class="actions"><button class="btn alt" data-a="uncorr">${t("Undo")}</button><button class="ghost" data-a="revclose">${t("Close")}</button></div>`;
+  } else if(R.fix){
+    body = `<div class="small mute">${t("Which document did the AI misread?")}</div>
+      <div class="actions">${["SI","BL"].map(s=>`<button class="btn alt ${R.side===s?"on":""}" data-a="revside" data-k="${s}" aria-pressed="${R.side===s}">${t(SIDE[s])}</button>`).join("")}</div>
+      <label class="small mute" for="rv-value">${t("The value as it is written in the document")}</label><input id="rv-value" data-rv="value" value="${esc(R.value)}">
+      <div class="actions"><button class="btn" data-a="corr" data-k="fix" ${R.busy?"disabled":""}>${R.busy?t("Checking..."):t("Check again")}</button><button class="ghost" data-a="revback" ${R.busy?"disabled":""}>${t("Back")}</button></div>`;
+  } else {
+    body = `<div class="actions"><button class="btn alt" data-a="corr" data-k="confirm">${t("Confirm difference")}</button><button class="btn alt" data-a="corr" data-k="dismiss">${t("Not a real difference")}</button><button class="btn alt" data-a="revfix">${t("Fix the reading")}</button><button class="ghost" data-a="revclose">${t("Close")}</button></div>`;
+  }
+  return `<div class="review" role="region" aria-label="${t("Review {field}",{field:fld(R.field)})}"><div class="doch">${t("Review {field}",{field:fld(R.field)})}</div>
+    <div class="small">${t("SI says")}: <b>${esc(r.si_raw)||t("(blank)")}</b> · ${t("BL says")}: <b>${esc(r.bl_raw)||t("(blank)")}</b></div>${body}
+    ${R.err?`<div class="err small" role="alert">${esc(t(R.err))}</div>`:""}${R.sent?`<div class="small mute" role="status">${t(SENT[R.sent])}</div>`:""}</div>`;
+}
+/* One row of the corrections table (backend/db/migrations/0007_correction_kind.sql). */
+function correctionRow(o, c){
+  if(c.kind==="fix") return {field:o.field, kind:"fix", side:c.side, was:(c.side==="SI"?o.si_raw:o.bl_raw)||null, corrected:c.row[c.side==="SI"?"si_raw":"bl_raw"]||null};
+  return {field:o.field, kind:c.kind, side:null, was:o.verdict, corrected:c.kind==="dismiss"?"match":o.verdict};
+}
+/* What the admin queue shows when a reviewer changes a result. English, like the rest of the queue. */
+function correctionReport(id, o, c, from, to, undone){
+  const name = FIELDS[o.field], doc = c.side==="SI" ? "Shipping Instruction" : "draft Bill of Lading";
+  const verdict = {match:"match", mismatch:"differ", missing:"blank"};
+  const title = undone ? `Reviewer undid a correction to ${name} on ${id}`
+    : c.kind==="dismiss" ? `Reviewer: ${name} on ${id} is not a real difference`
+    : `Reviewer fixed the ${doc}'s ${name} on ${id}`;
+  const what = c.kind==="dismiss" ? `The check said the two documents ${verdict[o.verdict]}. The reviewer says it is not a real difference.`
+    : `The AI read the ${doc} as: ${(c.side==="SI"?o.si_raw:o.bl_raw)||"(blank)"}\nThe reviewer corrected it to: ${c.row[c.side==="SI"?"si_raw":"bl_raw"]||"(blank)"}\nChecked again, the two documents ${verdict[c.row.verdict]}.`;
+  return {title,
+    detail: `${undone?"Undone, so the pipeline's result stands again.\n\n":""}${what}\n\nWhat the check read:\nSI: ${o.si_raw||"(blank)"}\nBL: ${o.bl_raw||"(blank)"}\n\nEmail status: ${LABEL[from]} -> ${LABEL[to]}`,
+    context: {correction: {field:o.field, kind:c.kind, side:c.side||null, undone:!!undone, status_before:from, status_after:to}}};
+}
+/* Keep a reviewer's call (or, with no entry, take it back): here first, then the database behind it. */
+function keepCorrection(id, field, entry){
+  const e = getEmail(id), o = e.rows.find(r=>r.field===field), old = (S.corr[id]||{})[field];
+  const from = withCorrections(e).status;
+  const mine = S.corr[id] || (S.corr[id] = {});
+  if(entry) mine[field] = entry; else delete mine[field];
+  if(!Object.keys(mine).length) delete S.corr[id];
+  saveCorr();
+  const c = entry || old, to = withCorrections(e).status;
+  const row = entry ? correctionRow(o, entry) : {field, kind:"undo", side:old.side||null, was:old.kind, corrected:null};
+  const report = c.kind==="confirm" ? null : correctionReport(id, o, c, from, to, !entry);
+  const open = ()=>S.rev && S.rev.id===id && S.rev.field===field ? S.rev : null;   // the reviewer may have moved on
+  if(open()) open().sent = S.user ? "sending" : "local";
+  window.Store?.pushCorrection?.(id, row, report)?.then(ok=>{
+    const R = open();
+    if(R){ R.sent = ok ? "sent" : S.user ? "failed" : "local"; render(); }
+  });
+}
+/* Fix the reading: the new value is compared again by the backend, with the same rules as the full check. */
+async function recompareField(){
+  const R = S.rev, o = getEmail(R.id).rows.find(r=>r.field===R.field);
+  const value = R.value.trim(), before = (R.side==="SI" ? o.si_raw : o.bl_raw) || "";
+  if(!value){ R.err = T("Type the value as it is written in the document."); render(); return; }
+  if(value===before.trim()){ R.err = T("That is what the AI read. Change it, or go back."); render(); return; }
+  R.busy = true; R.err = null; render();
+  try{
+    const body = {field:R.field, si_raw:R.side==="SI" ? value : o.si_raw||null, bl_raw:R.side==="BL" ? value : o.bl_raw||null};
+    const res = await fetch(API_BASE + "/recompare", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const row = await res.json();
+    R.busy = false;
+    keepCorrection(R.id, R.field, {kind:"fix", side:R.side, row, at:new Date().toISOString()});
+  }catch(_){ R.busy = false; R.err = T("Could not reach the checker, so the new reading was not saved. Go back to confirm or dismiss instead."); }
+  render();
 }
 
 /* An email the backend gave up on (backend/app.py check_message): nothing was sorted or compared,
@@ -1306,7 +1433,7 @@ function failedHTML(e){
 
 function detail(e){
   if(e.check_failed) return failedHTML(e);
-  const view = e;
+  const view = withCorrections(e);
   let h = `<div class="detail"><h2>${esc(title(e))}</h2>${e.intent&&!(e.about||[]).includes(e.subject)?`<div class="mute small subj">${esc(e.subject)}</div>`:""}<div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
   let banner, tbl = "";
   if(e.awaiting){
@@ -1324,7 +1451,7 @@ function detail(e){
   } else {
     banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by!=="llm"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
-  h += banner + actionsHTML(e) + tbl;
+  h += banner + actionsHTML(view) + tbl + reviewHTML(e, view);
   h += scanHTML(e);
   if(e.docs) h += docsHTML(e, view.rows||[]);
   if(!e.uploaded) h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
@@ -1397,7 +1524,7 @@ function render(){
                 y: (S.resetList || S.resetPane) ? null : window.scrollY};
   // A popup covers the page: when it closes, the page goes back to where it stood when it
   // opened, whatever reached it meanwhile, unless the popup took the reader somewhere else.
-  const popup = S.help||S.langDlg||S.reportDlg||S.uploadDlg;
+  const popup = S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.mailDlg;
   if(popup && !S.under) S.under = {...keep, at:location.hash+'|'+S.sel};
   if(!popup && S.under){ if(S.under.at===location.hash+'|'+S.sel) Object.assign(keep, S.under); S.under = null; }
   S.resetList = false; S.resetPane = false;
@@ -1421,7 +1548,7 @@ function render(){
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
      <div class="bar"><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}${S.mailbox==="upload"?`<button class="btn alt" data-a="upload">${ICON.UPLOAD}${t("Upload more")}</button>`:""}${checkingHTML()}<span class="grow"></span>${loadingBox()?"":tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()&&ONE_PANE.matches?`<div class="empty">${ICON.MAIL}${loadingHTML()}</div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.uploadDlg?uploadHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()&&ONE_PANE.matches?`<div class="empty">${ICON.MAIL}${loadingHTML()}</div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.mailDlg?mailDlgHTML():""}${S.uploadDlg?uploadHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -1439,6 +1566,7 @@ function render(){
   if(S.markScroll){ S.markScroll=false; document.querySelectorAll(".text .srcline").forEach(m=>{ const box=m.closest(".text"); box.scrollTop = Math.max(0, m.offsetTop - 40); }); }
   if(S.keyNav){ S.keyNav=false; const on=q(".item.on"); if(on) on.scrollIntoView({block:"nearest"}); }
   if(S.scrollTo){ const el=q(S.scrollTo); if(el) el.scrollIntoView({block:"start"}); S.scrollTo=null; }
+  if(S.scrollNear){ const el=q(S.scrollNear); if(el) el.scrollIntoView({block:"nearest"}); S.scrollNear=null; }   // just into view: the table above stays in sight
 }
 
 /* The top bar stays one row, whatever the language or name: when it would wrap (and a menu
@@ -1530,19 +1658,27 @@ document.addEventListener("click", ev=>{
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
   else if(a==="hl"){ S.hl = S.hl===k ? null : k; if(S.hl){ S.docs=true; S.markScroll=true; } }
+  else if(a==="rev"){ const same = S.rev && S.rev.id===S.sel && S.rev.field===k; S.rev = same ? null : {id:S.sel, field:k, fix:false, side:"BL", value:"", busy:false, err:null, sent:null}; if(!same) S.scrollNear=".review"; }
+  else if(a==="revfix"){ const r = getEmail(S.rev.id).rows.find(x=>x.field===S.rev.field); S.rev.fix=true; S.rev.err=null; S.rev.sent=null; S.rev.side = !r.si_raw && r.bl_raw ? "SI" : "BL"; S.rev.value = (S.rev.side==="SI" ? r.si_raw : r.bl_raw)||""; }
+  else if(a==="revside"){ const r = getEmail(S.rev.id).rows.find(x=>x.field===S.rev.field); S.rev.side=k; S.rev.err=null; S.rev.value = (k==="SI" ? r.si_raw : r.bl_raw)||""; }
+  else if(a==="revback"){ S.rev.fix=false; S.rev.err=null; }
+  else if(a==="revclose"){ S.rev=null; }
+  else if(a==="corr"){ if(k==="fix"){ if(!S.rev.busy) recompareField(); return; } keepCorrection(S.rev.id, S.rev.field, {kind:k, at:new Date().toISOString()}); }
+  else if(a==="uncorr"){ keepCorrection(S.rev.id, S.rev.field, null); }
   else if(a==="first"){ const f=items()[0]; if(f){ S.fade=true; S.hl=null; S.sel=f.id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; } }
   else if(a==="clearq"){ S.q=""; S.page=0; S.resetList=true; }
   else if(a==="back"){ S.sel=null; S.draft=null; S.resetPane=true; }
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
-  else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
+  else if(a==="draft"){ S.draft = draftFor(withCorrections(getEmail(id))); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="aidraft"){ draftLive(id); return; }
   else if(a==="discard"){ S.draft=null; S.refineErr=null; }
   else if(a==="refine"){ if(!S.refining) refineDraft(id); }
   else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
-  else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
+  else if(a==="mailto"){ S.mailDlg=true; }
+  else if(a==="mailclose"){ S.mailDlg=false; }
   render();
 });
 document.addEventListener("input", ev=>{
@@ -1551,6 +1687,7 @@ document.addEventListener("input", ev=>{
   if(fbf){ S.fb[fbf]=ev.target.value; S.fb.err=false; S.fb.copied=false; return; }   // no redraw while typing
   const f = ev.target.dataset.f;
   if(f && S.draft) S.draft[f] = ev.target.value;   // no redraw while typing, or the cursor would jump
+  if(ev.target.dataset.rv && S.rev) S.rev.value = ev.target.value;
 });
 document.addEventListener("change", ev=>{
   const a = ev.target.dataset.a;
@@ -1631,10 +1768,11 @@ function stepKey(key){
 }
 document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.resetList=true; render(); return; }
-  if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.langMenu||(S.uploadDlg&&!S.uploading))){ S.help=false; S.langDlg=false; S.uploadDlg=false; S.reportDlg=false; S.langMenu=false; render(); return; }
+  if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.mailDlg||S.langMenu||(S.uploadDlg&&!S.uploading))){ S.help=false; S.langDlg=false; S.uploadDlg=false; S.reportDlg=false; S.mailDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && (ev.target.classList.contains("src")||ev.target.classList.contains("brand"))){ ev.preventDefault(); ev.target.click(); return; }
+  if(ev.key==="Enter" && ev.target.dataset && ev.target.dataset.rv && S.rev && !S.rev.busy){ ev.preventDefault(); recompareField(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
-  if(typing||S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.busy||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
+  if(typing||S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.mailDlg||S.busy||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);
@@ -1705,6 +1843,8 @@ async function sendLive(id){
 async function draftLive(id){
   const e = getEmail(id), token = window.Store?.googleToken?.();
   if(!e || S.drafting) return;
+  /* A demo email calls no model: its draft was written in advance, and shows the same way. */
+  if(e.demo_draft){ e.draft_reply = e.demo_draft; if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; } render(); return; }
   if(!token){ S.draftErr = {id, msg:t("Sign in with Google again to draft a reply.")}; render(); return; }
   S.drafting = id; S.draftErr = null; render();
   try{
