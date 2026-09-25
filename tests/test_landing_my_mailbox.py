@@ -18,5 +18,5 @@ def test_signed_in_the_hero_leads_with_my_mailbox() -> None:
 
 
 def test_signed_out_the_hero_is_as_before() -> None:
-    assert ':`<button class="btn" data-a="inbox">${t("Open the demo inbox")}</button>`' in hero()
+    assert ':`<button class="btn" data-a="demoacct">${t("Sign in with demo account")}</button>`' in hero()
     assert 'data-a="howto"' in hero()

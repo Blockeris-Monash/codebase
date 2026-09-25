@@ -4,17 +4,22 @@ import urllib.request
 from typing import Optional, List, Dict, Any
 from supabase import create_client, Client
 from google import genai
-from backend import reports
+from backend import reports, settings
 from backend.classify import EmailInput
 from backend.extract.fallback import with_fallback
 
-# Initialize Supabase and Gemini
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# backend/settings.py is the one place that decides which environment variable
+# names count. Read directly here, this module disagreed with the rest of the
+# service twice over: it wanted its own name for the Supabase secret, and it
+# wanted GEMINI_API_KEY while gemini.py has always taken GOOGLE_API_KEY too - so
+# an environment with GOOGLE_API_KEY set had no model here at all and drafted
+# nothing, silently.
+SUPABASE_URL = settings.supabase_url()
+SUPABASE_SECRET = settings.supabase_secret()
+GEMINI_API_KEY = settings.gemini_key()
 
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+if SUPABASE_URL and SUPABASE_SECRET:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET)
 else:
     supabase = None
 

@@ -42,6 +42,8 @@ from typing import Any, Optional
 
 import httpx
 
+from backend import settings
+
 log = logging.getLogger(__name__)
 
 ANSWERED = "answered"
@@ -154,7 +156,9 @@ def file(row: dict[str, Any], own_email_only: bool = False) -> None:
     does not repeat one written within the window. `own_email_only`: the title is
     about this email alone, so the cap per title does not apply."""
     log.warning("technical report: %s [%s]", row["title"], row["email_ref"] or "no email")
-    url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    # Through settings so this module agrees with the rest of the service about
+    # what counts as configured.
+    url, key = settings.supabase_url(), settings.supabase_secret()
     if not (url and key):
         say_reports_are_off()
         return

@@ -22,6 +22,8 @@ from backend.extract.ai import AiExtractor
 from backend.extract.fallback import with_fallback
 from backend.extract.gemini import api_key as gemini_key, gemini_model
 from backend.extract.qwen import qwen_model
+from backend.extract.circuit_breaker import CircuitBreaker
+from backend.intent import about, email_intent
 
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
@@ -32,6 +34,8 @@ from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend import settings
+from backend.extract.rules import fields_from_pairs
 
 
 load_dotenv()
@@ -39,6 +43,32 @@ load_dotenv()
 # discarded and the warnings that survive carry no timestamp or request id.
 configure_logging()
 log = logging.getLogger(__name__)
+
+def say_what_is_switched_on() -> None:
+    """One line at startup naming every optional feature and whether it is on.
+
+    Each of these is off when a variable is unset, and each fails quietly: no
+    Supabase key means the guidelines are never retrieved and replies are
+    drafted from nothing; no Gemini key means there is no second provider when
+    Qwen stalls. Nothing on screen says so. A deployment that is missing a
+    variable should say it once, at the top of the log, rather than be
+    discovered during judging.
+    """
+    def state(ready: object) -> str:
+        return "on" if ready else "OFF"
+
+    # Retrieval needs a database AND a model. Reporting only the database said
+    # "on" while replies were being drafted with no model behind them at all.
+    log.info(
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s rules-first=%s",
+        state(settings.supabase_configured()),
+        state(settings.supabase_configured() and settings.gemini_key()),
+        state(settings.gemini_key()),
+        state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
+        state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+        state(rules_first_enabled()),
+    )
+
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
 
@@ -117,9 +147,11 @@ class PairedInput(BaseModel):
 # Qwen first. If it fails or stalls, Gemini answers (with_fallback), but only when a Gemini key
 # is set. With a second provider behind, two tries are enough. Each call gives up after 15 s,
 # and no retry starts after 45 s: a document the model cannot read in time goes to a person
-# rather than leaving the reviewer at a spinner for minutes (#111).
-extractor = AiExtractor(with_fallback(qwen_model, gemini_model, first_timeout=15,
-                                      enabled=lambda: bool(gemini_key())),
+# rather than leaving the reviewer at a spinner for minutes (#111). After 3 Qwen failures in a
+# row, Qwen is skipped for 60 s while Gemini can answer instead (backend/extract/circuit_breaker.py).
+qwen_breaker = CircuitBreaker()
+extractor = AiExtractor(with_fallback(qwen_breaker.wrap(qwen_model, skip_allowed=lambda: bool(gemini_key())),
+                                      gemini_model, first_timeout=15, enabled=lambda: bool(gemini_key())),
                         tries=2, deadline=45)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
@@ -142,6 +174,24 @@ def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
 ABSENT_FIELDS = {"present": False, "raw": None, "label_seen": None}
 
 
+def report_empty_extraction(email_id: str, role: str, raw_fields: Optional[Dict[str, Any]],
+                            parse_status: str) -> None:
+    """One technical report when a document gave no fields for a reason the retry
+    report does not cover (#114 item 5): the file could not be read, or the model
+    answered and not one field came back. No answer at all is already filed by
+    `reports.watching`, and a missing file is not a failure."""
+    step = f"Extraction ({role})"
+    if parse_status == ParseStatusType.Unreadable:
+        title, outcome = "file could not be read", "The file could not be read, so the email went to a person."
+    elif (parse_status == ParseStatusType.Ok and raw_fields is not None
+          and not any(field.get("present") for field in raw_fields.values())):
+        title, outcome = "nothing extracted", "The model answered, but no field came back, so the email went to a person."
+    else:
+        return
+    reports.file({"kind": reports.KIND, "email_ref": email_id, "title": f"{step}: {title}",
+                  "detail": outcome, "context": {"step": step, "tries": 1, "outcome": outcome}})
+
+
 async def extract_live(
     email_id: str,
     role: str,
@@ -161,6 +211,7 @@ async def extract_live(
         log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
         raw_fields = None
 
+    report_empty_extraction(email_id, role, raw_fields, parse_status)
     if not raw_fields:
         # A model that returned nothing is not evidence that the fields are
         # absent, so every field is marked missing and the comparator sends
@@ -195,6 +246,61 @@ def is_cache_current(cached: Dict[str, Any], title: Optional[str],
     return detect_doc_type(title) == cached.get("detected_doc_type")
 
 
+RULES_FIRST = "SHIP_HAPPENS_RULES_FIRST"
+RULES_FIRST_DEFAULT = "1"
+
+
+def rules_first_enabled() -> bool:
+    """On by default, and one environment variable turns it off.
+
+    Read per call rather than at import: during judging the way to undo this is
+    a Render environment variable and a restart, and a value captured at import
+    would need a redeploy instead.
+    """
+    return (os.environ.get(RULES_FIRST) or RULES_FIRST_DEFAULT) != "0"
+
+
+def extract_by_rule(
+    email_id: str,
+    role: str,
+    pairs: List[tuple[str, str]],
+    title: Optional[str],
+    parse_status: str,
+) -> Optional[Dict[str, Any]]:
+    """The seven fields straight from the labels, or None to let the model try.
+
+    The reader has already produced (label, value) pairs by the time we get
+    here; aligning them onto the seven field names costs about a millisecond
+    and needs no network. On the 250-document corpus this answers 237 of them,
+    and over the 124 comparison emails the verdict is identical to the model's
+    every time - so the model call was buying nothing on documents whose labels
+    we have parsed hundreds of times.
+
+    It is deliberately all-or-nothing. A partial answer is worse than no answer:
+    the comparator treats a missing field as something a person must look at, so
+    handing it six of seven fields would turn "the model has not read this yet"
+    into "this document does not state a consignee". The model still earns its
+    place on wording the label table has never seen - which is most of what it
+    was brought in for.
+    """
+    if not rules_first_enabled() or parse_status != ParseStatusType.Ok:
+        return None
+
+    fields = fields_from_pairs(pairs)
+    if not all(field["present"] for field in fields.values()):
+        return None
+
+    log.info("%s %s read by rule, no model call", email_id, role)
+
+    return {
+        "email_id": email_id,
+        "declared_role": role,
+        "detected_doc_type": detect_doc_type(title) if title else None,
+        "parse_status": parse_status,
+        "fields": fields,
+    }
+
+
 async def extract_document(
     email_id: str,
     role: str,
@@ -202,10 +308,14 @@ async def extract_document(
     title: Optional[str],
     parse_status: str,
 ) -> Dict[str, Any]:
-    """Cache first, model second. Milk's saved results answer instantly."""
+    """Cache, then rules, then the model. The saved results answer instantly."""
     cached = load_saved_extract(email_id, role)
     if cached and is_cache_current(cached, title, parse_status):
         return cached
+
+    by_rule = extract_by_rule(email_id, role, pairs, title, parse_status)
+    if by_rule is not None:
+        return by_rule
 
     return await extract_live(email_id, role, pairs, title, parse_status)
 
@@ -343,7 +453,8 @@ async def classify(email: EmailInput) -> ClassificationResult:
     try:
         return await classify_email(email, second_opinion=gemini_second_opinion)
     except ClassificationFailed as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
+        status = error.status_code if error.status_code in range(400, 600) else 502
+        raise HTTPException(status_code=status, detail=str(error)) from error
 
 # =====================================================================
 # 5. Routing Helpers: Attachment Resolution
@@ -594,7 +705,7 @@ def folder_for(address: str, gmail_id: str) -> Path:
 async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, Any]:
     """One live email as the page draws it: the same fields cli/make_results.py
     writes for a demo email, from the same /process-email the demo button calls."""
-    from cli.make_results import clean_body, document, shipment_ref  # cli imports this module
+    from cli.make_results import DRAFT_REQUEST, clean_body, document, shipment_ref  # cli imports this module
 
     email_id = gmail.mailbox_id(message.gmail_id)
     email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
@@ -610,6 +721,14 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     ref = shipment_ref(message.subject, message.body)
     if ref:
         entry["ref"] = ref
+
+    # The same rules as the demo (backend/intent.py). A real subject rarely has the dataset's
+    # shape, so when no customer or port is found the subject itself follows the label.
+    awaiting = not paths and bool(DRAFT_REQUEST.search(message.body))
+    intent = email_intent(found["category"], message.subject, message.body, awaiting=awaiting)
+    if intent:
+        entry["intent"] = intent
+        entry["about"] = about(intent, message.subject, message.body) or [message.subject]
 
     result = checked["ComparisonResult"]
     if result:
@@ -719,3 +838,78 @@ async def reply(request: ReplyRequest, authorization: Optional[str] = Header(Non
     except gmail.GmailError as error:
         raise gmail_failure(error) from error
     return {"sent": True, "gmail_id": sent.get("id"), "thread_id": sent.get("threadId")}
+
+
+# =====================================================================
+# 8. Upload an SI and a draft BL, no sign-in needed (Meeting 7, job 10)
+# =====================================================================
+#
+# The person says which file is which, so there is no email to classify. The files
+# are read, compared the way a Gmail attachment is, and deleted before the answer
+# goes back: nothing uploaded is kept.
+
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/tmp/shiphappens-uploads"))
+UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+
+
+class UploadedFile(BaseModel):
+    name: str = Field(..., max_length=255)
+    data: str = Field(..., max_length=8_000_000)  # base64 of UPLOAD_MAX_BYTES, with room to spare
+
+
+class UploadRequest(BaseModel):
+    si: UploadedFile
+    bl: UploadedFile
+
+
+def uploaded_bytes(upload: UploadedFile) -> tuple[str, bytes]:
+    """The file's suffix and contents, or the reason it cannot be checked."""
+    import base64
+    import binascii
+    from backend.read.documents import reader_for
+
+    suffix = Path(upload.name).suffix.lower()
+    if not gmail.SAFE_SUFFIX.match(suffix) or reader_for(Path("x" + suffix)) is None:
+        raise HTTPException(status_code=415, detail="Upload a .txt, .docx, .xlsx, .pdf or .edi file.")
+    try:
+        data = base64.b64decode(upload.data, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise HTTPException(status_code=400, detail="The file did not arrive whole. Try again.") from error
+    if len(data) > UPLOAD_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Each file must be 5 MB or smaller.")
+    return suffix, data
+
+
+@app.post("/check-files")
+async def check_files(upload: UploadRequest) -> Dict[str, Any]:
+    """One SI and one draft BL, checked field by field, shaped like a mailbox entry
+    so the page shows it on the same review screen."""
+    import shutil
+    import uuid
+    from cli.make_results import document  # cli imports this module
+
+    files = {DocumentRoleType.Si: uploaded_bytes(upload.si), DocumentRoleType.Bl: uploaded_bytes(upload.bl)}
+    email_id = f"upload_{uuid.uuid4().hex[:12]}"
+    folder = UPLOAD_DIR / email_id
+    folder.mkdir(parents=True, exist_ok=True)
+    try:
+        # Named by role, never by the uploader's file name, which is not a safe path.
+        paths = {role: folder / f"{email_id}_{role}{suffix}" for role, (suffix, _) in files.items()}
+        for role, (_, data) in files.items():
+            paths[role].write_bytes(data)
+        pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
+        result = (await run_pipeline(pair, live=False)).model_dump()
+        docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}
+                for role, path in paths.items()}
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+
+    return {"id": email_id, "uploaded": True, "from": "", "subject": f"{docs['SI']['name']} and {docs['BL']['name']}",
+            "body": "", "n_attachments": 2, "category": "BL_COMPARISON", "decided_by": "upload",
+            "status": result["status"], "review_reason": result["review_reason"], "rows": result["rows"],
+            "defect_fields": result["defect_fields"], "evidence": result["evidence"], "docs": docs}
+
+
+# Last, so every name it reads is defined. One line naming what is switched on,
+# because each of these fails quietly when its variable is unset.
+say_what_is_switched_on()

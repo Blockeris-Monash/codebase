@@ -46,7 +46,7 @@ TOO_MANY_REQUESTS = 429
 # the routes that spend it; /mailbox, /reply, /health and the docs do not, and
 # a new cheap route added later is not throttled by accident.
 LIMITED_PATHS = frozenset({"/process-email", "/classify", "/translate",
-                           "/extract-clean-compare"})
+                           "/extract-clean-compare", "/check-files"})
 
 _seen: dict[str, deque[float]] = defaultdict(deque)
 

@@ -100,8 +100,9 @@ def test_clicking_a_dropdown_does_not_redraw_the_page() -> None:
 
 
 def test_switching_mailbox_lands_on_a_folder_that_exists() -> None:
-    """The mailbox switch reset the folder to "all", which Other mail replaced; folder() then found nothing."""
-    switch = block('else if(a==="switchbox"){', "\n  }\n")
-    target = re.search(r'S\.f = "(\w+)"', switch).group(1)
+    """The mailbox switch reset the folder to "all", which Other mail replaced; folder() then found nothing.
+    The switch is now the account menu: both of its actions must land on a real folder."""
     keys = re.findall(r'\{k:"(\w+)"', block("const FOLDERS = [", "\n];\n"))
-    assert target in keys
+    for act in ('else if(a==="demoacct"){', 'else if(a==="mymailbox"){'):
+        target = re.search(r'S\.f="(\w+)"', block(act, "\n")).group(1)
+        assert target in keys

@@ -35,11 +35,12 @@ def folder_order(folder: str, marks: dict[str, str] | None = None, sort: str = "
     js = "\n".join([
         (FRONTEND / "results.js").read_text(encoding="utf-8"),
         "const T = s=>s;",
-        f"const S = {{q:'', f:{json.dumps(folder)}, sort:{json.dumps(sort)}, sel:null, marks:{json.dumps(marks or {})}}};",
+        f"const S = {{q:'', f:{json.dumps(folder)}, sort:{json.dumps(sort)}, sel:null, mailbox:'demo', marks:{json.dumps(marks or {})}}};",
         block("const FOLDERS = [", "\n];\n"),
         re.search(r"const folder = .*\n", SCRIPT).group(0),
         re.search(r"const issues = .*\n", SCRIPT).group(0),
         re.search(r"const RANKED = .*\n", SCRIPT).group(0),
+        re.search(r"const mailList = .*\n", SCRIPT).group(0),
         block("const items = ()=>{"),
         "console.log(JSON.stringify(items().map(e=>[e.id, issues(e)])));",
     ])

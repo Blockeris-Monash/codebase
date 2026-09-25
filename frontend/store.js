@@ -77,21 +77,34 @@
     }
   }
 
+  // True when the row reached the queue, false when it did not. The page tells
+  // the reviewer which, so "Thank you, we got it" is only said when it is true.
+  //
+  // supabase-js does not throw when the database refuses a row, it resolves with
+  // an `error` - so the old version caught nothing, reported nothing, and the
+  // page thanked the reviewer for a report that had been rejected.
   async function pushReport(entry) {
     const c = sb(), u = await user();
-    if (!c || !u) return;
+    if (!c || !u) return false;
     try {
-      await c.from("reports").insert({
+      // The title is what the admin queue lists, so "problem" three times over
+      // is a queue nobody can triage. Name the email it is about.
+      const kind = entry.kind || "note";
+      const title = entry.about ? `${kind} about ${entry.about}` : kind;
+      const { error } = await c.from("reports").insert({
         user_id: u.id, kind: "human", email_ref: entry.about || null,
-        title: entry.kind || "note", detail: entry.msg || "",
+        title: title, detail: entry.msg || "",
         rating: entry.rating || null,
       });
+      if (error) throw error;
+      return true;
     } catch (error) {
       console.warn("report not mirrored to the database:", error);
+      return false;
     }
   }
 
-  // --- the reports queue (admin.html) ------------------------------------
+  // --- the reports queue (/admin) -----------------------------------------
   // Both of these are guarded by row-level security, not by the caller. A
   // session that is not in `admins` gets an empty list from the database
   // however it asks, so hiding the page is presentation, never protection.
@@ -177,6 +190,8 @@
   async function signOut() {
     const c = sb();
     if (!c) return;
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch (_) { /* nothing kept */ }
+    googleAccess = null;
     try {
       await c.auth.signOut();
     } catch (error) {
@@ -192,19 +207,36 @@
     if (!c) return false;
     c.auth.onAuthStateChange(function (event, session) {
       // Google's token arrives with the session right after sign-in. Supabase drops
-      // it at its next refresh, so the last one seen is kept here, in memory only.
-      if (!session) googleAccess = null;
-      else if (session.provider_token) googleAccess = session.provider_token;
+      // it at its next refresh, so the last one seen is kept, for this tab only.
+      if (!session) keepToken(null);
+      else if (session.provider_token) keepToken(session.provider_token);
       callback(session ? session.user : null, event);
     });
     return true;
   }
 
   // The Google access token for /mailbox and /reply, or null. It lasts about an
-  // hour; after that the backend answers 401 and the page asks for a new sign-in.
+  // hour; after that the backend answers 401 and the page asks to reconnect Gmail.
+  // Kept in sessionStorage so a reload does not lose it: the tab only, gone when the
+  // tab closes, never localStorage, and dropped a little before Google's hour is up.
+  const TOKEN_KEY = "blockeris.gmail";
+  const TOKEN_MS = 55 * 60 * 1000;
   let googleAccess = null;
+  function keepToken(token) {
+    googleAccess = token;
+    try {
+      if (token) sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token: token, until: Date.now() + TOKEN_MS }));
+      else sessionStorage.removeItem(TOKEN_KEY);
+    } catch (_) { /* private mode: memory only, as before */ }
+  }
   function googleToken() {
-    return googleAccess;
+    if (googleAccess) return googleAccess;
+    try {
+      const kept = JSON.parse(sessionStorage.getItem(TOKEN_KEY) || "null");
+      if (kept && kept.until > Date.now()) return (googleAccess = kept.token);
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch (_) { /* nothing kept */ }
+    return null;
   }
 
 

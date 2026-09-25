@@ -15,7 +15,7 @@ def fetch_body() -> str:
 
 def test_the_page_knows_whether_the_mailbox_has_answered_yet() -> None:
     assert "liveLoaded:false" in INDEX
-    assert "const loadingBox = ()=>S.mailbox===\"live\" && !S.liveLoaded;" in INDEX
+    assert "const loadingBox = ()=>S.mailbox===\"live\" && (!S.liveLoaded" in INDEX
 
 
 def test_every_answer_or_failure_ends_the_loading_state() -> None:

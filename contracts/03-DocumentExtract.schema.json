@@ -17,7 +17,7 @@
   "properties": {
     "email_id": {
       "type": "string",
-      "pattern": "^(email_[0-9]{3}|gmail_[0-9a-f]{8,32})$"
+      "pattern": "^(email_[0-9]{3}|gmail_[0-9a-f]{8,32}|upload_[0-9a-f]{12})$"
     },
     "declared_role": {
       "enum": [
