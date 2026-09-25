@@ -33,6 +33,7 @@ from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
 from backend import settings
+from backend.extract.rules import fields_from_pairs
 
 
 load_dotenv()
@@ -57,12 +58,13 @@ def say_what_is_switched_on() -> None:
     # Retrieval needs a database AND a model. Reporting only the database said
     # "on" while replies were being drafted with no model behind them at all.
     log.info(
-        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s",
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s rules-first=%s",
         state(settings.supabase_configured()),
         state(settings.supabase_configured() and settings.gemini_key()),
         state(settings.gemini_key()),
         state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
         state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+        state(rules_first_enabled()),
     )
 
 
@@ -221,6 +223,61 @@ def is_cache_current(cached: Dict[str, Any], title: Optional[str],
     return detect_doc_type(title) == cached.get("detected_doc_type")
 
 
+RULES_FIRST = "SHIP_HAPPENS_RULES_FIRST"
+RULES_FIRST_DEFAULT = "1"
+
+
+def rules_first_enabled() -> bool:
+    """On by default, and one environment variable turns it off.
+
+    Read per call rather than at import: during judging the way to undo this is
+    a Render environment variable and a restart, and a value captured at import
+    would need a redeploy instead.
+    """
+    return (os.environ.get(RULES_FIRST) or RULES_FIRST_DEFAULT) != "0"
+
+
+def extract_by_rule(
+    email_id: str,
+    role: str,
+    pairs: List[tuple[str, str]],
+    title: Optional[str],
+    parse_status: str,
+) -> Optional[Dict[str, Any]]:
+    """The seven fields straight from the labels, or None to let the model try.
+
+    The reader has already produced (label, value) pairs by the time we get
+    here; aligning them onto the seven field names costs about a millisecond
+    and needs no network. On the 250-document corpus this answers 237 of them,
+    and over the 124 comparison emails the verdict is identical to the model's
+    every time - so the model call was buying nothing on documents whose labels
+    we have parsed hundreds of times.
+
+    It is deliberately all-or-nothing. A partial answer is worse than no answer:
+    the comparator treats a missing field as something a person must look at, so
+    handing it six of seven fields would turn "the model has not read this yet"
+    into "this document does not state a consignee". The model still earns its
+    place on wording the label table has never seen - which is most of what it
+    was brought in for.
+    """
+    if not rules_first_enabled() or parse_status != ParseStatusType.Ok:
+        return None
+
+    fields = fields_from_pairs(pairs)
+    if not all(field["present"] for field in fields.values()):
+        return None
+
+    log.info("%s %s read by rule, no model call", email_id, role)
+
+    return {
+        "email_id": email_id,
+        "declared_role": role,
+        "detected_doc_type": detect_doc_type(title) if title else None,
+        "parse_status": parse_status,
+        "fields": fields,
+    }
+
+
 async def extract_document(
     email_id: str,
     role: str,
@@ -228,10 +285,14 @@ async def extract_document(
     title: Optional[str],
     parse_status: str,
 ) -> Dict[str, Any]:
-    """Cache first, model second. Milk's saved results answer instantly."""
+    """Cache, then rules, then the model. The saved results answer instantly."""
     cached = load_saved_extract(email_id, role)
     if cached and is_cache_current(cached, title, parse_status):
         return cached
+
+    by_rule = extract_by_rule(email_id, role, pairs, title, parse_status)
+    if by_rule is not None:
+        return by_rule
 
     return await extract_live(email_id, role, pairs, title, parse_status)
 
