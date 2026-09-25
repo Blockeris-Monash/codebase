@@ -32,6 +32,7 @@ from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend import settings
 
 
 load_dotenv()
@@ -50,15 +51,18 @@ def say_what_is_switched_on() -> None:
     variable should say it once, at the top of the log, rather than be
     discovered during judging.
     """
-    on = lambda flag: "on" if flag else "OFF"
+    def state(ready: object) -> str:
+        return "on" if ready else "OFF"
+
+    # Retrieval needs a database AND a model. Reporting only the database said
+    # "on" while replies were being drafted with no model behind them at all.
     log.info(
         "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s",
-        on(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
-        on(os.environ.get("SUPABASE_URL")
-           and (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY"))),
-        on(gemini_key()),
-        on(os.environ.get("GEMINI_CRITIC_API_KEY") or gemini_key()),
-        on(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+        state(settings.supabase_configured()),
+        state(settings.supabase_configured() and settings.gemini_key()),
+        state(settings.gemini_key()),
+        state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
+        state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
     )
 
 

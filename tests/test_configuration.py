@@ -77,12 +77,12 @@ def test_every_setting_the_code_reads_is_written_down() -> None:
 
 def test_the_two_names_for_the_supabase_secret_both_work() -> None:
     """One credential had two names across two modules, and only one was
-    documented. Both are accepted now, the documented one first, so neither a
-    new deployment nor an existing one is left without a client."""
-    source = (ROOT / "backend" / "reply.py").read_text(encoding="utf-8")
+    documented. Both are accepted, canonical first, so neither a new deployment
+    nor one set up before the rename is left without a client."""
+    from backend import settings
 
-    assert "SUPABASE_SERVICE_ROLE_KEY" in source
-    assert source.index("SUPABASE_SERVICE_ROLE_KEY") < source.index('os.environ.get("SUPABASE_KEY")')
+    assert settings.SUPABASE_SECRET_NAMES[0] == "SUPABASE_SERVICE_ROLE_KEY"
+    assert "SUPABASE_KEY" in settings.SUPABASE_SECRET_NAMES
 
 
 def test_the_service_says_which_optional_features_are_off() -> None:
@@ -111,3 +111,44 @@ def test_the_guidelines_corpus_is_not_readable_with_the_public_key() -> None:
     # And no policy may grant it back: RLS denies what no policy permits, which
     # leaves the corpus reachable only by the service role the server holds.
     assert not re.search(r"create policy \w+ on policies", combined)
+
+
+def test_one_place_decides_which_names_count() -> None:
+    """Aliases are fine; a name cannot be withdrawn once people have set it. Each
+    module deciding for itself which names count is not, because then "is this
+    configured" has a different answer in every file - which is exactly how
+    reply.py ended up with no model while gemini.py had one."""
+    reply = (ROOT / "backend" / "reply.py").read_text(encoding="utf-8")
+
+    assert "settings.supabase_secret()" in reply
+    assert "settings.gemini_key()" in reply
+    assert 'os.environ.get("GEMINI_API_KEY")' not in reply
+    assert 'os.environ.get("SUPABASE_KEY")' not in reply
+
+
+def test_a_gemini_key_under_either_name_reaches_the_reply_drafting() -> None:
+    """gemini.py has always accepted GOOGLE_API_KEY or GEMINI_API_KEY. reply.py
+    read only the second, so an environment with the first - which is what
+    .env.example has always shown - had drafting with no model behind it and
+    nothing on screen to say so."""
+    from backend import settings
+
+    from backend.extract.gemini import KEY_NAMES
+
+    assert set(KEY_NAMES) == {"GOOGLE_API_KEY", "GEMINI_API_KEY"}
+    monkeypatch_free = settings.gemini_key
+    assert monkeypatch_free.__module__ == "backend.settings"
+
+
+def test_retrieval_is_only_on_when_it_has_both_halves(monkeypatch) -> None:
+    """It needs a database and a model. Reporting only the database said "on"
+    while replies were drafted with no model at all."""
+    from backend import settings
+
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "secret")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    assert settings.supabase_configured() is True
+    assert settings.gemini_key() is None        # so retrieval must report OFF

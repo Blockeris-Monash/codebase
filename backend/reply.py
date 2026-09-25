@@ -4,21 +4,19 @@ import urllib.request
 from typing import Optional, List, Dict, Any
 from supabase import create_client, Client
 from google import genai
-from backend import reports
+from backend import reports, settings
 from backend.classify import EmailInput
 from backend.extract.fallback import with_fallback
 
-# Initialize Supabase and Gemini
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-# One credential, two names. backend/reports.py reads SUPABASE_SERVICE_ROLE_KEY
-# and .env.example documents only that one, so a deployment that set the
-# documented name left this module without a client and the retrieval silently
-# off - no error, just replies drafted with nothing retrieved. Both names are
-# accepted, the documented one first. It has to be the service role key either
-# way: `policies` has RLS on with no policy, so nothing else can read it.
-SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-                or os.environ.get("SUPABASE_KEY"))
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# Both of these accept more than one variable name, and backend/settings.py is
+# the one place that decides which. Read directly here, this module disagreed
+# with the rest of the service twice over: it wanted SUPABASE_KEY while
+# reports.py wanted SUPABASE_SERVICE_ROLE_KEY, and it wanted GEMINI_API_KEY
+# while gemini.py has always taken GOOGLE_API_KEY too - so an environment with
+# GOOGLE_API_KEY set had no model here at all and drafted nothing, silently.
+SUPABASE_URL = settings.supabase_url()
+SUPABASE_KEY = settings.supabase_secret()
+GEMINI_API_KEY = settings.gemini_key()
 
 if SUPABASE_URL and SUPABASE_KEY:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
