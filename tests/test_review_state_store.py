@@ -110,8 +110,7 @@ def test_a_refused_report_is_not_thanked_for() -> None:
     push = STORE[STORE.index("async function pushReport"):]
     push = push[:push.index("\n  }")]
 
-    assert "const { error } = await c.from(\"reports\").insert" in push
-    assert "if (error) throw error;" in push
+    assert 'checked(await c.from("reports").insert' in push   # tests/test_store_checks_every_answer.py runs it
     assert "return true;" in push and "return false;" in push
 
 

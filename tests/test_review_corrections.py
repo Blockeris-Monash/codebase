@@ -234,7 +234,7 @@ def test_the_report_is_filed_as_the_signed_in_reviewer_and_checked() -> None:
     assert 'kind: "human"' in push and "user_id: u.id" in push, "0006 refuses a report that does not name its author"
     assert push.index('from("reports")') < push.index('from("corrections")'), \
         "the report must not wait on the corrections table"
-    assert push.count("throw error") + push.count("throw saved.error") >= 3, "supabase-js resolves an error, it does not throw"
+    assert push.count("checked(await") >= 3, "supabase-js resolves an error, it does not throw"
     assert "mark:" not in push, "correcting a field must not mark the email as done"
     assert "pushCorrection" in STORE[STORE.index("window.Store = {"):]
 
