@@ -1,4 +1,8 @@
 {
+  "//": "A rewrite, not cleanUrls. cleanUrls would also turn /index.html into a redirect to /, and sw.js precaches './index.html' and falls back to it when offline - a redirect there stops that entry caching and quietly breaks the offline page. This serves the reports queue at /admin while /admin.html keeps working for anything already bookmarked.",
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",

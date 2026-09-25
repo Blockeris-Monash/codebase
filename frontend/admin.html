@@ -6,9 +6,10 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Reports · Ship Happens</title>
 <style>
-/* Deliberately a separate page rather than a route in index.html: the reviewer
-   app is not the place for an internal queue, and a Supabase session is shared
-   across one origin, so this signs in once alongside it and nothing else. */
+/* Served at /admin (vercel.json rewrites it to this file). Deliberately a
+   separate page rather than a route in index.html: the reviewer app is not the
+   place for an internal queue, and a Supabase session is shared across one
+   origin, so this signs in once alongside the inbox and nothing else. */
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
   --accent:#e8620c; --accent-ink:#fff; --accent-soft:#fdeadb;
@@ -73,7 +74,7 @@ li.technical{border-left-color:var(--rev)}
   <header>
     <h1>Reports</h1>
     <span class="grow"></span>
-    <a href="./index.html">← Back to the inbox</a>
+    <a href="/">← Back to the inbox</a>
   </header>
   <p class="sub">Everything a reviewer flagged with “Report a problem”, plus anything the
      pipeline logged about itself. Newest first.</p>
@@ -105,12 +106,26 @@ li.technical{border-left-color:var(--rev)}
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
     c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
-  // The database stores UTC. Show the reader's own zone, because "was this
-  // before or after the run we just did" is the only question anyone asks.
+  // One clock for everyone, not the reader's own. This is a shared queue: if
+  // three admins open the same report and each sees it in their own zone, "the
+  // 2am one" stops meaning anything. The database stores UTC; this renders it
+  // in the team's zone, the same string on every screen.
+  const TEAM_ZONE = "Asia/Kuala_Lumpur";
+  const TEAM_ZONE_LABEL = "MYT";
+
   function when(iso){
-    const d = new Date(iso);
-    if (isNaN(d)) return "";
-    return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    const at = new Date(iso);
+    if (isNaN(at)) return "";
+    return at.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short",
+                                        timeZone: TEAM_ZONE }) + " " + TEAM_ZONE_LABEL;
+  }
+
+  // The backend logs in UTC, so a report can be lined up against a log line.
+  function whenUtc(iso){
+    const at = new Date(iso);
+    if (isNaN(at)) return "";
+    return at.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short",
+                                        timeZone: "UTC" }) + " UTC";
   }
 
   function who(row){
@@ -119,14 +134,14 @@ li.technical{border-left-color:var(--rev)}
     return u.display_name || u.email || "Unknown";
   }
 
-  // A demo reference is email_013; a live one is gmail_<id>. Only the demo ones
-  // can be linked, because a Gmail id means nothing without that person's inbox.
+  // Shown, not linked. This used to point at `index.html#/email/<id>`, a route
+  // the reviewer app has never had: the only hashes it answers to are #/, #/inbox
+  // and #/next, so the link landed on the inbox with nothing selected and looked
+  // like the queue was broken. A reference that can be read and searched for is
+  // more use than a link that goes somewhere wrong. It can become a link again
+  // the day index.html can open one email by id.
   function emailCell(ref){
-    if (!ref) return "";
-    const demo = /^email_\d+$/.test(ref);
-    return demo
-      ? `<a href="./index.html#/email/${esc(ref)}">${esc(ref)}</a>`
-      : esc(ref);
+    return ref ? esc(ref) : "";
   }
 
   // How many model calls an automatic report's step took (backend/reports.py).
@@ -145,7 +160,7 @@ li.technical{border-left-color:var(--rev)}
     return card(`<b>You are signed in, but not on the reports list</b>
       <span>Reading everyone's reports is restricted to team accounts. Ask someone already on
       it to add you, or open your own reports from the inbox instead.</span>
-      <a href="./index.html">Back to the inbox</a>`);
+      <a href="/">Back to the inbox</a>`);
   }
 
   function screenFailed(){
@@ -177,7 +192,7 @@ li.technical{border-left-color:var(--rev)}
       ${r.detail ? `<p class="detail">${esc(r.detail)}</p>` : ""}
       <div class="meta">
         <span>${esc(who(r))}</span>
-        <span>${esc(when(r.created_at))}</span>
+        <span title="${esc(whenUtc(r.created_at))}">${esc(when(r.created_at))}</span>
         ${ref ? `<span>about ${ref}</span>` : ""}
       </div></li>`;
   }

@@ -91,7 +91,7 @@
     }
   }
 
-  // --- the reports queue (admin.html) ------------------------------------
+  // --- the reports queue (/admin) -----------------------------------------
   // Both of these are guarded by row-level security, not by the caller. A
   // session that is not in `admins` gets an empty list from the database
   // however it asks, so hiding the page is presentation, never protection.

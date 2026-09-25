@@ -122,15 +122,22 @@ def test_every_value_from_the_database_is_escaped() -> None:
         assert f"${{{field}}}" not in row, f"{field} interpolated raw"
 
     # And the two indirect ones: the filer's name, and the email reference,
-    # which is escaped inside emailCell for the branch that is not a link.
+    # which emailCell escapes on the way out.
     assert "esc(who(r))" in row and "esc(when(r.created_at))" in row
-    assert "${esc(ref)}" in ADMIN[ADMIN.index("function emailCell"):ADMIN.index("function card")]
+    cell = ADMIN[ADMIN.index("function emailCell"):ADMIN.index("function card")]
+    assert "esc(ref)" in cell
 
 
-def test_a_gmail_reference_is_not_turned_into_a_link() -> None:
-    """A demo id resolves in the inbox; a gmail_<id> means nothing without that
-    person's mailbox, so linking it would be a link that always fails."""
-    assert r"/^email_\d+$/.test(ref)" in ADMIN
+def test_no_report_reference_is_turned_into_a_link() -> None:
+    """It used to link to `index.html#/email/<id>`, a route the reviewer app has
+    never had - it answers to #/, #/inbox and #/next and nothing else - so the
+    link landed on the inbox with nothing selected and looked like a broken
+    queue. Nothing here may link into the app until it can open one email by id.
+    """
+    cell = ADMIN[ADMIN.index("function emailCell"):ADMIN.index("function card")]
+
+    assert "<a " not in cell
+    assert 'href="./index.html#/email/' not in ADMIN
 
 
 def test_the_page_asks_to_be_left_out_of_search_results() -> None:
@@ -167,3 +174,27 @@ def test_store_reads_the_client_lazily() -> None:
     head = STORE[:STORE.index("function sb(")]
 
     assert "window.supabase" not in head, "store.js reads window.supabase at load time"
+
+
+def test_the_queue_shows_one_clock_for_everyone() -> None:
+    """A shared queue read in each viewer's own zone is a queue where "the 2am
+    one" means three different reports to three admins. The zone is fixed and
+    labelled, and UTC is on the hover so a row can be lined up against a log
+    line, which the backend writes in UTC."""
+    assert 'TEAM_ZONE = "Asia/Kuala_Lumpur"' in ADMIN
+    assert "timeZone: TEAM_ZONE" in ADMIN
+    assert 'timeZone: "UTC"' in ADMIN
+    assert "toLocaleString(undefined" not in ADMIN, "falls back to the reader's own zone"
+
+
+def test_the_page_is_reachable_without_the_extension() -> None:
+    """Served at /admin. A rewrite rather than cleanUrls, because cleanUrls also
+    turns /index.html into a redirect and sw.js precaches './index.html' and
+    falls back to it offline - a redirect stops that entry caching."""
+    import json
+
+    config = json.loads((ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8"))
+    rewrites = {r["source"]: r["destination"] for r in config.get("rewrites", [])}
+
+    assert rewrites.get("/admin") == "/admin.html"
+    assert "cleanUrls" not in config
