@@ -57,11 +57,20 @@ class AiExtractor:
     def ask_model(self, email_id: str, text: str) -> dict[str, ExtractedField] | None:
         """Retry a failing model; None means it never answered.
 
-        No retry starts once `deadline` seconds have passed, or would pass during the
-        wait before it. A call already running is not cut short here: each model call
-        has its own timeout for that."""
+        No attempt and no wait starts once `deadline` seconds have passed. A call
+        already running is not cut short here: each model call has its own timeout.
+
+        The deadline is checked before an attempt as well as before the wait,
+        because one "attempt" can be two model calls - `with_fallback` tries the
+        second provider inside it - so an attempt begun at 44 s of a 45 s budget
+        could still run for another 30. Checking only before the wait made the
+        real ceiling `deadline + one whole attempt`."""
         give_up_at = None if self.deadline is None else time.monotonic() + self.deadline
         for attempt in range(1, self.tries + 1):
+            if give_up_at is not None and attempt > 1 and time.monotonic() >= give_up_at:
+                log.warning("%s gave up before attempt %d/%d: the %gs deadline has passed",
+                            email_id, attempt, self.tries, self.deadline)
+                break
             try:
                 return self.model(text)
             except Exception as error:

@@ -32,6 +32,7 @@ from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend import settings
 
 
 load_dotenv()
@@ -39,6 +40,31 @@ load_dotenv()
 # discarded and the warnings that survive carry no timestamp or request id.
 configure_logging()
 log = logging.getLogger(__name__)
+
+def say_what_is_switched_on() -> None:
+    """One line at startup naming every optional feature and whether it is on.
+
+    Each of these is off when a variable is unset, and each fails quietly: no
+    Supabase key means the guidelines are never retrieved and replies are
+    drafted from nothing; no Gemini key means there is no second provider when
+    Qwen stalls. Nothing on screen says so. A deployment that is missing a
+    variable should say it once, at the top of the log, rather than be
+    discovered during judging.
+    """
+    def state(ready: object) -> str:
+        return "on" if ready else "OFF"
+
+    # Retrieval needs a database AND a model. Reporting only the database said
+    # "on" while replies were being drafted with no model behind them at all.
+    log.info(
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s",
+        state(settings.supabase_configured()),
+        state(settings.supabase_configured() and settings.gemini_key()),
+        state(settings.gemini_key()),
+        state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
+        state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+    )
+
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
 
@@ -713,3 +739,8 @@ async def reply(request: ReplyRequest, authorization: Optional[str] = Header(Non
     except gmail.GmailError as error:
         raise gmail_failure(error) from error
     return {"sent": True, "gmail_id": sent.get("id"), "thread_id": sent.get("threadId")}
+
+
+# Last, so every name it reads is defined. One line naming what is switched on,
+# because each of these fails quietly when its variable is unset.
+say_what_is_switched_on()

@@ -1,0 +1,29 @@
+# Five people, ten identities. Everyone here has committed under at least two,
+# because the GitHub web editor uses a noreply address while a local clone uses
+# whatever `git config user.email` says - and two of us also changed our display
+# name partway through.
+#
+# Without this, `git shortlog -sn`, `git blame` and GitHub's contributor graph
+# count the same person twice. Elyesa's 115 commits show as 80 and 35; Athith's
+# 110 show as 94 and 16. Anyone judging the repository by its insights tab sees
+# a team that did roughly a third less work than it did.
+#
+# Left of the angle brackets is the name to show; the entries after it are the
+# identities to fold into it. Check with: git shortlog -sne --all
+
+Elyesa Tee Way Yien <etee3001@gmail.com> <110232398+veyroxie@users.noreply.github.com>
+Elyesa Tee Way Yien <etee3001@gmail.com> veyroxie <110232398+veyroxie@users.noreply.github.com>
+
+Athith Kounsana <athithkosn@gmail.com> <Athithkosn@gmail.com>
+Athith Kounsana <athithkosn@gmail.com> <108474589+Taohudess@users.noreply.github.com>
+Athith Kounsana <athithkosn@gmail.com> Taohudess <Athithkosn@gmail.com>
+Athith Kounsana <athithkosn@gmail.com> Milk <athithkosn@gmail.com>
+Athith Kounsana <athithkosn@gmail.com> Milk <108474589+Taohudess@users.noreply.github.com>
+
+Muhammad Hanif Rafli <hanifrafli0503@gmail.com> <110047639+hanif-rafli@users.noreply.github.com>
+Muhammad Hanif Rafli <hanifrafli0503@gmail.com> hanif-rafli <hanifrafli0503@gmail.com>
+
+Tan Le Han <lehan518324@gmail.com> HyperByte12263 <lehan518324@gmail.com>
+Tan Le Han <lehan518324@gmail.com> Lehan <lehan518324@gmail.com>
+
+Ho Jia Jun <jhoo0074@student.monash.edu> 05jiujing <jhoo0074@student.monash.edu>
