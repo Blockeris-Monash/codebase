@@ -273,37 +273,54 @@ class PIIMasker:
         return masked_pairs
 
     def anonymize_reversible(self, text: str) -> Tuple[str, Dict[str, str]]:
-        """Anonymizes text with numbered tokens (e.g. {{PHONE_1}}) and returns a restoration mapping.
+        """Anonymizes text with numbered tokens (e.g. __PHONE_NUMBER_1__) and returns a restoration mapping.
         
         Designed for translation so real phone numbers and emails can be restored after translation.
         """
+        mapping: Dict[str, str] = {}
+        return self._tokenise(text, {}, mapping), mapping
+
+    def anonymize_many(self, texts: Dict[str, str]) -> Tuple[Dict[str, str], Dict[str, str]]:
+        """Several texts masked under one numbering, with one mapping to restore them all.
+
+        Masked one by one, each text numbers its tokens from 1, so a phone number in the
+        subject and a different one in the body would both be __PHONE_NUMBER_1__.
+        """
+        token_counts: Dict[str, int] = {}
+        mapping: Dict[str, str] = {}
+        masked = {name: self._tokenise(text, token_counts, mapping) for name, text in texts.items()}
+        return masked, mapping
+
+    def _tokenise(self, text: str, token_counts: Dict[str, int], mapping: Dict[str, str]) -> str:
+        """`text` with each detected value replaced by its numbered token. A value already
+        in `mapping` keeps its token, so the model sees one name for one number."""
         if not text or not text.strip():
-            return text, {}
+            return text
 
         results = self.analyzer.analyze(
             text=text,
             entities=self.target_entities,
             language="en",
         )
-
-        if not results:
-            return text, {}
-
-        # Sort results from end to start to avoid offset displacement
-        sorted_results = sorted(results, key=lambda x: x.start, reverse=True)
-        mapping: Dict[str, str] = {}
-        token_counts: Dict[str, int] = {}
+        tokens_by_value = {original: token for token, original in mapping.items()}
         modified = text
-
-        for r in sorted_results:
-            entity_type = r.entity_type
-            token_counts[entity_type] = token_counts.get(entity_type, 0) + 1
-            token = f"__{entity_type}_{token_counts[entity_type]}__"
+        # End to start, so each replacement leaves the earlier offsets valid; a span that
+        # overlaps one already replaced is skipped rather than cut in two.
+        next_start = len(text)
+        for r in sorted(results, key=lambda x: x.start, reverse=True):
+            if r.end > next_start:
+                continue
             original_val = text[r.start:r.end]
-            mapping[token] = original_val
+            token = tokens_by_value.get(original_val)
+            if token is None:
+                token_counts[r.entity_type] = token_counts.get(r.entity_type, 0) + 1
+                token = f"__{r.entity_type}_{token_counts[r.entity_type]}__"
+                mapping[token] = original_val
+                tokens_by_value[original_val] = token
             modified = modified[:r.start] + token + modified[r.end:]
+            next_start = r.start
 
-        return modified, mapping
+        return modified
 
     def deanonymize(self, text: str, mapping: Dict[str, str]) -> str:
         """Restores original values for numbered placeholder tokens after translation."""

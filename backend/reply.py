@@ -10,6 +10,7 @@ from backend.classify import EmailInput
 from backend.embeddings import EmbeddingTask, embed
 from backend.extract.fallback import with_fallback
 from backend.extract.circuit_breaker import CircuitBreaker
+from backend.security.pii import get_pii_masker
 
 # backend/settings.py is the one place that decides which environment variable
 # names count. Read directly here, this module disagreed with the rest of the
@@ -108,12 +109,32 @@ def gemini_generate(prompt: str, system_instruction: str) -> str:
     )
     return response.text
 
+def write_with_models(prompt: str, system_instruction: str) -> str:
+    """One reply from Gemini, with Qwen behind it; without a Gemini key, Qwen alone."""
+    def try_qwen(text: str) -> str:
+        return qwen_generate(text, system_instruction)
+
+    def try_gemini(text: str) -> str:
+        return gemini_generate(text, system_instruction)
+
+    if GEMINI_API_KEY:
+        generate_fn = with_fallback(try_gemini, qwen_reply_breaker.wrap(try_qwen),
+                                    first_timeout=GEMINI_REPLY_SECONDS, names=("Gemini", "Qwen"))
+    else:  # no Gemini key: Qwen drafts alone, as before
+        generate_fn = with_fallback(try_qwen, try_gemini, enabled=lambda: False)
+
+    return generate_fn(prompt)
+
+
 def generate_rag_reply(email: EmailInput, category: str) -> Optional[str]:
-    """Generate a reply using retrieved policy context. Tries Gemini first, then Qwen."""
-    
-    # 1. Retrieve Context
-    query = email.body
-    retrieved = retrieve_policies(query)
+    """Generate a reply using retrieved policy context. Tries Gemini first, then Qwen.
+
+    Personal data is masked before any model or the embedding API sees the email, and
+    restored in the draft, which goes to the customer (#147 B1)."""
+    masker = get_pii_masker()
+    masked, restore = masker.anonymize_many({"subject": email.subject, "body": email.body})
+
+    retrieved = retrieve_policies(masked["body"])
     
     context_str = "No specific policy documents found."
     if retrieved:
@@ -137,38 +158,30 @@ OUTPUT FORMAT (Mitigate Improper Output Handling):
 """
 
     prompt = f"""
-USER EMAIL SUBJECT: {email.subject}
+USER EMAIL SUBJECT: {masked["subject"]}
 USER EMAIL BODY:
-{email.body}
+{masked["body"]}
 
 ---
 GLOBETRANS POLICY CONTEXT:
 {context_str}
 """
-    
-    def try_qwen(text: str) -> str:
-        return qwen_generate(text, system_instruction)
-        
-    def try_gemini(text: str) -> str:
-        return gemini_generate(text, system_instruction)
-        
-    if GEMINI_API_KEY:
-        generate_fn = with_fallback(try_gemini, qwen_reply_breaker.wrap(try_qwen),
-                                    first_timeout=GEMINI_REPLY_SECONDS, names=("Gemini", "Qwen"))
-    else:  # no Gemini key: Qwen drafts alone, as before
-        generate_fn = with_fallback(try_qwen, try_gemini, enabled=lambda: False)
 
     try:
         with reports.watching("Reply draft", email.email_id, "No reply was drafted."):
-            reply_text = generate_fn(prompt)
-        return strip_dangerous_tags(reply_text)
+            reply_text = write_with_models(prompt, system_instruction)
+        return strip_dangerous_tags(masker.deanonymize(reply_text, restore))
     except Exception as e:
         # None, not a sentence: the page shows draft_reply as the reply itself, and from
         # My mailbox Send reply would email an error message to the customer (#96).
         print(f"Error generating RAG reply: {e}")
         return None
+
 def refine_rag_reply(email: EmailInput, current_draft: str, instruction: str) -> Optional[str]:
-    """Refine an existing drafted reply based on user instruction."""
+    """Refine an existing drafted reply based on user instruction, masked as a draft is."""
+    masker = get_pii_masker()
+    masked, restore = masker.anonymize_many({"subject": email.subject, "body": email.body,
+                                             "draft": current_draft, "instruction": instruction})
     system_instruction = """You are a professional customer support agent for GlobeTrans International.
 Your task is to refine the drafted email reply based on the user's instruction.
 Keep the tone professional and helpful, and incorporate the requested changes.
@@ -181,35 +194,23 @@ OUTPUT FORMAT (Mitigate Improper Output Handling):
 - Start with a polite greeting and end with a professional sign-off.
 """
     prompt = f"""
-ORIGINAL EMAIL SUBJECT: {email.subject}
+ORIGINAL EMAIL SUBJECT: {masked["subject"]}
 ORIGINAL EMAIL BODY:
-{email.body}
+{masked["body"]}
 
 ---
 CURRENT DRAFT:
-{current_draft}
+{masked["draft"]}
 
 ---
 USER INSTRUCTION FOR REFINEMENT:
-{instruction}
+{masked["instruction"]}
 """
-    
-    def try_qwen(text: str) -> str:
-        return qwen_generate(text, system_instruction)
-        
-    def try_gemini(text: str) -> str:
-        return gemini_generate(text, system_instruction)
-        
-    if GEMINI_API_KEY:
-        generate_fn = with_fallback(try_gemini, qwen_reply_breaker.wrap(try_qwen),
-                                    first_timeout=GEMINI_REPLY_SECONDS, names=("Gemini", "Qwen"))
-    else:
-        generate_fn = with_fallback(try_qwen, try_gemini, enabled=lambda: False)
 
     try:
         with reports.watching("Reply draft refinement", email.email_id, "No refinement was drafted."):
-            reply_text = generate_fn(prompt)
-        return strip_dangerous_tags(reply_text)
+            reply_text = write_with_models(prompt, system_instruction)
+        return strip_dangerous_tags(masker.deanonymize(reply_text, restore))
     except Exception as e:
         print(f"Error refining reply: {e}")
         return None
