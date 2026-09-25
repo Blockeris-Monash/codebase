@@ -29,9 +29,12 @@ PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
 # The one copy: backend/app.py and cli/mutation_check.py import it from here.
 NAME_SPLIT = r"\s*\|\s*|\s*[\r\n]+\s*"
 LEADING_INTEGER = r"(\d+)"
-# Must start with a digit: "([\d,]+...)" also matches a bare "," and then
-# float("") raises out of the comparator.
-DECIMAL_WITH_SEPARATORS = r"(\d[\d,]*(?:\.\d+)?)"
+# A number as a weight is written, never starting inside another one: the European
+# "21.577,00", "1.234.567" and "21 577,5", then "40,326", "21 577" and "40,326.5".
+# The one copy: backend/app.py imports it from here.
+WEIGHT_NUMBER = (r"(?<![\d.,])(?:\d{1,3}(?:\.\d{3})+,\d+|\d{1,3}(?:\.\d{3}){2,}|\d{1,3}(?: \d{3})+,\d+"
+                 r"|\d{1,3}(?:[ ,]\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)")
+THOUSANDS_GROUP_DIGITS = 3
 
 
 def normalise_name(value: str) -> str:
@@ -59,10 +62,25 @@ def normalise_count(value: str) -> str | None:
     return match.group(1) if match else None
 
 
-def normalise_weight(value: str) -> str | None:
-    match = re.search(DECIMAL_WITH_SEPARATORS, value)
+def parse_number(written: str) -> float:
+    """A WEIGHT_NUMBER as a float. A comma is the decimal point when it comes last and
+    either a dot comes before it or it is not followed by exactly three digits, so
+    "21.577,00" and "21 577,5" read the European way and "40,326" as 40326. A lone
+    "21.577" stays 21.577: it is ambiguous, and that is how it has always been read."""
+    compact = written.replace(" ", "")
+    head, comma, tail = compact.rpartition(",")
+    if comma and "." not in tail and ("." in head or len(tail) != THOUSANDS_GROUP_DIGITS):
+        return float(f"{head.replace('.', '').replace(',', '')}.{tail}")
+    if compact.count(".") > 1:
+        return float(compact.replace(".", "").replace(",", ""))
 
-    return str(float(match.group(1).replace(",", ""))) if match else None
+    return float(compact.replace(",", ""))
+
+
+def normalise_weight(value: str) -> str | None:
+    match = re.search(WEIGHT_NUMBER, value)
+
+    return str(parse_number(match.group(0))) if match else None
 
 
 def normalise(field: str, raw: str | None) -> str | None:

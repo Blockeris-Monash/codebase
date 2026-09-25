@@ -318,7 +318,7 @@
       "defect_fields": []
     },
     "why": "21.577,00 KG is 21,577 kg written the European way.",
-    "known_gap": "The weight is read as 21.577 kg instead of 21,577 kg: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {

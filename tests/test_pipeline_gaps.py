@@ -10,6 +10,7 @@ import pytest
 
 from backend import app as app_module
 from backend.compare.comparator import compare
+from backend.compare.normalise import normalise
 from backend.contracts import FIELD_NAMES
 from backend.read.labels import detect_doc_type
 
@@ -99,3 +100,20 @@ def test_a_title_is_recognised_by_its_wording_not_one_exact_line(title: str, rol
 @pytest.mark.parametrize("title", ["COMMERCIAL INVOICE", "PACKING LIST", "CERTIFICATE OF ORIGIN", "BILL OF EXCHANGE"])
 def test_another_document_still_names_itself(title: str) -> None:
     assert detect_doc_type(title) == title
+
+
+# --- B3.5 ------------------------------------------------------------------
+
+@pytest.mark.parametrize("written, kilograms", [
+    ("21.577,00 KG", 21577.0),      # European: dots group thousands, the comma is the decimal point
+    ("1.234.567 KGS", 1234567.0),
+    ("21 577,5 KG", 21577.5),
+    ("40,326 KG", 40326.0),         # the dataset's own forms read as before
+    ("40,326.5 KG", 40326.5),
+    ("12.5 MT", 12500.0),
+    ("21.577 KG", 21.577),          # a lone dot group is ambiguous; today's reading is kept
+])
+def test_a_weight_is_read_the_way_its_separators_say(written: str, kilograms: float) -> None:
+    assert float(app_module.clean_weight(written)) == pytest.approx(kilograms)
+    assert float(normalise("gross_weight_kg", written.removesuffix(" MT"))) == pytest.approx(
+        kilograms / (1000 if written.endswith("MT") else 1))

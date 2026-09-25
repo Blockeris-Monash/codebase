@@ -32,7 +32,7 @@ from backend.intent import about, email_intent
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
 from backend import gmail, reports
-from backend.compare.normalise import NAME_SPLIT, SENTINEL  # one rule each for where a name ends and what counts as blank, shared with the reference
+from backend.compare.normalise import NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, parse_number  # one rule each, shared with the reference
 from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
@@ -370,9 +370,6 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
-# Never starting inside another number ("326,000" is not a weight in "40.326,000"), and
-# thousands grouped by commas or by spaces: "21 577 KG" is 21,577.
-WEIGHT_NUMBER = r"(?<![\d.,])(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?"
 WEIGHT_UNIT = r"(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?|MTS?|M/T|TONNES?|METRIC TONS?|LBS?|POUNDS?)"
 # A net weight written beside the gross one, before or after its number:
 # "NET 38,000 KG GROSS 40,326 KG", "21,577 KGS GROSS / 20,000 KGS NET". It is removed
@@ -393,7 +390,7 @@ LABEL_UNIT = re.compile(r"\((KGS?|MTS?|M/T|TONNES?|LBS?)\)", re.I)
 
 
 def as_number(text: str) -> float:
-    return float(text.replace(",", "").replace(" ", ""))
+    return parse_number(text)
 
 
 def clean_weight(text: str) -> str:
