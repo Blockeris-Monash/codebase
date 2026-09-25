@@ -228,7 +228,14 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .reply{margin-top:16px;display:flex;flex-direction:column;gap:6px}
 .reply input,.reply textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 .reply textarea{resize:vertical;line-height:1.5}
-.ov{position:fixed;inset:0;background:rgba(20,26,51,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30}
+.ov{position:fixed;inset:0;background:rgba(20,26,51,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30;overflow:auto;overscroll-behavior:contain}
+/* a popup holds the page still behind it, so a scroll never moves the inbox */
+html:has(.ov){overflow:hidden}
+.dlgb{overscroll-behavior:contain}
+.busyc{display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 36px;text-align:center}
+.spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 .dlg{background:var(--panel);color:var(--ink);border-radius:16px;padding:20px;max-width:520px;max-height:100%;overflow:auto;box-shadow:var(--shadow)}
 .dlg h2{margin:0 0 8px;font-size:1.1875rem}
 .dlg .steps{padding-left:0;gap:0;margin:0}
@@ -876,6 +883,26 @@ function langHTML(){
       <div class="actions" style="justify-content:center"><button class="btn" data-a="langnext">${t("See what's next")}</button></div></div></div></div></div>`;
 }
 
+/* A loading screen while the page waits on Google or Supabase, which would otherwise look
+   frozen. It clears itself after 15 s, so a sign-in that never answers cannot lock the page. */
+let busyTimer = null;
+function busy(text){
+  S.busy = text; clearTimeout(busyTimer);
+  if(text) busyTimer = setTimeout(()=>busy(null), 15000);
+  render();
+}
+// Back from Google with the browser's Back button, the page is shown as it was left.
+window.addEventListener("pageshow", ev=>{ if(ev.persisted) busy(null); });
+function busyHTML(){
+  return `<div class="ov"><div class="dlg busyc" role="status" aria-live="polite"><span class="spin" aria-hidden="true"></span><b>${t(S.busy)}</b></div></div>`;
+}
+function startSignIn(){
+  busy(T("Opening Google sign-in..."));
+  const going = window.Store?.signIn?.();
+  if(!going){ busy(null); return; }
+  going.then(ok=>{ if(ok===false) busy(null); });
+}
+
 // Signed out, a report only reaches this browser: the reports queue takes rows from signed-in accounts.
 function reportSignInHTML(){
   return `<div class="ov" data-a="reportclose"><div class="dlg wide" role="dialog" aria-label="${t("Sign in to report a problem")}" data-a="stay">
@@ -901,7 +928,7 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1201,6 +1228,11 @@ function render(){
                 pane: S.resetPane ? null : (q(".pane")||{}).scrollTop,
                 list: S.resetList ? null : (q(".list")||{}).scrollTop,
                 y: (S.resetList || S.resetPane) ? null : window.scrollY};
+  // A popup covers the page: when it closes, the page goes back to where it stood when it
+  // opened, whatever reached it meanwhile, unless the popup took the reader somewhere else.
+  const popup = S.help||S.langDlg||S.reportDlg;
+  if(popup && !S.under) S.under = {...keep, at:location.hash+'|'+S.sel};
+  if(!popup && S.under){ if(S.under.at===location.hash+'|'+S.sel) Object.assign(keep, S.under); S.under = null; }
   S.resetList = false; S.resetPane = false;
   const list = items(), total = list.length, from = total?S.page*PAGE+1:0, to = Math.min(total,(S.page+1)*PAGE);
   const pagerHTML = `<div class="pager small num"><span>${t("{from}\u2013{to} of {total}",{from,to,total})}</span><span class="pbtns"><button data-a="newer" ${S.page===0?"disabled":""} aria-label="${t("Newer emails")}" title="${t("Newer emails")}">${ICON.LEFT}</button><button data-a="older" ${to>=total?"disabled":""} aria-label="${t("Older emails")}" title="${t("Older emails")}">${ICON.RIGHT}</button></span></div>`;
@@ -1221,7 +1253,7 @@ function render(){
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
      <div class="bar">${S.user||signInReturn?"":`<div class="seg mbox"><button class="segb ${S.mailbox==='demo'?'on':''}" data-a="switchbox" data-k="demo">${t("Demo data")}</button><button class="segb ${S.mailbox==='live'?'on':''}" data-a="switchbox" data-k="live" ${!S.user?'disabled title="'+t("Sign in to see your mailbox")+'"':''}>${t("My mailbox")}</button></div>`}<span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${loadingBox()?"":tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${toastHTML()}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -1276,15 +1308,15 @@ document.addEventListener("click", ev=>{
   else if(a==="mymailbox"){ if(!S.user) return; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="live"){ S.mailbox="live"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } if(!S.polling) startPolling(); }
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
   else if(a==="settings") S.langMenu=!S.langMenu;
-  else if(a==="signin"){ window.Store?.signIn(); return; }
+  else if(a==="signin"){ startSignIn(); return; }
   else if(a==="usermenu") S.userMenu=!S.userMenu;
   else if(a==="dismisserr"){ S.authErr=null; }
-  else if(a==="signout"){ S.userMenu=false; window.Store?.signOut(); }
+  else if(a==="signout"){ S.userMenu=false; busy(T("Signing out...")); window.Store?.signOut()?.finally?.(()=>busy(null)); return; }
   else if(a==="langpick"){ S.langMenu=false; setLang(k); }
   else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
   else if(a==="langclose"){ S.langDlg=false; }
   else if(a==="reportclose"){ S.reportDlg=false; }
-  else if(a==="reportsignin"){ S.reportDlg=false; window.Store?.signIn(); return; }
+  else if(a==="reportsignin"){ S.reportDlg=false; startSignIn(); return; }
   else if(a==="langnext"){ S.langDlg=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
   else if(a==="kind") S.fb.kind=k;
@@ -1402,7 +1434,7 @@ document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.reportDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && (ev.target.classList.contains("src")||ev.target.classList.contains("brand"))){ ev.preventDefault(); ev.target.click(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
-  if(typing||S.help||S.langDlg||S.reportDlg||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
+  if(typing||S.help||S.langDlg||S.reportDlg||S.busy||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);
@@ -1473,7 +1505,7 @@ function startPolling() {
 document.addEventListener("DOMContentLoaded", ()=>{
   S.authErr = window.Store?.authError?.() || null;
   S.authReady = !!window.Store?.onUser?.((user, event)=>{
-    S.user = user; S.userMenu = false; 
+    S.user = user; S.userMenu = false; S.busy = null;
     if (!user) { S.liveEmails = []; S.liveLoaded = false; }
     if (!user) signInReturn = false;
     if (!user && S.mailbox === "live") { S.mailbox = "demo"; S.polling = false; clearInterval(pollTimer); pollTimer = null; }

@@ -308,7 +308,9 @@ window.I18N = {
   "Writes a draft reply, and sends it from your own Gmail when you press Send": "Menulis draf balasan, dan menghantarnya dari Gmail anda sendiri apabila anda menekan Hantar",
   "{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.": "{reply} menulis draf untuk anda sunting. Dalam Peti mel saya, Hantar balasan menghantarnya dari Gmail anda, dalam perbualan yang sama. Pada data demo tiada apa yang dihantar, dan klik yang salah boleh dibatalkan dengan Buat asal.",
   "Sign in to report a problem": "Log masuk untuk melaporkan masalah",
-  "These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.": "Ini ialah e-mel demo, jadi laporan yang dihantar dari sini tidak disimpan atau dilihat oleh pasukan. Laporan hanya boleh dibuat selepas anda log masuk dengan Google."
+  "These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.": "Ini ialah e-mel demo, jadi laporan yang dihantar dari sini tidak disimpan atau dilihat oleh pasukan. Laporan hanya boleh dibuat selepas anda log masuk dengan Google.",
+  "Signing out...": "Sedang log keluar...",
+  "Opening Google sign-in...": "Membuka log masuk Google..."
  },
  "zh": {
   "What the scan says": "扫描件上的内容",
@@ -617,6 +619,8 @@ window.I18N = {
   "Writes a draft reply, and sends it from your own Gmail when you press Send": "撰写回复草稿，并在您按下“发送”时从您自己的 Gmail 发出",
   "{reply} writes a draft for you to edit. In My mailbox, Send reply sends it from your Gmail, in the same thread. On demo data nothing is sent, and a wrong click can be undone with Undo.": "{reply} 会为您写好草稿供您修改。在“我的邮箱”中，“发送回复”会从您的 Gmail 在同一对话中发出。演示数据不会真的发送，点错了可以用“撤销”恢复。",
   "Sign in to report a problem": "登录后才能报告问题",
-  "These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.": "这些是演示邮件，从这里发送的报告不会被保存，团队也看不到。只有使用 Google 登录后才能报告问题。"
+  "These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.": "这些是演示邮件，从这里发送的报告不会被保存，团队也看不到。只有使用 Google 登录后才能报告问题。",
+  "Signing out...": "正在退出登录...",
+  "Opening Google sign-in...": "正在打开 Google 登录..."
  }
 };
