@@ -57,5 +57,88 @@
         ]
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "description": "status is NEEDS_REVIEW if and only if review_reason is set",
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NEEDS_REVIEW"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "review_reason": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "review_reason": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "description": "status is MISMATCH if and only if defect_fields is non-empty",
+      "if": {
+        "properties": {
+          "status": {
+            "const": "MISMATCH"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "defect_fields": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "defect_fields": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "description": "status is MISMATCH if and only if has_defect is true",
+      "if": {
+        "properties": {
+          "status": {
+            "const": "MISMATCH"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "has_defect": {
+            "const": true
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "has_defect": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
 }

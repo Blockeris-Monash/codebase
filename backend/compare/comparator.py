@@ -9,7 +9,7 @@ import json
 import re
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.compare.evidence import describe_blanks, describe_unreadable, describe_wrong_doc
 from backend.compare.normalise import normalise
@@ -70,6 +70,16 @@ class ComparisonResult(BaseModel):
     rows: List[Row]
     defect_fields: List[FieldType]
     evidence: str
+
+    @model_validator(mode="after")
+    def keeps_the_contract_rules(self) -> "ComparisonResult":
+        """Contract 04's if-and-only-if rules, so the service cannot build a result
+        that breaks them (contracts/04-ComparisonResult.schema.json, allOf)."""
+        if (self.status == "NEEDS_REVIEW") != (self.review_reason is not None):
+            raise ValueError("status is NEEDS_REVIEW if and only if review_reason is set")
+        if (self.status == "MISMATCH") != bool(self.defect_fields):
+            raise ValueError("status is MISMATCH if and only if defect_fields is non-empty")
+        return self
 
 
 # =====================================================================
