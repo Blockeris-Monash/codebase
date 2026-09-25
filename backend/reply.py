@@ -8,18 +8,18 @@ from backend import reports, settings
 from backend.classify import EmailInput
 from backend.extract.fallback import with_fallback
 
-# Both of these accept more than one variable name, and backend/settings.py is
-# the one place that decides which. Read directly here, this module disagreed
-# with the rest of the service twice over: it wanted SUPABASE_KEY while
-# reports.py wanted SUPABASE_SERVICE_ROLE_KEY, and it wanted GEMINI_API_KEY
-# while gemini.py has always taken GOOGLE_API_KEY too - so an environment with
-# GOOGLE_API_KEY set had no model here at all and drafted nothing, silently.
+# backend/settings.py is the one place that decides which environment variable
+# names count. Read directly here, this module disagreed with the rest of the
+# service twice over: it wanted its own name for the Supabase secret, and it
+# wanted GEMINI_API_KEY while gemini.py has always taken GOOGLE_API_KEY too - so
+# an environment with GOOGLE_API_KEY set had no model here at all and drafted
+# nothing, silently.
 SUPABASE_URL = settings.supabase_url()
-SUPABASE_KEY = settings.supabase_secret()
+SUPABASE_SECRET = settings.supabase_secret()
 GEMINI_API_KEY = settings.gemini_key()
 
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+if SUPABASE_URL and SUPABASE_SECRET:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET)
 else:
     supabase = None
 

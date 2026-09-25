@@ -5,8 +5,8 @@ Two credentials in this service ended up with two names each, both by ordinary
 accident: people added them in parallel, hours apart, and neither could have
 known about the other.
 
-- The Supabase secret is `SUPABASE_SERVICE_ROLE_KEY` in `backend/reports.py` and
-  was `SUPABASE_KEY` in `backend/reply.py`.
+- The Supabase secret was `SUPABASE_SERVICE_ROLE_KEY` in `backend/reports.py`
+  and `SUPABASE_KEY` in `backend/reply.py`. It is the first name everywhere now.
 - The Gemini key is `GOOGLE_API_KEY` or `GEMINI_API_KEY`, which
   `backend/extract/gemini.py` has always accepted either of - but `reply.py`
   read only the second, so a deployment with the first had retrieval-backed
@@ -24,12 +24,11 @@ from typing import Optional
 
 from backend.extract.gemini import api_key as gemini_api_key
 
-# Canonical first. A name that is only still read so that an environment set up
-# before it was renamed keeps working is marked as such, not quietly equal.
-SUPABASE_SECRET_NAMES = (
-    "SUPABASE_SERVICE_ROLE_KEY",   # canonical, and the one .env.example documents
-    "SUPABASE_KEY",                # accepted so an older deployment keeps working
-)
+# One name. SUPABASE_KEY was briefly accepted as well, while the deployment still
+# had it set; it is gone now that every environment uses the canonical name. A
+# tuple rather than a bare string because the guard in tests/conftest.py clears
+# every name in it, and that has to keep working if one is ever added back.
+SUPABASE_SECRET_NAMES = ("SUPABASE_SERVICE_ROLE_KEY",)
 
 
 def first_set(*names: str) -> Optional[str]:
