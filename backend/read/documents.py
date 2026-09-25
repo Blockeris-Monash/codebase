@@ -1,6 +1,6 @@
 """Turn any attachment into the same {label: value} pairs.
 
-Lane A. Text, Word and Excel need no third-party package — .docx and .xlsx
+Lane A. Text, Word and Excel need no third-party package: .docx and .xlsx
 are ZIP archives of XML. PDF needs `pypdf`; without it a PDF reports
 NotAttempted rather than pretending to be empty.
 

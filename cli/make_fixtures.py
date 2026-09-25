@@ -139,7 +139,7 @@ def evidence_for(email: dict[str, object], category: str) -> str:
 
 
 def entry_for(comparison: ComparisonResult, category: str) -> SubmissionEntry:
-    """Non-comparison categories carry no verdict — classified, then stop."""
+    """Non-comparison categories carry no verdict: classified, then stop."""
     if category == CategoryType.BlComparison:
         return submission_entry(comparison, category)
 

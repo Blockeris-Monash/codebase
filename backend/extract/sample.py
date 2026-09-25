@@ -46,4 +46,4 @@ for filename in sample_files:
     else:
         print(f"❌ Failed to extract {filename}")
 
-print("\nDone! Check results/extracts/ — you now have your cache for these 3 emails.")
+print("\nDone! Check results/extracts/: you now have your cache for these 3 emails.")

@@ -32,7 +32,7 @@ def attachment_meta(path: str) -> Attachment:
 
 
 def email_record(email: dict[str, object]) -> EmailRecord:
-    """Contract 1 — loader output, one per email."""
+    """Contract 1: loader output, one per email."""
     sender = str(email["from"])
 
     return {
@@ -67,7 +67,7 @@ def fields_from_pairs(pairs: list[tuple[str, str]]) -> dict[str, ExtractedField]
 
 
 def document_extract(data_dir: str, email_id: str, meta: Attachment) -> DocumentExtract:
-    """Contract 3 — one per attachment, whatever format it arrived in."""
+    """Contract 3: one per attachment, whatever format it arrived in."""
     base: DocumentExtract = {
         "email_id": email_id,
         "declared_role": meta["declared_role"],
@@ -87,7 +87,7 @@ def document_extract(data_dir: str, email_id: str, meta: Attachment) -> Document
 
 
 def review_result(email_id: str, reason: str, evidence: str) -> ComparisonResult:
-    """Contract 4, escalation form — no table, nothing was comparable."""
+    """Contract 4, escalation form: no table, nothing was comparable."""
     return {"email_id": email_id, "status": StatusType.NeedsReview,
             "review_reason": reason, "rows": [], "defect_fields": [],
             "evidence": evidence}
@@ -95,7 +95,7 @@ def review_result(email_id: str, reason: str, evidence: str) -> ComparisonResult
 
 def comparison_result(email_id: str, si: DocumentExtract,
                       bl: DocumentExtract) -> ComparisonResult:
-    """Contract 4 — the seven-row table plus the verdict for one email.
+    """Contract 4: the seven-row table plus the verdict for one email.
 
     An absent value outranks a defect: a partial comparison cannot support a
     complete verdict, so the whole email escalates.
@@ -123,7 +123,7 @@ def comparison_result(email_id: str, si: DocumentExtract,
 
 
 def submission_entry(comparison: ComparisonResult, category: str) -> SubmissionEntry:
-    """Contract 5 — exactly the sample_submission.json shape."""
+    """Contract 5: exactly the sample_submission.json shape."""
     is_mismatch = comparison["status"] == StatusType.Mismatch
 
     return {"category": category, "status": comparison["status"],

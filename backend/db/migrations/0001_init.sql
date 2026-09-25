@@ -1,4 +1,4 @@
--- Ship Happens — per-user state.
+-- Ship Happens: per-user state.
 --
 -- What this does NOT hold: the 520 demo emails and their comparison results.
 -- Those ship inside frontend/results.js so the page opens with no backend, no

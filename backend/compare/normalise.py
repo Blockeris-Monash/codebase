@@ -1,4 +1,4 @@
-"""Reference normalisation — turning a raw document value into a comparable one.
+"""Reference normalisation: turning a raw document value into a comparable one.
 
 R3 owns the production version and the rules behind it; this exists so the
 fixtures carry realistic normalised values. The rules are evidence-backed:
@@ -35,7 +35,7 @@ DECIMAL_WITH_SEPARATORS = r"(\d[\d,]*(?:\.\d+)?)"
 
 
 def normalise_name(value: str) -> str:
-    """Name only — Excel stores name and address in one cell."""
+    """Name only: Excel stores name and address in one cell."""
     return re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,")
 
 
