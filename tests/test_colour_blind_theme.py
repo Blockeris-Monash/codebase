@@ -173,3 +173,45 @@ def test_the_choice_changes_the_page_and_is_remembered() -> None:
 
 def test_it_is_built_so_it_is_no_longer_on_the_roadmap() -> None:
     assert 'T("Colour-blind friendly themes")' not in INDEX
+
+
+# ---------------------------------------------------------------- monotone must stay readable
+#
+# Seen on the page: in grey, the sky, the cards and the three statuses blended together, the
+# Verified number looked switched off, and the orange buttons turned a muddy grey. Shade alone
+# cannot carry a status, so Monotone gives each one its own shape as well.
+
+MONO = ':root[data-palette="mono"]'
+
+
+def rule(selector: str) -> str:
+    at = STYLE.index(selector + "{")
+    return STYLE[at + len(selector) + 1:STYLE.index("}", at)]
+
+
+def test_monotone_gives_each_status_its_own_shape() -> None:
+    assert "background:var(--bad)" in rule(f"{MONO} .b-MISMATCH")          # solid: the loudest
+    assert "border:" in rule(f"{MONO} .b-NEEDS_REVIEW")                     # outlined
+    assert "background:var(--panel)" in rule(f"{MONO} .b-MISMATCH .cnt")   # the count stays visible on the fill
+    assert "--stripe" in rule(f"{MONO} .kpi.k-MISMATCH::before")            # tiles: solid, dashed and dotted bars
+    assert "radial-gradient" in rule(f"{MONO} .kpi.k-OK::before")
+
+
+def test_monotone_tile_numbers_are_full_strength() -> None:
+    """A dim 63 under Verified read as switched off."""
+    assert "color:var(--ink)" in rule(f"{MONO} .kpi b")
+
+
+def test_monotone_quiets_the_sky_behind_the_cards() -> None:
+    assert "opacity:" in rule(f"{MONO} .appbg")
+
+
+@pytest.mark.parametrize("mode", ["light", "dark"])
+def test_monotone_edges_buttons_and_quiet_text_stand_out(mode: str) -> None:
+    ours = monotone(mode)
+    assert contrast(ours["--line"], ours["--panel"]) >= 3, f"{mode}: card edges"         # WCAG non-text
+    assert contrast(ours["--accent-ink"], ours["--accent"]) >= 7, f"{mode}: button text"
+    assert contrast(ours["--mute"], ours["--panel"]) >= READABLE, f"{mode}: quiet text"
+    for name in ("--line", "--panel", "--accent", "--accent-ink", "--mute", "--ink"):
+        r, g, b = (ours[name][i:i + 2] for i in (1, 3, 5))
+        assert r == g == b, f"{mode} {name} {ours[name]} is not a grey"
