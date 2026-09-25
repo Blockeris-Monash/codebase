@@ -19,13 +19,17 @@ from backend.extract.gemini import PROMPT, ModelFields
 DEFAULT_BASE_URL = "https://gateway.9arm.co"
 DEFAULT_MODEL = "qwen3.8-27b-fp8"
 USER_AGENT = "hackathon-extractor/0.1"  # the gateway's Cloudflare blocks requests without one
+# A normal call answers in 5 to 7 s; on a slow night it takes about 48 s, too late to be of use
+# (#109). 15 s never cuts off a healthy call. Classification uses http_post too.
+DEFAULT_TIMEOUT_SECONDS = 15.0
 
 Post = Callable[[str, dict, dict], dict]
 
 
 def http_post(url: str, headers: dict, body: dict) -> dict:
     request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
-    with urllib.request.urlopen(request, timeout=120) as response:
+    timeout = float(os.environ.get("QWEN_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
+    with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
 

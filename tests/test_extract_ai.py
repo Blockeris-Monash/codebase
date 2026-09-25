@@ -4,6 +4,8 @@ It does not read files, check the document type or set parse_status. Those are
 Lane A's result, so every test here hands it pairs directly."""
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from backend.contracts import ExtractedField
@@ -81,6 +83,39 @@ def test_a_temporary_failure_recovers() -> None:
 
     assert fields is not None
     assert fields["port_of_loading"]["raw"] == "SINGAPORE"
+
+
+def test_a_slow_failing_model_is_not_retried_past_the_deadline() -> None:
+    calls: list[str] = []
+
+    def slow_broken_model(text: str) -> dict[str, ExtractedField]:
+        calls.append(text)
+        time.sleep(0.2)
+        raise TimeoutError("timed out")
+
+    started = time.monotonic()
+    fields = AiExtractor(slow_broken_model, tries=5, wait=0,
+                         deadline=0.3).extract_fields("email_055", PAIRS)
+
+    assert fields is None
+    assert len(calls) == 2
+    assert time.monotonic() - started < 0.6
+
+
+def test_no_retry_starts_when_the_wait_would_pass_the_deadline() -> None:
+    calls: list[str] = []
+
+    def broken_model(text: str) -> dict[str, ExtractedField]:
+        calls.append(text)
+        raise RuntimeError("503 UNAVAILABLE")
+
+    started = time.monotonic()
+    fields = AiExtractor(broken_model, tries=3, wait=1.0,
+                         deadline=0.5).extract_fields("email_055", PAIRS)
+
+    assert fields is None
+    assert len(calls) == 1
+    assert time.monotonic() - started < 0.3
 
 
 def test_a_value_not_in_the_document_is_rejected(
