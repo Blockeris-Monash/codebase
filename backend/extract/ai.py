@@ -29,22 +29,6 @@ def squash(text: str) -> str:
     return " ".join(text.split())
 
 
-def keep_only_values_in_text(email_id: str, fields: dict[str, ExtractedField],
-                             text: str) -> dict[str, ExtractedField]:
-    """A raw value that is not in the document was invented or altered by the
-    model, so that field is reported as absent."""
-    haystack = squash(text)
-    checked: dict[str, ExtractedField] = {}
-    for name, value in fields.items():
-        if value["present"] and squash(value["raw"] or "") not in haystack:
-            log.warning("%s %s: %r not found in document, rejected",
-                        email_id, name, value["raw"])
-            value = {"present": False, "label_seen": None, "raw": None}
-        checked[name] = value
-
-    return checked
-
-
 def is_under_its_label(raw: str, label_seen: str | None, pairs: LabelledPairs) -> bool:
     """The value appears whole under the label the model says it read.
 
