@@ -2,6 +2,7 @@
 configurable and every test that needs it skips when it is absent."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
+LIVE_OPT_IN = "SHIP_HAPPENS_LIVE"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -30,6 +32,30 @@ def data_dir(request: pytest.FixtureRequest) -> Path:
 @pytest.fixture(scope="session")
 def attachments(data_dir: Path) -> Path:
     return data_dir / "attachments"
+
+
+# backend/app.py calls load_dotenv() at import, so importing the service pulls a
+# developer's .env into os.environ - including the model keys. The live gate stops
+# *tests* calling a model; it cannot stop the *application* doing it, and the
+# mailbox check classifies each new email in the background. So on any machine
+# with a .env the suite made real model calls: 66.9s and a flaky failure against
+# 1.45s and green with the keys cleared, a 45x difference, and quota spent on
+# every run. CI never saw it because CI has no .env.
+MODEL_KEYS = ("QWEN_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY", "GEMINI_CRITIC_API_KEY")
+
+
+@pytest.fixture(autouse=True)
+def no_model_calls_from_the_application(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the offline suite offline, whatever is in the developer's .env.
+
+    Left alone when SHIP_HAPPENS_LIVE=1, because that is someone asking for the
+    live tests by name and they need the keys.
+    """
+    if os.environ.get(LIVE_OPT_IN) == "1":
+        return
+
+    for name in MODEL_KEYS:
+        monkeypatch.delenv(name, raising=False)
 
 
 @pytest.fixture(autouse=True)
