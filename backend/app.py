@@ -357,19 +357,46 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
+WEIGHT_NUMBER = r"\d[\d,]*(?:\.\d+)?"
+POUNDS_TO_KG = 0.45359237
+# The number a unit is written against, in the order a document states its gross weight:
+# kilograms first, so "12,500 KGS (12.5 MT)" is the kilograms and "40,326 KG (NET: ___ MTS)"
+# is not multiplied by the tonnes decoy beside it.
+WEIGHT_UNITS = (
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?)\b"), 1.0),
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:MTS?|M/T|TONNES?|METRIC TONS?)\b"), 1000.0),
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:LBS?|POUNDS?)\b"), POUNDS_TO_KG),
+)
+# "Gross Weight (LBS)": the unit is in the label and the value is a bare number.
+LABEL_UNIT = re.compile(r"\((KGS?|MTS?|M/T|TONNES?|LBS?)\)", re.I)
+
+
 def clean_weight(text: str) -> str:
-    text_upper = text.upper()
-    is_mt = "MT" in text_upper or "M/T" in text_upper
-    numeric_str = re.sub(r"[^\d.]", "", text.replace(",", ""))
-    if not numeric_str:
-        return ""
-    try:
-        weight_val = float(numeric_str)
-        if is_mt:
-            weight_val *= 1000.0
-        return str(weight_val)
-    except ValueError:
-        return text.strip()
+    """Kilograms, from the number written against a unit; with no unit, the largest number,
+    since a weight dwarfs the container count written beside it ("2 x 20GP 40326").
+
+    This used to join every digit in the value, so "2 x 20GP 40,326 KG" became 22040326,
+    and any "MT" anywhere multiplied the lot by 1000 (#147 A3)."""
+    upper = text.upper()
+    for pattern, kilograms_per_unit in WEIGHT_UNITS:
+        found = pattern.search(upper)
+        if found:
+            return str(round(float(found.group(1).replace(",", "")) * kilograms_per_unit, 3))
+    numbers = [float(n.replace(",", "")) for n in re.findall(WEIGHT_NUMBER, upper)]
+
+    return str(max(numbers)) if numbers else ""
+
+
+def with_label_unit(value: str, label: Optional[str]) -> str:
+    """The value with the unit its label states, when the value itself states none, so
+    40,326 under "Gross Weight (LBS)" is read as pounds rather than kilograms."""
+    has_unit = any(pattern.search(value.upper()) for pattern, _ in WEIGHT_UNITS)
+    unit = LABEL_UNIT.search(label or "")
+    if has_unit or unit is None:
+        return value
+
+    return f"{value} {unit.group(1)}"
+
 
 def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
     cleaned: Dict[str, Any] = {}
@@ -389,7 +416,7 @@ def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
             elif key == "container_count":
                 field_data["norm"] = clean_containers(raw_str)
             elif key == "gross_weight_kg":
-                field_data["norm"] = clean_weight(raw_str)
+                field_data["norm"] = clean_weight(with_label_unit(raw_str, field_data.get("label_seen")))
             else:
                 field_data["norm"] = raw_str
 
