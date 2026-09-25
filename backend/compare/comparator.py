@@ -76,7 +76,11 @@ class ComparisonResult(BaseModel):
 # Deterministic Normalization & Comparison Helpers
 # =====================================================================
 
-LOCODE_DECOY = re.compile(r"\s*\(([A-Z]{5})\)\s*|\b[A-Z]{2}[A-Z0-9]{3}\b", re.I)
+# A UN/LOCODE in brackets, "(KEMBA)". Bare five-letter words are left alone: the bare
+# alternative this used to have also deleted KLANG, NORTH, SOUTH, CHINA and every other
+# five-letter word, so PORT KLANG matched PORT DICKSON (#147 A3). No port value in the
+# dataset carries a bare code, and one that did would still match by the subset rule.
+LOCODE_DECOY = re.compile(r"\s*\(([A-Z]{5})\)\s*", re.I)
 
 
 def extract_meaningful_tokens(val: str | None) -> set[str]:
