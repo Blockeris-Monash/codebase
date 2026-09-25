@@ -319,3 +319,16 @@ def test_the_evidence_names_the_file_used_and_the_one_set_aside(monkeypatch) -> 
 
     assert result.status == "OK"
     assert result.evidence.startswith("Revised BL email_908_BL_REVISED.txt used; email_908_BL.txt set aside.")
+
+
+@pytest.mark.parametrize("text, label, value", [
+    ("Notify Party:\nPort of Loading: PORT KLANG\n", "Port of Loading", "PORT KLANG"),
+    ("Gross Weight:\nVessel Name: X\n", "Vessel Name", "X"),
+])
+def test_a_blank_label_does_not_swallow_the_next_label(tmp_path: Path, text: str, label: str, value: str) -> None:
+    """A label left blank stays blank; the next "label: value" line is its own pair."""
+    pairs = txt_pairs(tmp_path, text)
+    blank = text.split(":", 1)[0]
+
+    assert pairs[blank] == ""
+    assert pairs[label] == value

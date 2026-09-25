@@ -56,8 +56,8 @@ def _read_member(archive: zipfile.ZipFile, name: str) -> str:
 
 def read_txt(path: Path) -> LabelledPairs:
     """One `label: value` per line. An indented line continues the value above, and a
-    label with nothing after its colon takes the lines beneath it; a blank line ends a
-    value. An unindented line under a filled value is not taken: under Gross Weight it
+    label with nothing after its colon takes the colon-free lines beneath it, so a blank
+    label never swallows the next one; a blank line ends a value. An unindented line under a filled value is not taken: under Gross Weight it
     would reach the weight parser (#147 B3)."""
     pairs: LabelledPairs = []
     is_open = False
@@ -66,7 +66,7 @@ def read_txt(path: Path) -> LabelledPairs:
         if not text:
             is_open = False
             continue
-        if is_open and (line[0].isspace() or not pairs[-1][1]):
+        if is_open and (line[0].isspace() or (not pairs[-1][1] and ":" not in line)):
             label, value = pairs[-1]
             pairs[-1] = (label, f"{value}\n{text}" if value else text)
             continue
