@@ -192,6 +192,23 @@ def report_empty_extraction(email_id: str, role: str, raw_fields: Optional[Dict[
                   "detail": outcome, "context": {"step": step, "tries": 1, "outcome": outcome}})
 
 
+async def model_fields(email_id: str, role: str, pairs: List[tuple[str, str]]) -> Optional[Dict[str, Any]]:
+    """The model's reading of one document's pairs, or None when there is nothing to read
+    or the model failed."""
+    if not pairs:
+        # Nothing came out of the file (a scan, a zip bomb, a broken PDF), so a model has
+        # nothing to map and any answer would be invented. Anyone can upload such a file
+        # without signing in, so the call would also be free to trigger and paid for by us.
+        return None
+    try:
+        with reports.watching(f"Extraction ({role})", email_id,
+                              "Every field was treated as missing, so the email went to a person."):
+            return await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
+    except Exception as error:  # third-party model client, any failure is one
+        log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
+        return None
+
+
 async def extract_live(
     email_id: str,
     role: str,
@@ -203,14 +220,7 @@ async def extract_live(
 
     Run in a threadpool so the SI and the BL extract concurrently.
     """
-    try:
-        with reports.watching(f"Extraction ({role})", email_id,
-                              "Every field was treated as missing, so the email went to a person."):
-            raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
-    except Exception as error:  # third-party model client, any failure is one
-        log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
-        raw_fields = None
-
+    raw_fields = await model_fields(email_id, role, pairs)
     report_empty_extraction(email_id, role, raw_fields, parse_status)
     if not raw_fields:
         # A model that returned nothing is not evidence that the fields are
