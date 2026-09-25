@@ -1195,7 +1195,7 @@ function docsHTML(e, rows){
 const line = r=>`- ${FIELDS[r.field]}: the SI says ${r.si_raw||"(blank)"}, the draft BL says ${r.bl_raw||"(blank)"}`;
 function draftFor(e){
   if(e.draft_reply) {
-    return {id:e.id, to:e.from, subject:/^re[:_]/i.test(e.subject)?e.subject:"RE: "+e.subject, body: e.draft_reply};
+    return {id:e.id, to:e.from, subject:/^re[:_]/i.test(e.subject)?e.subject:"RE: "+e.subject, body: e.draft_reply, grounded: e.draft_grounded};
   }
   const rows = e.rows||[];
   let ask;
@@ -1281,6 +1281,7 @@ function actionsHTML(e){
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
+      ${d.grounded===false?`<div class="small mute ungrounded">${t("No company policy matched this email. Check the facts before sending.")}</div>`:""}
       ${d.refined?"":(e.draft_by==="sample"?`<div class="small mute sample">${t("Sample reply written for the demo, not drafted by Ship Happens' AI.")}</div>`:"")}
       <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
@@ -1710,7 +1711,8 @@ async function draftLive(id){
     const res = await fetch(API_BASE + "/draft-reply", {method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
                                                         body: JSON.stringify({email_id:id})});
     if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
-    e.draft_reply = (await res.json()).draft_reply;
+    const data = await res.json();
+    e.draft_reply = data.draft_reply; e.draft_grounded = data.grounded;
     if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; }
   }catch(err){ S.draftErr = {id, msg:t("No draft: {reason}", {reason: err.message})}; }
   S.drafting = null; render();

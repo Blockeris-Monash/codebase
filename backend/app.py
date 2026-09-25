@@ -659,6 +659,8 @@ class ProcessedEmail(BaseModel):
     # A reply drafted from company policy for INVOICE_QUERY and GENERAL mail (#93), or None.
     # Kept out of SubmissionEntry so the scorer's line keeps exactly its five keys.
     draft_reply: Optional[str] = None
+    # Whether any company policy stood behind an AI draft; None when the AI wrote none.
+    draft_grounded: Optional[bool] = None
 
 
 
@@ -742,12 +744,14 @@ async def process_email(
 
     # 3. Non-comparison branch (SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM)
     if classification.category != "BL_COMPARISON":
-        draft_reply = None
+        draft_reply, draft_grounded = None, None
         if classification.category in DRAFTED and draft:
             from backend.reply import generate_rag_reply
             # A thread, not a direct call: it waits on the AI for up to 120 s, and a blocking
             # call here would stop every other request (#96).
-            draft_reply = await asyncio.to_thread(generate_rag_reply, email, classification.category)
+            drafted = await asyncio.to_thread(generate_rag_reply, email, classification.category)
+            if drafted:
+                draft_reply, draft_grounded = drafted
         elif classification.category == "SI_REQUEST":
             draft_reply = await si_request_reply(email)
 
@@ -764,6 +768,7 @@ async def process_email(
                 "defect_fields": [],
             },
             "draft_reply": draft_reply,
+            "draft_grounded": draft_grounded,
         }
 
     # 4. BL_COMPARISON branch: resolve attachments & run comparison pipeline
@@ -964,8 +969,8 @@ async def draft_reply(request: DraftRequest, authorization: Optional[str] = Head
         written = await asyncio.to_thread(generate_rag_reply, email, entry["category"])
         if not written:
             raise HTTPException(status_code=502, detail="The AI could not draft a reply just now. Try again, or write one yourself.")
-        entry["draft_reply"] = written
-    return {"email_id": entry["id"], "draft_reply": entry["draft_reply"]}
+        entry["draft_reply"], entry["draft_grounded"] = written
+    return {"email_id": entry["id"], "draft_reply": entry["draft_reply"], "grounded": entry.get("draft_grounded")}
 
 
 class RefineRequest(BaseModel):

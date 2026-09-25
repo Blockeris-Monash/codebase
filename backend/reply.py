@@ -1,8 +1,9 @@
-import os
 import json
+import logging
+import os
 import re
 import urllib.request
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, NamedTuple, Optional
 from supabase import create_client, Client
 from google import genai
 from google.genai import types
@@ -12,6 +13,8 @@ from backend.embeddings import EmbeddingTask, embed
 from backend.extract.fallback import with_fallback
 from backend.extract.circuit_breaker import CircuitBreaker
 from backend.security.pii import get_pii_masker
+
+log = logging.getLogger(__name__)
 
 # backend/settings.py is the one place that decides which environment variable
 # names count. Read directly here, this module disagreed with the rest of the
@@ -57,6 +60,12 @@ def fenced(tag: str, text: str) -> str:
     return f"<{tag}>\n{defused}\n</{tag}>"
 
 
+class Draft(NamedTuple):
+    """A drafted reply, and whether any company policy was in front of the model."""
+    text: str
+    grounded: bool
+
+
 def strip_dangerous_tags(text: str) -> str:
     """Basic programmatic sanitization to mitigate LLM05 (Improper Output Handling)"""
     if not text:
@@ -79,10 +88,14 @@ def retrieve_policies(query: str, top_k: int = 3) -> List[Dict[str, Any]]:
             {'query_embedding': query_embedding, 'match_threshold': 0.7, 'match_count': top_k}
         ).execute()
 
-        return response.data
-    except Exception as e:
-        print(f"Error retrieving policies: {e}")
+        return response.data or []
+    except Exception as error:  # a database, an embedding API or a network: any failure is one
+        log.warning("policy retrieval failed, drafting with no policy: %s", type(error).__name__, exc_info=True)
+        reports.file({"kind": reports.KIND, "email_ref": None, "title": "Policy retrieval failed",
+                      "detail": f"{type(error).__name__}: the reply was drafted with no company policy behind it.",
+                      "context": {"step": "Retrieval", "error": type(error).__name__}})
         return []
+
 
 def qwen_generate(prompt: str, system_instruction: str) -> str:
     key = os.environ.get("QWEN_API_KEY")
@@ -138,7 +151,7 @@ def write_with_models(prompt: str, system_instruction: str) -> str:
     return generate_fn(prompt)
 
 
-def generate_rag_reply(email: EmailInput, category: str) -> Optional[str]:
+def generate_rag_reply(email: EmailInput, category: str) -> Optional[Draft]:
     """Generate a reply using retrieved policy context. Tries Gemini first, then Qwen.
 
     Personal data is masked before any model or the embedding API sees the email, and
@@ -177,11 +190,11 @@ COMPANY POLICY:
     try:
         with reports.watching("Reply draft", email.email_id, "No reply was drafted."):
             reply_text = write_with_models(prompt, system_instruction)
-        return strip_dangerous_tags(masker.deanonymize(reply_text, restore))
-    except Exception as e:
+        return Draft(strip_dangerous_tags(masker.deanonymize(reply_text, restore)), grounded=bool(retrieved))
+    except Exception:
         # None, not a sentence: the page shows draft_reply as the reply itself, and from
         # My mailbox Send reply would email an error message to the customer (#96).
-        print(f"Error generating RAG reply: {e}")
+        log.error("no reply drafted for %s", email.email_id, exc_info=True)
         return None
 
 def refine_rag_reply(email: EmailInput, current_draft: str, instruction: str) -> Optional[str]:
@@ -210,6 +223,6 @@ OUTPUT FORMAT (Mitigate Improper Output Handling):
         with reports.watching("Reply draft refinement", email.email_id, "No refinement was drafted."):
             reply_text = write_with_models(prompt, system_instruction)
         return strip_dangerous_tags(masker.deanonymize(reply_text, restore))
-    except Exception as e:
-        print(f"Error refining reply: {e}")
+    except Exception:
+        log.error("no refinement drafted for %s", email.email_id, exc_info=True)
         return None

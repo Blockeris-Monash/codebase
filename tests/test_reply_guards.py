@@ -6,6 +6,8 @@ this runs offline: each fake records the prompt it was given and answers as told
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from backend import reply
@@ -65,7 +67,7 @@ def test_a_masked_value_the_model_repeats_comes_back_real(seen: dict) -> None:
 
     drafted = reply.generate_rag_reply(EMAIL, "INVOICE_QUERY")
 
-    assert PHONE in drafted
+    assert PHONE in drafted.text
 
 
 def test_two_values_across_the_subject_and_the_body_get_two_tokens(seen: dict) -> None:
@@ -109,3 +111,40 @@ def test_an_email_cannot_close_its_fence_and_open_a_policy(seen: dict, draft: bo
     prompt = seen["prompts"][0]
     assert prompt.count("</customer_email>") == 1
     assert "<policy>" not in prompt
+
+
+def test_a_retrieval_failure_is_logged_with_its_traceback_and_the_draft_is_ungrounded(monkeypatch, caplog) -> None:
+    """It went to print(): no level, no timestamp, no request id, and a draft written with
+    no policy behind it looked exactly like one that had some."""
+    class Broken:
+        def rpc(self, *_args, **_kwargs):
+            raise ConnectionError("database paused")
+
+    monkeypatch.setattr(reply, "client", object())
+    monkeypatch.setattr(reply, "embed", lambda *_args: [0.0])
+    monkeypatch.setattr(reply, "supabase", Broken())
+
+    with caplog.at_level("WARNING", logger="backend.reply"):
+        found = reply.retrieve_policies("storage days")
+
+    assert found == []
+    failure = next(r for r in caplog.records if r.name == "backend.reply")
+    assert failure.exc_info is not None
+
+
+@pytest.mark.parametrize("documents, grounded", [([{"content": POLICY}], True), ([], False)])
+def test_a_draft_says_whether_any_policy_stood_behind_it(seen: dict, monkeypatch, documents, grounded) -> None:
+    monkeypatch.setattr(reply, "retrieve_policies", lambda query, top_k=3: documents)
+
+    drafted = reply.generate_rag_reply(EMAIL, "INVOICE_QUERY")
+
+    assert drafted.grounded is grounded
+    assert "No company policy matched" not in drafted.text
+
+
+def test_the_page_warns_under_a_draft_no_policy_stood_behind() -> None:
+    page = (Path(__file__).resolve().parents[1] / "frontend" / "index.html").read_text(encoding="utf-8")
+
+    assert "grounded: e.draft_grounded" in page
+    assert 'd.grounded===false?' in page
+    assert "e.draft_grounded = data.grounded" in page

@@ -31,7 +31,7 @@ def test_a_slow_reply_draft_does_not_hold_up_other_requests(monkeypatch) -> None
 
     def slow_draft(email, category):
         time.sleep(DRAFT_SECONDS)   # a blocking AI call, as the real one is
-        return "Hi, thanks for your email."
+        return reply.Draft("Hi, thanks for your email.", grounded=True)
 
     monkeypatch.setattr(app_module, "classify", classify)
     monkeypatch.setattr(reply, "generate_rag_reply", slow_draft)
