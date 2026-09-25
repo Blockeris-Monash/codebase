@@ -196,3 +196,14 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     verdict = "ALL VERIFIED" if total_bad == 0 else f"{total_bad} FAILING"
     write(f"  {verdict}   {total_ok} passed, {total_bad} failed")
     write("═" * 74)
+
+
+@pytest.fixture(autouse=True)
+def reports_start_with_nothing_held_back():
+    """Reports remember what they filed recently, to hold back repeats. Each test
+    starts with nothing remembered, so one test's rows never hold back another's."""
+    from backend import reports
+
+    reports.forget()
+    yield
+    reports.forget()

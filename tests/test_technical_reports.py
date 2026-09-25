@@ -125,6 +125,70 @@ def test_a_single_failed_try_is_still_reported(queue) -> None:
     assert row["context"]["tries"] == 1
 
 
+# --- repeats are held back ----------------------------------------------------
+
+def no_answer_step(email_id: str = EMAIL) -> None:
+    """Qwen is down and there is no backup: the failure that repeats on every email."""
+    with pytest.raises(RuntimeError):
+        with reports.watching("Classification", email_id, "The email could not be sorted."):
+            with_fallback(broken, answer, enabled=lambda: False)("text")
+
+
+def test_the_same_failure_on_the_same_email_is_filed_once(queue) -> None:
+    for _ in range(5):
+        no_answer_step()
+
+    assert len(filed(queue)) == 1
+
+
+def test_fifty_emails_failing_the_same_way_file_at_most_three_rows(queue) -> None:
+    for n in range(50):
+        no_answer_step(f"email_{n:03d}")
+
+    assert len(filed(queue)) == 3
+
+
+def test_different_failures_are_each_filed(queue) -> None:
+    no_answer_step()
+    backup_step()
+
+    assert len(filed(queue)) == 2
+
+
+def test_after_the_window_the_next_row_says_how_many_were_held_back(
+        queue, monkeypatch) -> None:
+    now = [1000.0]
+    monkeypatch.setattr(reports, "clock", lambda: now[0])
+    for n in range(10):
+        no_answer_step(f"email_{n:03d}")
+    now[0] += reports.REPEAT_WINDOW_SECONDS + 1
+
+    no_answer_step("email_100")
+
+    rows = filed(queue)
+    assert len(rows) == 4
+    assert rows[-1]["context"]["held_back"] == 7
+    assert "7 more like this" in rows[-1]["detail"]
+
+
+def test_every_emails_second_opinion_is_still_filed(queue) -> None:
+    """The critic notes each second opinion on purpose: one per email, however many."""
+    for n in range(10):
+        with reports.watching("Classification", f"email_{n:03d}", "not sorted"):
+            reports.note("second opinion agreed", "Gemini agreed.")
+
+    assert len(filed(queue)) == 10
+
+
+def test_held_back_repeats_still_reach_the_log(queue, caplog) -> None:
+    caplog.set_level(logging.WARNING, logger="backend.reports")
+
+    for _ in range(5):
+        no_answer_step()
+
+    assert caplog.text.count("technical report: Classification: no AI answer") == 5
+
+
 # --- each step the pipeline watches -------------------------------------------
 
 def test_an_extraction_with_no_answer_says_what_happened_to_the_email(queue, monkeypatch) -> None:
@@ -220,6 +284,17 @@ def test_without_the_service_key_the_report_only_goes_to_the_log(queue, monkeypa
     assert "technical report: Classification: answered on try 2, by Gemini" in caplog.text
 
 
+def test_without_the_service_key_one_warning_says_reports_are_off(queue, monkeypatch, caplog) -> None:
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY")
+    caplog.set_level(logging.WARNING, logger="backend.reports")
+
+    backup_step()
+    no_answer_step()
+
+    assert caplog.text.count("technical reports are not being saved") == 1
+    assert "SUPABASE_SERVICE_ROLE_KEY" in caplog.text
+
+
 def test_a_database_that_refuses_never_reaches_the_check(monkeypatch, caplog) -> None:
     def refuse(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("database paused")
@@ -267,3 +342,72 @@ def test_a_reports_tries_are_read_as_a_number_never_as_markup() -> None:
     """context comes from the database and is shown in the page: only a number
     may reach it, so a crafted row cannot inject markup through the count."""
     assert "Number(r.context && r.context.tries) || 0" in ADMIN
+
+
+# --- the mailbox and the rate limit -------------------------------------------
+
+def failing_mailbox(monkeypatch: pytest.MonkeyPatch):
+    """A Gmail that fails on every message, with mail content in its error."""
+    from backend import app as app_module
+
+    class BrokenGmail:
+        def __init__(self, token: str) -> None:
+            pass
+
+        async def __aenter__(self):
+            raise ValueError("could not decode 'Subject: private offer for ACME'")
+
+        async def __aexit__(self, *exc: object) -> None:
+            return None
+
+    monkeypatch.setattr(app_module.gmail, "Gmail", BrokenGmail)
+    for store in ("MAILBOXES", "ORIGINALS", "WORKING", "FAILURES"):
+        monkeypatch.setattr(app_module, store, {})
+    monkeypatch.setattr(app_module, "CHECKS", asyncio.Semaphore(2))
+    return app_module
+
+
+def test_a_mailbox_email_that_cannot_be_checked_is_reported_once(queue, monkeypatch) -> None:
+    app_module = failing_mailbox(monkeypatch)
+
+    for _ in range(app_module.GIVE_UP_AFTER + 2):
+        asyncio.run(app_module.check_message("token", "a@ours.example", "18c2f4e9a1b3d5f7"))
+
+    row = only(queue)
+    assert row["title"] == "Mailbox email not checked"
+    assert row["email_ref"] == "gmail_18c2f4e9a1b3d5f7"
+    assert row["context"]["error"] == "ValueError"
+    assert "private offer" not in json.dumps(row)
+
+
+def test_a_mailbox_email_that_fails_once_is_not_reported_yet(queue, monkeypatch) -> None:
+    app_module = failing_mailbox(monkeypatch)
+
+    asyncio.run(app_module.check_message("token", "a@ours.example", "18c2f4e9a1b3d5f7"))
+
+    assert filed(queue) == []
+
+
+def test_a_caller_over_the_rate_limit_is_reported_once_without_their_address(
+        queue, monkeypatch) -> None:
+    from collections import defaultdict, deque
+
+    from fastapi.testclient import TestClient
+
+    from backend import app as app_module, middleware
+
+    now = time.monotonic()
+    seen = defaultdict(deque, {"203.0.113.57": deque([now] * middleware.MAX_REQUESTS_PER_WINDOW)})
+    monkeypatch.setattr(middleware, "_seen", seen)
+    with TestClient(app_module.app) as client:
+        for _ in range(3):
+            got = client.post("/translate", json={"texts": {"a": "hi"}, "target": "ms"},
+                              headers={"X-Forwarded-For": "203.0.113.57"})
+            assert got.status_code == 429
+
+    row = only(queue)
+    assert row["title"] == "Rate limited"
+    assert row["email_ref"] is None
+    assert row["context"]["path"] == "/translate"
+    assert row["context"]["caller"] == "203.0.113.x"
+    assert "203.0.113.57" not in json.dumps(row)
