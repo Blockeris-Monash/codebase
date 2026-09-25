@@ -744,7 +744,7 @@ function supportHTML(){
     <label class="fl" for="fb-from">${t("Your email, if you want a reply (optional)")}</label><input id="fb-from" data-fb="from" type="email" value="${esc(f.from)}" placeholder="name@example.com">
     <div class="fl">${t("How is Ship Happens working for you?")}</div><div class="stars">${stars}</div>
     ${about}
-    <div class="actions"><button class="btn" data-a="fbsend">${SUPPORT_EMAIL?t("Send to support"):t("Send feedback")}</button><button class="btn alt" data-a="fbcopy">${f.copied?t("Copied"):t("Copy message")}</button></div></div>`;
+    <div class="actions"><button class="btn" data-a="fbsend">${SUPPORT_EMAIL?t("Send to support"):t("Send feedback")}</button><button class="btn alt" data-a="fbcopy">${f.copied===true?t("Copied"):f.copied===false?t("Copy failed: select the text and copy it"):t("Copy message")}</button></div></div>`;
 }
 
 const TODAY = [
@@ -985,7 +985,7 @@ function mailDlgHTML(){
   return `<div class="ov" data-a="mailclose"><div class="dlg wide" role="dialog" aria-label="${t("Open in your email app")}" data-a="stay">
     <div class="dlgh"><h2>${t("Open in your email app")}</h2><button class="ghost" data-a="mailclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="dlgb"><div class="thanks">${ICON.MAIL}<span>${t("This is a demo email, so nothing is opened or sent. In your own mailbox, this button opens the reply in Gmail, in the same thread, ready to send.")}</span>
-      <div class="actions" style="justify-content:center"><button class="btn" data-a="copy">${S.draft&&S.copied===S.draft.id?t("Copied"):t("Copy the reply")}</button><button class="btn alt" data-a="mailclose">${t("Close")}</button></div></div></div></div></div>`;
+      <div class="actions" style="justify-content:center"><button class="btn" data-a="copy">${S.draft&&S.copied===S.draft.id?t("Copied"):S.draft&&S.copyFailed===S.draft.id?t("Copy failed: select the text and copy it"):t("Copy the reply")}</button><button class="btn alt" data-a="mailclose">${t("Close")}</button></div></div></div></div></div>`;
 }
 
 // Signed out, a report only reaches this browser: the reports queue takes rows from signed-in accounts.
@@ -1049,7 +1049,7 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), corr:loadCorr(), rev:null, draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:null}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), corr:loadCorr(), rev:null, draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1328,7 +1328,7 @@ function actionsHTML(e){
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       ${d.grounded===false?`<div class="small mute ungrounded">${t("No company policy matched this email. Check the facts before sending.")}</div>`:""}
       ${d.refined?"":(e.draft_by==="claude"?`<div class="small mute sample">${t("Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.")}</div>`:"")}
-      <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
+      <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):S.copyFailed===e.id?t("Copy failed: select the text and copy it"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
         <input type="text" id="r-refine" data-f="instruction" maxlength="500" value="${esc(d.instruction||"")}" placeholder="${t("Refine draft...")}" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 10px; background:var(--panel); color:var(--ink); font:inherit;">
         <button class="btn alt" data-a="refine" data-id="${e.id}" ${S.refining?"disabled":""}>${S.refining?t("Refining..."):t("Refine")}</button>
@@ -1603,6 +1603,12 @@ document.addEventListener("pointerdown", ev=>{
   document.addEventListener("pointermove", move); document.addEventListener("pointerup", up);
 });
 
+/* Says "Copied" only once the browser has copied: writeText is a promise, and a refused copy
+   (no permission, not a secure context) used to report success anyway (#147 B2). */
+function copyText(text, done){
+  const writing = navigator.clipboard?.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("no clipboard"));
+  return writing.then(()=>done(true), ()=>done(false));
+}
 document.addEventListener("click", ev=>{
   if(S.langMenu && !ev.target.closest(".langwrap")){ S.langMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
   if(S.userMenu && !ev.target.closest(".acctwrap")){ S.userMenu=false; if(!ev.target.closest("[data-a]")){ render(); return; } }
@@ -1636,8 +1642,8 @@ document.addEventListener("click", ev=>{
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
   else if(a==="kind") S.fb.kind=k;
   else if(a==="rate") S.fb.rating = S.fb.rating===+k ? 0 : +k;
-  else if(a==="fbagain") S.fb={kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false};
-  else if(a==="fbcopy"){ try{ navigator.clipboard.writeText(feedbackText()); S.fb.copied=true; }catch(_){} }
+  else if(a==="fbagain") S.fb={kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:null};
+  else if(a==="fbcopy"){ copyText(feedbackText(), ok=>{ S.fb.copied = ok; render(); if(!ok) document.getElementById("fb-msg")?.select(); }); return; }
   else if(a==="fbsend"){
     if(!S.fb.msg.trim()) S.fb.err=true;
     else{
@@ -1653,7 +1659,7 @@ document.addEventListener("click", ev=>{
   }
   else if(a==="step"){ S.pipeManual=true; document.querySelector(".lp-pipe")?.classList.remove("auto"); setStep(+k); return; }
   else if(a==="howto"){ document.getElementById("how")?.scrollIntoView({behavior:"smooth", block:"start"}); return; }
-  else if(a==="report"){ if(!S.user){ S.reportDlg=true; } else{ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; } }
+  else if(a==="report"){ if(!S.user){ S.reportDlg=true; } else{ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:null}; S.tabChanged=true; } }
   else if(a==="folder"){ S.f=k; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; }
   else if(a==="newer"){ S.page--; S.resetList=true; } else if(a==="older"){ S.page++; S.resetList=true; }
   else if(a==="open"){ S.fade=true; S.hl=null; S.sel=id; S.docs=true; S.body=false; S.how=false; S.draft=null; S.resetPane=true; S.keyNav=true; }
@@ -1671,12 +1677,12 @@ document.addEventListener("click", ev=>{
   else if(a==="docs") S.docs=!S.docs; else if(a==="body") S.body=!S.body; else if(a==="how") S.how=!S.how;
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
-  else if(a==="draft"){ S.draft = draftFor(withCorrections(getEmail(id))); S.copied=null; S.scrollTo=".reply"; }
+  else if(a==="draft"){ S.draft = draftFor(withCorrections(getEmail(id))); S.copied=null; S.copyFailed=null; S.scrollTo=".reply"; }
   else if(a==="aidraft"){ draftLive(id); return; }
   else if(a==="discard"){ S.draft=null; S.refineErr=null; }
   else if(a==="refine"){ if(!S.refining) refineDraft(id); }
   else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
-  else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
+  else if(a==="copy"){ const copying = S.draft.id; copyText(S.draft.body, ok=>{ S.copied = ok ? copying : null; S.copyFailed = ok ? null : copying; render(); if(!ok) document.getElementById("r-body")?.select(); }); return; }
   else if(a==="mailto"){ S.mailDlg=true; }
   else if(a==="mailclose"){ S.mailDlg=false; }
   render();
@@ -1684,7 +1690,7 @@ document.addEventListener("click", ev=>{
 document.addEventListener("input", ev=>{
   if(ev.target.id==="q"){ S.q=ev.target.value; S.page=0; S.resetList=true; if(ONE_PANE.matches){ S.sel=null; S.resetPane=true; } render(); return; }
   const fbf = ev.target.dataset.fb;
-  if(fbf){ S.fb[fbf]=ev.target.value; S.fb.err=false; S.fb.copied=false; return; }   // no redraw while typing
+  if(fbf){ S.fb[fbf]=ev.target.value; S.fb.err=false; S.fb.copied=null; return; }   // no redraw while typing
   const f = ev.target.dataset.f;
   if(f && S.draft) S.draft[f] = ev.target.value;   // no redraw while typing, or the cursor would jump
   if(ev.target.dataset.rv && S.rev) S.rev.value = ev.target.value;
@@ -1844,7 +1850,7 @@ async function draftLive(id){
   const e = getEmail(id), token = window.Store?.googleToken?.();
   if(!e || S.drafting) return;
   /* A demo email calls no model: its draft was written in advance, and shows the same way. */
-  if(e.demo_draft){ e.draft_reply = e.demo_draft; if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; } render(); return; }
+  if(e.demo_draft){ e.draft_reply = e.demo_draft; if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.copyFailed=null; S.scrollTo=".reply"; } render(); return; }
   if(!token){ S.draftErr = {id, msg:t("Sign in with Google again to draft a reply.")}; render(); return; }
   S.drafting = id; S.draftErr = null; render();
   try{
@@ -1853,7 +1859,7 @@ async function draftLive(id){
     if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
     const data = await res.json();
     e.draft_reply = data.draft_reply; e.draft_grounded = data.grounded;
-    if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; }
+    if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.copyFailed=null; S.scrollTo=".reply"; }
   }catch(err){ S.draftErr = {id, msg:t("No draft: {reason}", {reason: err.message})}; }
   S.drafting = null; render();
 }
