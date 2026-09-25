@@ -1222,11 +1222,13 @@ function signInErrorHTML(){
   return `<div class="authbar" role="alert"><span>${esc(why)}</span><button class="ghost" data-a="dismisserr">${t("Dismiss")}</button></div>`;
 }
 
-const onHome = ()=>!location.hash || location.hash==="#/";
+/* The landing page lives at an empty address. Back from Google, supabase-js empties the
+   address to remove the token before the account lands, so that moment is not the landing page. */
+const isHome = ()=>!signInReturn && (!location.hash || location.hash==="#/");
 /* The demo data is an account of its own: signed out you are on it, signed in you switch to it here. */
 function accountHTML(){
   if(!S.authReady || (!S.user && signInReturn)) return "";
-  if(!S.user && onHome()) return `<button class="ghost hb" data-a="signin" aria-label="${t("Sign in with Google")}" title="${t("Sign in with Google")}">${ICON.USER}<span class="lbl">${t("Sign in")}</span></button>`;
+  if(!S.user && isHome()) return `<button class="ghost hb" data-a="signin" aria-label="${t("Sign in with Google")}" title="${t("Sign in with Google")}">${ICON.USER}<span class="lbl">${t("Sign in")}</span></button>`;
   const demo = !S.user || S.mailbox==="demo";
   const meta = (S.user && S.user.user_metadata) || {}, email = (S.user && S.user.email) || "", name = meta.full_name || meta.name || email;
   const acct = (on, act, title, sub)=>`<button class="mi ${on?"on":""}" role="menuitemradio" aria-checked="${on}" data-a="${act}"><span class="mtick">${on?ICON.CHECKED:""}</span><span class="macct"><b>${title}</b>${sub?`<span class="mute small">${sub}</span>`:""}</span></button>`;
@@ -1243,7 +1245,7 @@ function render(){
   const rootTheme = document.documentElement.dataset.theme;
   const isDark = rootTheme ? rootTheme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
   const onNext = location.hash==="#/next";
-  const onHome = !location.hash || location.hash==="#/";
+  const onHome = isHome();
   const q = sel=>document.querySelector(sel);
   // The whole app is rebuilt by one innerHTML write below, so every scroll box comes back
   // at 0. These put them back. The list and the pane reset independently: selecting an
@@ -1533,7 +1535,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if (user && !wasSignedIn && S.mailbox !== "live") { S.mailbox = "live"; S.sel = null; S.page = 0; S.q = ""; S.f = "MISMATCH"; startPolling(); }
     if (user && !S.polling) startPolling();
     // Supabase has cleared the token from the address by now; point it at the inbox, not the landing page.
-    if (user && signInReturn) { signInReturn = false; setTimeout(()=>{ history.replaceState(null, "", location.pathname + "#/inbox"); render(); }, 0); }
+    if (user && signInReturn) {
+      signInReturn = false; history.replaceState(null, "", location.pathname + "#/inbox");
+      // In case the address is emptied after this callback rather than before it.
+      setTimeout(()=>{ if(!location.hash){ history.replaceState(null, "", location.pathname + "#/inbox"); render(); } }, 0);
+    }
     render();
     // Outside the callback: supabase-js must not be called from inside its own auth callback.
     if(user && (event==="INITIAL_SESSION"||event==="SIGNED_IN")) setTimeout(()=>{
