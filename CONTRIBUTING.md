@@ -34,6 +34,15 @@ ships no `submission.json`, because it is a self-check rather than a
 deliverable — `cli.make_fixtures` writes a `SubmissionSample.json` showing the
 shape.
 
+## Before you commit
+
+Turn on the repository's hook once per clone. It refuses a commit whose page
+scripts do not parse, which is how a merge broke every translation on #159:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## After editing an inline script
 
 The page's content security policy allows each inline `<script>` in
