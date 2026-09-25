@@ -165,3 +165,35 @@ def test_composes_with_with_fallback_so_gemini_answers_while_open() -> None:
         assert model("doc") == "gemini answered"  # fallback covers the first two failures too
     # breaker is now open; with_fallback still gets a fast failure and reaches Gemini
     assert model("doc") == "gemini answered"
+
+
+def test_without_a_fallback_the_model_is_tried_even_while_open() -> None:
+    """With no Gemini key there is nothing to skip to, so skipping Qwen would only fail the
+    document. The breaker still counts, but lets every call through to Qwen."""
+    from backend.extract.fallback import with_fallback
+
+    outcomes = iter(["fail", "fail", "ok"])
+
+    def recovering(text: str) -> str:
+        if next(outcomes) == "fail":
+            raise RuntimeError("down")
+        return "qwen answered"
+
+    gemini_on = False
+    breaker = CircuitBreaker(threshold=2, cooldown=100, clock=FakeClock())
+    protected_qwen = breaker.wrap(recovering, skip_allowed=lambda: gemini_on)
+    model = with_fallback(protected_qwen, lambda text: "gemini answered",
+                          enabled=lambda: gemini_on)
+
+    for _ in range(2):
+        with pytest.raises(RuntimeError):
+            model("doc")
+    assert model("doc") == "qwen answered"  # open, but no fallback: Qwen is still asked
+
+
+def test_app_lets_qwen_through_when_there_is_no_gemini_key() -> None:
+    """app.py wires the breaker so it only skips Qwen while Gemini can answer instead."""
+    from pathlib import Path
+
+    source = (Path(__file__).parent.parent / "backend" / "app.py").read_text()
+    assert "qwen_breaker.wrap(qwen_model, skip_allowed=lambda: bool(gemini_key()))" in source

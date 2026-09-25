@@ -13,9 +13,12 @@ Behaviour:
 - After `threshold` consecutive failures, the breaker opens: for the next `cooldown` seconds,
   the wrapped model is not called at all - a CircuitOpen is raised immediately, so a caller
   such as with_fallback moves to its second model without waiting on the first at all.
-- Once `cooldown` seconds have passed, the breaker goes half-open: exactly one call is let
-  through to test whether the model has recovered. Success closes the breaker again; failure
-  re-opens it and the cooldown starts over.
+- Once `cooldown` seconds have passed, the breaker goes half-open: calls are let through
+  again to test whether the model has recovered (calls that arrive together, such as SI and
+  BL, all go through). A success closes the breaker again; a failure re-opens it and the
+  cooldown starts over.
+- `skip_allowed` is asked on every call. When it says no (for example there is no Gemini key,
+  so nothing would answer instead), the model is called even while the breaker is open.
 
 One CircuitBreaker instance holds state across calls, so create it once (module level) and
 reuse it - a fresh instance per call would never remember a failure.
@@ -72,9 +75,10 @@ class CircuitBreaker:
                     log.warning("circuit open after %d consecutive failures", self._failures)
                 self._opened_at = self._clock()
 
-    def wrap(self, model: Callable[[str], object]) -> Callable[[str], object]:
+    def wrap(self, model: Callable[[str], object],
+             skip_allowed: Callable[[], bool] = lambda: True) -> Callable[[str], object]:
         def call(text: str):
-            if not self._should_try():
+            if skip_allowed() and not self._should_try():
                 raise CircuitOpen(
                     f"skipping: {self.threshold} consecutive failures, retry after cooldown")
             try:
