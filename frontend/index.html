@@ -1175,13 +1175,17 @@ function step(n, title, evidence){
 }
 const cut = (t,n)=>t.length>n ? t.slice(0,n).replace(/\s+\S*$/,"")+"…" : t;
 
+/* Why an email was sorted without the AI (backend/app.py sort_email). */
+const RULE_REASON = {"An SI and a draft BL are attached, so it was sorted without the AI.":T("An SI and a draft BL are attached, so it was sorted without the AI."),
+  "The AI did not answer, so a simple keyword rule sorted it.":T("The AI did not answer, so a simple keyword rule sorted it.")};
+const RULE_REASON_ATTACHED = "An SI and a draft BL are attached, so it was sorted without the AI.";
 function how(e){
   const cat = esc(e.category==="BL_COMPARISON" ? t("SI vs BL") : (OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase());
-  const ai = e.decided_by!=="fallback";
+  const ai = e.decided_by==="llm";
   const pct = typeof e.class_confidence==="number" ? `<span class="pill">${t("{n}% sure",{n:Math.round(e.class_confidence*100)})}</span>` : "";
-  const steps = [e.uploaded ? step(1, t("You uploaded an SI and a draft BL"), `<div class="cap">${t("There is no email to sort, so the two files went straight to the check.")}</div>`) : step(1, ai ? `${t("The AI read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"})} ${pct}` : t("A keyword rule read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"}),
+  const steps = [e.uploaded ? step(1, t("You uploaded an SI and a draft BL"), `<div class="cap">${t("There is no email to sort, so the two files went straight to the check.")}</div>`) : step(1, ai ? `${t("The AI read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"})} ${pct}` : e.class_evidence===RULE_REASON_ATTACHED ? t("A rule filed it under {cat}",{cat:"<b>"+cat+"</b>"}) : t("A keyword rule read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"}),
     `<blockquote>${esc(cut(e.body.replace(/\s+/g," ").trim(),240))}</blockquote>` +
-    (ai && e.class_evidence ? `<div class="cap">${t("AI reason:")} ${esc(e.class_evidence)}</div>` : ai ? "" : `<div class="cap">${t("Not the AI. A simple rule on the subject and text.")}</div>`))];
+    (ai && e.class_evidence ? `<div class="cap">${t("AI reason:")} ${esc(e.class_evidence)}</div>` : ai ? "" : `<div class="cap">${RULE_REASON[e.class_evidence] ? t(RULE_REASON[e.class_evidence]) : t("Not the AI. A simple rule on the subject and text.")}</div>`))];
   if(e.category!=="BL_COMPARISON"){
     steps.push(step(2, t("Stopped here"), `<div class="cap">${t("Only SI vs BL emails are compared, so nothing else was run.")}</div>`));
   } else {
@@ -1251,7 +1255,7 @@ function detail(e){
     banner = `<div class="banner OK">${ICON.OK}${t("All 7 fields match")}<span>${t("Nothing to do.")}</span></div>`;
     tbl = table(view.rows);
   } else {
-    banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by==="fallback"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
+    banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by!=="llm"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
   h += banner + actionsHTML(e) + tbl;
   h += scanHTML(e);

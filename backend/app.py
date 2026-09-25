@@ -586,6 +586,34 @@ class ProcessedEmail(BaseModel):
 
 
 
+# Why an email was sorted without the AI. decided_by is "rule" for both, the only other value
+# contract 02 allows; the page shows these reasons, translated.
+SI_AND_BL_ATTACHED = "An SI and a draft BL are attached, so it was sorted without the AI."
+AI_DID_NOT_ANSWER = "The AI did not answer, so a simple keyword rule sorted it."
+
+
+async def sort_email(email: EmailInput) -> ClassificationResult:
+    """The category for /process-email, asking the AI only when it is needed.
+
+    An email with a complete SI and BL pair is BL_COMPARISON without a model call: all 124
+    such emails in the organizer's dataset are, and the comparison reads the labels first
+    (#122), so the check needs no model at all. Anything else asks the AI; when the AI does
+    not answer (Qwen timed out and Gemini was out of quota on 25 Sep), the keyword rule the
+    demo data already uses files it, rather than the email being lost.
+    """
+    if shipments(email.attachments):
+        return ClassificationResult(email_id=email.email_id, category="BL_COMPARISON", decided_by="rule",
+                                    confidence=1.0, evidence=SI_AND_BL_ATTACHED)
+    try:
+        return await classify(email)
+    except HTTPException as error:
+        from cli.make_results import fallback_category  # cli imports this module
+        log.warning("classification failed for %s (%s), filed by the keyword rule", email.email_id, error.detail)
+        return ClassificationResult(
+            email_id=email.email_id, decided_by="rule", confidence=0.5, evidence=AI_DID_NOT_ANSWER,
+            category=fallback_category(email.subject, email.body, len(email.attachments)))
+
+
 @app.post("/process-email", response_model=ProcessedEmail)
 async def process_email(
     email: EmailInput,
@@ -598,8 +626,8 @@ async def process_email(
     2. Routes BL_COMPARISON to document extraction and comparison.
     3. Passes through non-comparison emails with null ComparisonResult.
     """
-    # 1. Classify the email
-    classification = await classify(email)
+    # 1. Classify the email (by rule when both documents are attached, or the AI is down)
+    classification = await sort_email(email)
 
     # 2. Build standard EmailRecord structure
     sender_domain = email.from_email.split("@")[-1] if "@" in email.from_email else ""
@@ -704,7 +732,9 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     email_id = gmail.mailbox_id(message.gmail_id)
     email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
                        body=message.body[:100_000], attachments=paths[:50])
-    checked = await process_email(email, live=True)
+    # Not live=True: that forces the model and skips the rules-first reader (#122). A Gmail id
+    # is never in the saved results, so the normal path is saved result, rules, then model.
+    checked = await process_email(email, live=False)
     found = checked["ClassificationResult"]
 
     entry = {"id": email_id, "from": message.sender, "subject": message.subject,
