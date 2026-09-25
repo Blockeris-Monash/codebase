@@ -1445,7 +1445,7 @@ function detail(e){
     banner = `<div class="banner NEEDS_REVIEW">${ICON.NEEDS_REVIEW}${t("Needs a person to look")}<span>${REASON[view.review_reason]?t(REASON[view.review_reason]):""}</span></div>`;
     if(view.rows.length) tbl = table(view.rows);
   } else if(view.status==="OK"){
-    banner = `<div class="banner OK">${ICON.OK}${t("All 7 fields match")}<span>${t("Nothing to do.")}</span></div>`;
+    banner = `<div class="banner OK">${ICON.OK}${t("No mismatch detected.")}<span>${t("All 7 fields match. Nothing to do.")}</span></div>`;
     tbl = table(view.rows);
   } else {
     banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by!=="llm"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
