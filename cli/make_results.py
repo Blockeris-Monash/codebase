@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 import backend.app as pipeline
 from backend.compare.comparator import compare
 from backend.intent import about, email_intent
-from cli.demo_replies import sample_reply
+from cli.demo_replies import demo_draft
 from backend.read.documents import document_title, read_document
 
 # Loaded here rather than relied on second-hand: this worked only because
@@ -152,12 +152,12 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
         entry["intent"] = intent
         entry["about"] = about(intent, record["subject"], record["body"])
 
-    # Live mail drafts these two with the AI (backend/reply.py); the demo calls no model, so it
-    # carries a sample written in advance, which the page labels as a sample.
+    # Live mail drafts these two with the AI (backend/reply.py) when asked; the demo calls no
+    # model, so it carries a draft Claude wrote in advance, shown behind the same Draft a reply.
     if entry["category"] in ("INVOICE_QUERY", "GENERAL"):
-        draft = sample_reply(intent, entry.get("about", []), record["body"])
+        draft = demo_draft(email_id)
         if draft:
-            entry.update(draft_reply=draft, draft_by="sample")
+            entry.update(can_draft=True, demo_draft=draft, draft_by="claude")
     return entry
 
 

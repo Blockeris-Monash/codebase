@@ -278,7 +278,6 @@ window.I18N = {
   "Translate an email and its documents into the reviewer's language with one click, for people who do not read English.": "Terjemah e-mel dan dokumennya ke bahasa penyemak dengan satu klik, untuk pengguna yang tidak membaca bahasa Inggeris.",
   "Draft BL requests": "Permintaan draf BL",
   "Draft BL requested": "Draf BL diminta",
-  "Sample reply written for the demo, not drafted by Ship Happens' AI.": "Contoh balasan yang ditulis untuk demo, bukan dirangka oleh AI Ship Happens.",
   "An SI and a draft BL are attached, so it was sorted without the AI.": "SI dan draf BL dilampirkan, jadi ia diisih tanpa AI.",
   "The AI did not answer, so a simple keyword rule sorted it.": "AI tidak menjawab, jadi peraturan kata kunci mudah mengisihnya.",
   "A rule filed it under {cat}": "Satu peraturan memfailkannya di bawah {cat}",
@@ -372,7 +371,8 @@ window.I18N = {
   "Colour-blind friendly": "Mesra buta warna",
   "Colours": "Warna",
   "Standard colours": "Warna biasa",
-  "Monotone": "Monoton"
+  "Monotone": "Monoton",
+  "Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.": "Ditulis lebih awal oleh Claude untuk demo. Dalam peti mel anda sendiri, AI Ship Happens mendraf balasan."
  },
  "zh": {
   "The pages themselves. Tap one to open it full size.": "页面原件。点按即可全尺寸打开。",
@@ -651,7 +651,6 @@ window.I18N = {
   "Translate an email and its documents into the reviewer's language with one click, for people who do not read English.": "一键把邮件及其文件翻译成审核人员的语言，方便不读英文的用户。",
   "Draft BL requests": "提单草稿请求",
   "Draft BL requested": "已请求提单草稿",
-  "Sample reply written for the demo, not drafted by Ship Happens' AI.": "这是为演示预先写好的示例回复，并非由 Ship Happens 的 AI 起草。",
   "An SI and a draft BL are attached, so it was sorted without the AI.": "已附上 SI 和提单草稿，因此无需 AI 即完成分类。",
   "The AI did not answer, so a simple keyword rule sorted it.": "AI 未响应，因此由简单的关键词规则完成分类。",
   "A rule filed it under {cat}": "由规则归入 {cat}",
@@ -745,6 +744,7 @@ window.I18N = {
   "Colour-blind friendly": "色盲友好",
   "Colours": "颜色",
   "Standard colours": "标准颜色",
-  "Monotone": "单色"
+  "Monotone": "单色",
+  "Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.": "由 Claude 为演示预先撰写。在您自己的邮箱中，回复由 Ship Happens 的 AI 起草。"
  }
 };

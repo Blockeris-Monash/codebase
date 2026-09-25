@@ -1281,7 +1281,7 @@ function actionsHTML(e){
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
-      ${d.refined?"":(e.draft_by==="sample"?`<div class="small mute sample">${t("Sample reply written for the demo, not drafted by Ship Happens' AI.")}</div>`:"")}
+      ${d.refined?"":(e.draft_by==="claude"?`<div class="small mute sample">${t("Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.")}</div>`:"")}
       <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
         <input type="text" id="r-refine" data-f="instruction" maxlength="500" value="${esc(d.instruction||"")}" placeholder="${t("Refine draft...")}" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 10px; background:var(--panel); color:var(--ink); font:inherit;">
@@ -1704,6 +1704,8 @@ async function sendLive(id){
 async function draftLive(id){
   const e = getEmail(id), token = window.Store?.googleToken?.();
   if(!e || S.drafting) return;
+  /* A demo email calls no model: its draft was written in advance, and shows the same way. */
+  if(e.demo_draft){ e.draft_reply = e.demo_draft; if(S.sel===id){ S.draft = draftFor(e); S.copied=null; S.scrollTo=".reply"; } render(); return; }
   if(!token){ S.draftErr = {id, msg:t("Sign in with Google again to draft a reply.")}; render(); return; }
   S.drafting = id; S.draftErr = null; render();
   try{
