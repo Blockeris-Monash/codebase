@@ -1603,7 +1603,7 @@ function render(){
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(title(e,true))}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
   const open = selectedEmail();
-  const pane = open ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(open)}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
+  const pane = open ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(open)}` : loadingBox() ? sceneCard(loadingHTML()) : S.f==="AWAIT" && !S.q.trim() ? chaseHTML() : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const focused = focusOf(document.activeElement);
@@ -1747,6 +1747,7 @@ document.addEventListener("click", ev=>{
   else if(a==="mark"){ S.marks[id]=k; saveMarks(); window.Store?.pushMark(id, k); advance(id); }
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(withCorrections(getEmail(id))); S.copied=null; S.copyFailed=null; S.scrollTo=".reply"; }
+  else if(a==="remind"){ const item = chaseList(mailList(), Date.now()).filter(x=>!x.closed_by)[+k]; if(item){ S.sel = item.requests[0].id; S.draft = reminderDraft(item); S.copied=null; S.copyFailed=null; S.docs=true; S.resetPane=true; S.scrollTo=".reply"; } }
   else if(a==="aidraft"){ draftLive(id); return; }
   else if(a==="discard"){ S.draft=null; S.refineErr=null; }
   else if(a==="refine"){ if(!S.refining) refineDraft(id); }
@@ -1824,6 +1825,50 @@ const APPBG = `<div class="appbg" aria-hidden="true">${SCENE}</div>`;
 const APPBG_LIVE = `<div class="appbg live" aria-hidden="true">${SCENE}</div>`;
 function sceneCard(inner, arrived){
   return `<div class="scard ${arrived?"arrived":""}">${SCENE}${arrived?LIGHTHOUSE:""}<div class="scard-ship" aria-hidden="true">${SHIP_ART}</div><div class="scard-txt">${inner}</div></div>`;
+}
+/* D2: the draft BLs asked for and not yet sent (#147). One item per (sender domain, shipment
+   reference); a later email from that domain with the same reference and a readable BL closes it.
+   The sender alone never closes one. Demo emails carry no dates, so their age is unknown. */
+const DAY_MS = 24*60*60*1000;
+const domainOf = from=>((String(from||"").match(/@([^>\s]+)/)||[])[1]||"").toLowerCase();
+const receivedMs = e=>{ const at = Date.parse(e.received_at||""); return Number.isNaN(at) ? null : at; };
+function answers(item, e, since){
+  const at = receivedMs(e);
+  return !e.awaiting && domainOf(e.from)===item.sender && e.ref===item.ref && since!==null && at!==null && at>since
+    && e.docs?.BL?.parse_status==="ok";
+}
+function chaseList(emails, now){
+  const items = new Map();
+  for(const e of emails.filter(x=>x.awaiting)){
+    const key = domainOf(e.from) + "|" + (e.ref||"");
+    const item = items.get(key) || {sender:domainOf(e.from), ref:e.ref||null, requests:[], oldest:null, closed_by:null};
+    const at = receivedMs(e);
+    item.requests.push(e);
+    if(at!==null && (item.oldest===null || at<item.oldest)) item.oldest = at;
+    items.set(key, item);
+  }
+  for(const item of items.values()){
+    const answer = item.ref ? emails.find(e=>answers(item, e, item.oldest)) : null;
+    item.closed_by = answer ? answer.id : null;
+    item.age_days = item.oldest===null ? null : Math.floor((now - item.oldest)/DAY_MS);
+  }
+  // Oldest first (an unknown age last), then the most requests.
+  return [...items.values()].sort((a,b)=>(b.age_days??-1)-(a.age_days??-1) || b.requests.length-a.requests.length);
+}
+function reminderDraft(item){
+  const latest = item.requests[0];
+  const ref = item.ref ? ` ${item.ref}` : "";
+  return {id:latest.id, to:latest.from, subject:`Draft BL${ref}`, reminder:true,
+          body:`Dear team,\n\nWe are still waiting for the draft Bill of Lading${ref}. Could you please send it so we can check it against the Shipping Instruction?\n\nBest regards,\nGlobeTrans Support Team`};
+}
+function chaseHTML(){
+  const open = chaseList(mailList(), Date.now()).filter(item=>!item.closed_by);
+  const rows = open.map((item, i)=>`<tr><td>${esc(item.sender)}</td><td>${item.ref?esc(item.ref):`<span class="mute">${t("no reference")}</span>`}</td>
+    <td class="num">${item.age_days===null?`<span class="mute">${t("unknown")}</span>`:t("{n} days",{n:item.age_days})}</td><td class="num">${item.requests.length}</td>
+    <td><button class="btn alt" data-a="remind" data-k="${i}">${t("Draft a reminder")}</button></td></tr>`).join("");
+  return `<div class="detail"><h2>${t("Chase list")} <span class="badge b-NEEDS_REVIEW">${open.length}</span></h2>
+    <div class="mute small">${t("Draft BLs a sender was asked for and has not sent yet, oldest first.")}</div>
+    <div class="tblwrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>${t("Sender")}</th><th>${t("Reference")}</th><th>${t("Waiting")}</th><th>${t("Requests")}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function allDoneHTML(){
   const other = S.f==="MISMATCH" ? "NEEDS_REVIEW" : "MISMATCH";

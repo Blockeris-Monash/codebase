@@ -953,6 +953,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     # The same rules as the demo (backend/intent.py). A real subject rarely has the dataset's
     # shape, so when no customer or port is found the subject itself follows the label.
     awaiting = not paths and bool(DRAFT_REQUEST.search(message.body))
+    if awaiting and found["category"] == CategoryType.BlComparison:
+        entry["awaiting"] = True   # as the demo marks it, so it files under Draft BL requests and the chase list (#147 D2)
     intent = email_intent(found["category"], message.subject, message.body, awaiting=awaiting)
     if intent:
         entry["intent"] = intent
