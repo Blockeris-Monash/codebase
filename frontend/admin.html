@@ -6,10 +6,18 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Reports · Ship Happens</title>
 <style>
-/* Served at /admin (vercel.json rewrites it to this file). Deliberately a
-   separate page rather than a route in index.html: the reviewer app is not the
-   place for an internal queue, and a Supabase session is shared across one
-   origin, so this signs in once alongside the inbox and nothing else. */
+/* Served at /admin, by a rewrite in vercel.json to this file.
+   A rewrite and not `cleanUrls`, which would also turn /index.html into a
+   redirect to / - and sw.js precaches './index.html' and falls back to it when
+   offline, so a redirect there stops that entry caching and quietly breaks the
+   offline page. /admin.html keeps working for anything already bookmarked.
+   (vercel.json cannot say any of this itself: Vercel validates it against a
+   strict schema and rejects unknown keys, including a "//" comment.)
+
+   Deliberately a separate page rather than a route in index.html: the reviewer
+   app is not the place for an internal queue, and a Supabase session is shared
+   across one origin, so this signs in once alongside the inbox and nothing
+   else. */
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
   --accent:#e8620c; --accent-ink:#fff; --accent-soft:#fdeadb;

@@ -198,3 +198,17 @@ def test_the_page_is_reachable_without_the_extension() -> None:
 
     assert rewrites.get("/admin") == "/admin.html"
     assert "cleanUrls" not in config
+
+
+def test_the_vercel_config_has_only_keys_vercel_accepts() -> None:
+    """Vercel validates the file against a strict schema and fails the build on
+    an unknown top-level key - including the "//" convention people use for a
+    comment, since JSON has none. The explanation lives in admin.html instead."""
+    import json
+
+    config = json.loads((ROOT / "frontend" / "vercel.json").read_text(encoding="utf-8"))
+    allowed = {"rewrites", "redirects", "headers", "cleanUrls", "trailingSlash",
+               "buildCommand", "outputDirectory", "framework", "installCommand",
+               "devCommand", "ignoreCommand", "functions", "regions", "crons", "images"}
+
+    assert set(config) <= allowed, f"Vercel will reject: {set(config) - allowed}"
