@@ -152,3 +152,23 @@ def test_retrieval_is_only_on_when_it_has_both_halves(monkeypatch) -> None:
 
     assert settings.supabase_configured() is True
     assert settings.gemini_key() is None        # so retrieval must report OFF
+
+
+def test_no_module_reads_a_credential_around_the_accessor() -> None:
+    """The point of settings.py is that "is this configured" has one answer. A
+    module that goes back to os.environ for a credential can disagree with it,
+    which is the bug this whole file exists because of."""
+    offenders = []
+    for path in (ROOT / "backend").rglob("*.py"):
+        if path.name == "settings.py":
+            continue
+        source = path.read_text(encoding="utf-8")
+        for name in ("SUPABASE_URL", "SUPABASE_KEY", "SUPABASE_SERVICE_ROLE_KEY",
+                     "GOOGLE_API_KEY", "GEMINI_API_KEY"):
+            if f'environ.get("{name}")' in source or f'environ["{name}"]' in source:
+                offenders.append(f"{path.relative_to(ROOT)}: {name}")
+
+    # gemini.py owns the Gemini alias list itself and settings re-exports it.
+    offenders = [o for o in offenders if not o.startswith("backend/extract/gemini.py")]
+
+    assert offenders == [], f"reads a credential directly: {offenders}"
