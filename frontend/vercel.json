@@ -11,7 +11,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js 'sha256-30D285P7eMSMt60Q5w6+AWFH/prRXbdQnGe4DRxqzuU=' 'sha256-FDQd8gpy9L4c4u+kIBnXqaR+8SftTAbHHaBi3wpmpOg=' 'sha256-VEWNAPAr11zWdX9EEhJlM9RhHJDYufyq7tpWW6o6rLc=' 'sha256-i3coHvGwhyXOqXUnsBYfFdibc0myxy/gVST0DziFaoo='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://blockeris-backend.onrender.com https://wcvvfiywelypxfkncpww.supabase.co; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'"
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js 'sha256-30D285P7eMSMt60Q5w6+AWFH/prRXbdQnGe4DRxqzuU=' 'sha256-FDQd8gpy9L4c4u+kIBnXqaR+8SftTAbHHaBi3wpmpOg=' 'sha256-VEWNAPAr11zWdX9EEhJlM9RhHJDYufyq7tpWW6o6rLc=' 'sha256-ueASPEnQ5+BMh85RURM+ilrHf1ZL5dT94js29djpmJg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://blockeris-backend.onrender.com https://wcvvfiywelypxfkncpww.supabase.co; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'"
         },
         {
           "key": "X-Content-Type-Options",
