@@ -195,11 +195,13 @@ long as the server holds it, and each hung call keeps a worker thread.
   behind it.
 
 **Approach.**
-- **`retrieve_policies` distinguishes nothing matched from could not look.**
-  - It returns `Retrieval(documents, failed: bool)`.
-  - A failure is `log.warning(..., exc_info=True)`, which keeps the stack.
-  - The failure is also filed once to the technical reports queue through the
-    existing `reports.file`. Its repeat suppression stops that from flooding.
+- **A retrieval failure is logged properly.**
+  - It is `log.warning(..., exc_info=True)`, which keeps the stack.
+  - It is also filed once to the technical reports queue through the existing
+    `reports.file`. Its repeat suppression stops that from flooding.
+  - `retrieve_policies` still returns a list. Nothing reads *why* it is empty,
+    so a `Retrieval(documents, failed)` type would be ceremony with no second
+    user.
 - **The drafting functions return `Draft(text, grounded)`.** `grounded` is true
   only when at least one policy document was put in front of the model. The
   other `print()` calls in `reply.py` become `log.error(..., exc_info=True)`.
