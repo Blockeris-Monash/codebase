@@ -1,6 +1,6 @@
 {
   "id": "/",
-  "name": "Ship Happens — shipping document check",
+  "name": "Ship Happens: shipping document check",
   "short_name": "Ship Happens",
   "description": "Checks a draft Bill of Lading against its Shipping Instruction and shows a person only what needs a decision.",
   "start_url": "/",

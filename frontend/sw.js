@@ -1,10 +1,10 @@
-// Service worker — present so Chrome and Android will offer "Install", and so
+// Service worker: present so Chrome and Android will offer "Install", and so
 // the page still opens with no network. iOS needs none of this, but Chrome's
 // installability criteria require a registered worker with a fetch handler.
 //
 // Strategy is deliberately NETWORK FIRST, not cache first. The obvious PWA
 // pattern would serve the cached shell instantly, but results.js is a 1 MB
-// build artefact that changes on every deploy — and a phone that installed the
+// build artefact that changes on every deploy, and a phone that installed the
 // app once and then showed yesterday's verdicts through judging is a far worse
 // failure than a page that loads a little slower. Network wins whenever it can,
 // the cache is only a fallback for offline.

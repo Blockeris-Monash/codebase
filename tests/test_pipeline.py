@@ -1,4 +1,4 @@
-"""End to end — an email goes in, a contract-shaped record comes out."""
+"""End to end: an email goes in, a contract-shaped record comes out."""
 from __future__ import annotations
 
 import json

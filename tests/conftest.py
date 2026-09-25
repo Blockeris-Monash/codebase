@@ -214,7 +214,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     write = terminalreporter.write_line
     write("")
     write("═" * 74)
-    write("  VERIFICATION REPORT — shipping document verification")
+    write("  VERIFICATION REPORT: shipping document verification")
     write("═" * 74)
     for area in seen:
         claims = grouped[area]

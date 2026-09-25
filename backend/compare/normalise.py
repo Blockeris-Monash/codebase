@@ -1,4 +1,4 @@
-"""Reference normalisation — turning a raw document value into a comparable one.
+"""Reference normalisation: turning a raw document value into a comparable one.
 
 R3 owns the production version and the rules behind it; this exists so the
 fixtures carry realistic normalised values. The rules are evidence-backed:
@@ -76,7 +76,7 @@ def party_name(value: str) -> str:
 
 
 def normalise_name(value: str) -> str:
-    """Name only — Excel stores name and address in one cell."""
+    """Name only: Excel stores name and address in one cell."""
     return order_form(re.sub(r"\s+", " ", party_name(value)).upper().strip(" ,"))
 
 
