@@ -1329,10 +1329,11 @@ function routeHTML(e){
 function actionsHTML(e){
   // A draft BL request has nothing to act on, unless a reminder for it is open (#147 D2).
   if(e.awaiting && !(S.draft && S.draft.id===e.id)) return "";
-  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply && !e.can_draft) return "";
   const m = S.marks[e.id], d = S.draft && S.draft.id===e.id ? S.draft : null, sent = S.sent[e.id];
+  /* A mark first: dismissing an email's last difference (#159) must not hide its done state or Undo. */
   if(m) return `<div class="done"><span>${m==="ok"?t("Marked as done"):sent&&sent.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${sent&&sent.real?"":`<button class="btn alt" data-a="undo" data-id="${e.id}">${t("Undo")}</button>`}</div>` +
       (sent?`<div class="mute small" style="margin-top:8px">${t("To {who}",{who:esc(sent.to)})}</div><div class="text" style="margin-top:4px">${esc(sent.body)}</div>`:"");
+  if(e.status!=="MISMATCH" && e.status!=="NEEDS_REVIEW" && !e.draft_reply && !e.can_draft) return "";
   /* Live General and Invoice mail: the AI drafts only when asked, since each draft is paid for (#149). */
   if(e.can_draft && !e.draft_reply) return `<div class="actions"><button class="btn" data-a="aidraft" data-id="${e.id}" ${S.drafting?"disabled":""}>${S.drafting===e.id?t("Drafting..."):t("Draft a reply")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>` +
       (S.draftErr&&S.draftErr.id===e.id?`<div class="small" role="alert" style="margin-top:8px">${esc(S.draftErr.msg)}</div>`:"");
@@ -1342,7 +1343,7 @@ function actionsHTML(e){
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
       ${d.grounded===false?`<div class="small mute ungrounded">${t("No company policy matched this email. Check the facts before sending.")}</div>`:""}
-      ${d.refined?"":(e.draft_by==="claude"?`<div class="small mute sample">${t("Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.")}</div>`:"")}
+      ${d.refined?(e.draft_by==="claude"?`<div class="small mute sample">${t("Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.")}</div>`:""):(e.draft_by==="claude"?`<div class="small mute sample">${t("Written in advance by Claude for the demo. In your own mailbox, Ship Happens' AI drafts the reply.")}</div>`:"")}
       <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):S.copyFailed===e.id?t("Copy failed: select the text and copy it"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
         <input type="text" id="r-refine" data-f="instruction" maxlength="500" value="${esc(d.instruction||"")}" placeholder="${t("Refine draft...")}" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 10px; background:var(--panel); color:var(--ink); font:inherit;">
@@ -1405,12 +1406,14 @@ function correctionReport(id, o, c, from, to, undone){
 /* Keep a reviewer's call (or, with no entry, take it back): here first, then the database behind it. */
 function keepCorrection(id, field, entry){
   const e = getEmail(id), o = e.rows.find(r=>r.field===field), old = (S.corr[id]||{})[field];
-  const from = withCorrections(e).status;
+  const from = withCorrections(e).status, before = S.draft && S.draft.id===id ? draftFor(withCorrections(e)).body : null;
   const mine = S.corr[id] || (S.corr[id] = {});
   if(entry) mine[field] = entry; else delete mine[field];
   if(!Object.keys(mine).length) delete S.corr[id];
   saveCorr();
   const c = entry || old, to = withCorrections(e).status;
+  /* An open draft the reviewer has not edited follows the corrected fields, and closes when nothing is left to ask. */
+  if(S.draft && S.draft.id===id && S.draft.body===before){ S.draft = to==="MISMATCH"||to==="NEEDS_REVIEW" ? draftFor(withCorrections(e)) : null; }
   const row = entry ? correctionRow(o, entry) : {field, kind:"undo", side:old.side||null, was:old.kind, corrected:null};
   const report = c.kind==="confirm" ? null : correctionReport(id, o, c, from, to, !entry);
   const open = ()=>S.rev && S.rev.id===id && S.rev.field===field ? S.rev : null;   // the reviewer may have moved on
