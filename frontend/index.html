@@ -1524,6 +1524,28 @@ function accountHTML(){
 }
 
 
+/* The whole app is rebuilt by one innerHTML write, which destroys the focused element: a reply
+   being typed lost its cursor to every poll, and keyboard users fell back to <body> after every
+   click (#147 B2). This names the focused element by what makes it unique, so the rebuilt one can
+   be found again, with its cursor, selection and scroll. */
+function focusOf(el){
+  if(!el || el===document.body || !el.closest("#app")) return null;
+  const attr = (name, value)=>value==null ? "" : `[${name}="${CSS.escape(value)}"]`;
+  const d = el.dataset || {};
+  const selector = el.id ? "#" + CSS.escape(el.id)
+    : d.a ? `${el.tagName.toLowerCase()}${attr("data-a", d.a)}${attr("data-id", d.id)}${attr("data-k", d.k)}`
+    : d.f ? attr("data-f", d.f) : d.fb ? attr("data-fb", d.fb) : null;
+  if(!selector) return null;
+  const typed = typeof el.selectionStart === "number";
+  return {selector, start: typed ? el.selectionStart : null, end: typed ? el.selectionEnd : null, top: el.scrollTop};
+}
+function refocus(focused){
+  const el = focused && document.querySelector("#app " + focused.selector);
+  if(!el || document.activeElement===el) return;
+  el.focus({preventScroll:true});
+  if(focused.start!==null){ try{ el.setSelectionRange(focused.start, focused.end); }catch(_){} }
+  el.scrollTop = focused.top;
+}
 function render(){
   const rootTheme = document.documentElement.dataset.theme;
   const isDark = rootTheme ? rootTheme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
@@ -1555,7 +1577,7 @@ function render(){
   const pane = open ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(open)}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
-  const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;
+  const focused = focusOf(document.activeElement);
   const brand = q(".brand");
   // every redraw rebuilds the scene; its loops resume from the page clock instead of restarting
   document.documentElement.style.setProperty("--t", (performance.now()/1000).toFixed(2));
@@ -1567,7 +1589,7 @@ function render(){
      <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()&&ONE_PANE.matches?`<div class="empty">${ICON.MAIL}${loadingHTML()}</div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.mailDlg?mailDlgHTML():""}${S.uploadDlg?uploadHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
-  if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
+  refocus(focused);
   if(brand&&q(".brand")) q(".brand").replaceWith(brand);
   else if(!logoIntro){ logoIntro=true; const m=q(".mark"); if(m){ m.classList.add("go"); setTimeout(()=>m.classList.remove("go"),4000); } }
   { const pane=q(".pane"), list=q(".list"), home=q(".home");
@@ -1814,10 +1836,10 @@ window.Store?.pull(S.marks)?.then(function (merged) {
    visible), one request at a time, the next only after this one settles. An answer that lands
    after sign-out or after leaving is dropped: it belongs to an older generation (#147 B2). */
 const POLL_MS = 10000;
-const poll = {timer:null, inflight:null, generation:0};
+const poll = {timer:null, inflight:null, generation:0, lastBody:null};
 const mailboxOnScreen = ()=>S.mailbox==="live" && !!S.user && !isHome() && location.hash!=="#/next" && document.visibilityState==="visible";
 function stopPolling(){
-  poll.generation++; clearTimeout(poll.timer); poll.timer = null;
+  poll.generation++; clearTimeout(poll.timer); poll.timer = null; poll.lastBody = null;
   if(poll.inflight){ poll.inflight.abort(); poll.inflight = null; }
 }
 function schedulePoll(delay){ clearTimeout(poll.timer); poll.timer = setTimeout(pollOnce, delay); }
@@ -1846,10 +1868,12 @@ async function fetchLiveMailbox(signal, generation) {
     if (generation !== poll.generation) return;   // signed out or moved away while this was in flight
     if (res.status === 401) { S.mailboxErr = T("Gmail access lasts an hour. Reconnect Gmail to see your mailbox."); S.liveLoaded = true; render(); return; }
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    const body = await res.text(), pending = +(res.headers.get("X-Mailbox-Pending") || 0);
     if (generation !== poll.generation) return;
-    S.liveEmails = data; S.mailboxErr = null; S.liveLoaded = true;
-    S.pending = +(res.headers.get("X-Mailbox-Pending") || 0);
+    // A quiet mailbox answers the same every 10 s; redrawing for it only disturbs the reader.
+    if (body === poll.lastBody && pending === S.pending && S.liveLoaded && !S.mailboxErr) return;
+    poll.lastBody = body;
+    S.liveEmails = JSON.parse(body); S.mailboxErr = null; S.liveLoaded = true; S.pending = pending;
     if (S.mailbox === "live") render();
   } catch (err) {
     if (err.name === "AbortError" || generation !== poll.generation) return;

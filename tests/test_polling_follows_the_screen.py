@@ -24,7 +24,8 @@ const API_BASE = "", T = s => s;
 let renders = 0; const render = () => { renders++; };
 const calls = [];
 globalThis.fetch = (url, options) => new Promise((resolve, reject) => {
-    const call = {answer: data => resolve({ok: true, status: 200, headers: {get: () => "0"}, json: async () => data})};
+    const call = {answer: data => resolve({ok: true, status: 200, headers: {get: () => "0"},
+                                           text: async () => JSON.stringify(data)})};
     options.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), {name: "AbortError"})));
     calls.push(call);
 });
@@ -75,3 +76,17 @@ def test_an_answer_on_screen_is_shown() -> None:
     """)
 
     assert result == {"emails": 1, "loaded": True}
+
+
+def test_the_same_answer_again_does_not_redraw_the_page() -> None:
+    """A redraw rebuilds the reply box someone may be typing in; a quiet mailbox has no news."""
+    result = run("""
+        syncPolling(); await settle();
+        calls[0].answer([{id: "gmail_1"}]); await settle();
+        const first = renders;
+        schedulePoll(0); await settle();
+        calls[1].answer([{id: "gmail_1"}]); await settle();
+        console.log(JSON.stringify({extra: renders - first}));
+    """)
+
+    assert result == {"extra": 0}
