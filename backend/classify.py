@@ -49,6 +49,11 @@ RETRY_HTTP = {408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 5
 # (backend/extract/qwen.py's http_post), 4 tries plus 1+2+4s backoff could otherwise
 # run to ~67s. A judge waiting on one click should never wait more than this.
 CLASSIFY_DEADLINE_SECONDS = 25.0
+# The longest one try may take, and how long before Gemini takes over when a Gemini key
+# is set: the same 15 s as extraction (app.py), since a healthy call answers in ~5 s.
+QWEN_TRY_SECONDS = 15.0
+# Less time than this left is not worth another try: it cannot answer in time.
+LAST_TRY_SECONDS = 0.5
 
 
 class ClassificationFailed(RuntimeError):
@@ -204,32 +209,34 @@ def post_with_retry(
 ) -> dict:
     """Call the gateway, retrying temporary errors with 1s, 2s, 4s... backoff,
     but never past `deadline` seconds of total wall-clock time.
+
+    Each try is given at most the time that is left, so a gateway that hangs rather
+    than refuses cannot carry a try past the deadline. When too little is left for
+    another try, the last error is raised as it came, keeping its status code.
     """
     start = time.monotonic()
     attempt = 0
     while True:
         attempt += 1
+        left = deadline - (time.monotonic() - start)
         try:
-            return http_post(url, headers, body)
+            return http_post(url, headers, body, timeout=min(QWEN_TRY_SECONDS, left))
         except urllib.error.HTTPError as err:
-            elapsed = time.monotonic() - start
-            if err.code not in RETRY_HTTP or elapsed >= deadline:
+            if err.code not in RETRY_HTTP:
                 raise
-            why = f"HTTP {err.code}"
+            why, last = f"HTTP {err.code}", err
         except (urllib.error.URLError, TimeoutError) as err:
-            elapsed = time.monotonic() - start
-            if elapsed >= deadline:
-                raise
-            why = str(err) or type(err).__name__
+            why, last = str(err) or type(err).__name__, err
 
-        remaining = deadline - elapsed
-        backoff = min(2 ** (attempt - 1), max(remaining, 0))
+        elapsed = time.monotonic() - start
+        backoff = 2 ** (attempt - 1)
+        if deadline - elapsed - backoff < LAST_TRY_SECONDS:
+            log.warning("Qwen call failed (%s), giving up after %.1fs of %.0fs", why, elapsed, deadline)
+            raise last
         log.warning(
             "Qwen call failed (%s), retrying in %.1fs (elapsed %.1fs/%.1fs)",
             why, backoff, elapsed, deadline,
         )
-        if backoff <= 0:
-            raise TimeoutError(f"classification deadline of {deadline:.0f}s exceeded")
         time.sleep(backoff)
 
 
@@ -296,7 +303,7 @@ def gemini_classification_model(prompt: str) -> ClassificationSchema:
 
 # Qwen first, Gemini when Qwen fails or stalls, only when a Gemini key is set (as in extraction).
 classification_model = with_fallback(qwen_classification_model, gemini_classification_model,
-                                     enabled=lambda: bool(gemini_key()))
+                                     first_timeout=QWEN_TRY_SECONDS, enabled=lambda: bool(gemini_key()))
 
 
 def gemini_second_opinion(prompt: str) -> ClassificationSchema:
@@ -356,6 +363,7 @@ async def classify_email(
         # Carry the upstream status through, so a caller like /classify can return
         # e.g. 429 or 503 instead of collapsing every failure into a bare 502.
         status_code = getattr(error, "code", None)  # urllib.error.HTTPError.code
+        status_code = status_code if isinstance(status_code, int) else None
         raise ClassificationFailed(str(error), status_code=status_code) from error
 
 

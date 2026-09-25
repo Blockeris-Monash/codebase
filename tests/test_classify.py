@@ -22,7 +22,7 @@ def fake_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def qwen_down(monkeypatch: pytest.MonkeyPatch) -> None:
-    def unreachable(url: str, headers: dict, body: dict) -> dict:
+    def unreachable(url: str, headers: dict, body: dict, timeout: float | None = None) -> dict:
         raise urllib.error.URLError("connection refused")
 
     monkeypatch.setattr(classify, "http_post", unreachable)
