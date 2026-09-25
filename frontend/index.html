@@ -18,7 +18,7 @@
 <style>
 :root{
   --bg:#fffdfb; --panel:#ffffff; --sunk:#f6f1ec; --line:#e8dfd6; --ink:#211b16; --mute:#7a6d63;
-  --accent:#e8620c; --accent-ink:#ffffff; --accent-soft:#fdeadb; --hl:#ffd54a; --hl-ink:#211b16;
+  --accent:#e8620c; --accent-fill:#c2520a; --accent-ink:#ffffff; --accent-soft:#fdeadb; --hl:#ffd54a; --hl-ink:#211b16;
   --bad:#c62828; --bad-soft:#fde8e6; --rev:#8a5a00; --rev-soft:#fff0b8; --ok:#1f8a4c; --ok-soft:#e2f4e9;
   color-scheme:light;
   --sk1:#7fbbe6; --sk2:#b9dcf2; --sk3:#ffe6c8; --sk4:#ffc796; --se1:#3f8fc4; --se2:#1d5a8a; --glint:#fff6dc; --wv:#d8eefb; --sheet:#fffdf7; --dlg-top:color-mix(in srgb,#3f8fc4 34%,var(--panel)); --sheet-bd:#a8926f; --sheet-ln:#c2ad8e;
@@ -30,7 +30,7 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#1e1a17; --panel:#292420; --sunk:#302a25; --line:#453b33; --ink:#f4ece4; --mute:#a99a8d;
-  --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
+  --accent:#ff8a3d; --accent-fill:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
   color-scheme:dark;
   --sk1:#141a33; --sk2:#3b2c52; --sk3:#b8583a; --sk4:#f09a55; --se1:#1e2a4a; --se2:#0f1426; --glint:#f6b57a; --wv:#8fa3d8; --sheet:#4a4266; --dlg-top:color-mix(in srgb,#3b2c52 75%,var(--panel)); --sheet-bd:#a79fca; --sheet-ln:#857ca8;
@@ -41,7 +41,7 @@
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}}
 :root[data-theme="dark"]{
   --bg:#1e1a17; --panel:#292420; --sunk:#302a25; --line:#453b33; --ink:#f4ece4; --mute:#a99a8d;
-  --accent:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
+  --accent:#ff8a3d; --accent-fill:#ff8a3d; --accent-ink:#1a0f06; --accent-soft:#3a2312; --hl:#8a5a10; --hl-ink:#fff3dc;
   --bad:#ff7b72; --bad-soft:#3d1f1d; --rev:#ffd24d; --rev-soft:#3f3410; --ok:#5fd18d; --ok-soft:#173424;
   color-scheme:dark;
   --sk1:#141a33; --sk2:#3b2c52; --sk3:#b8583a; --sk4:#f09a55; --se1:#1e2a4a; --se2:#0f1426; --glint:#f6b57a; --wv:#8fa3d8; --sheet:#4a4266; --dlg-top:color-mix(in srgb,#3b2c52 75%,var(--panel)); --sheet-bd:#a79fca; --sheet-ln:#857ca8;
@@ -50,6 +50,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}
+/* --accent-fill: the accent under --accent-ink; #e8620c under white is 3.4:1, so light darkens it to 4.7:1 (#147 B2). */
 /* Colours (Settings). Colour-blind friendly: Action required magenta and Verified blue instead of red and
    green, so the statuses stay apart for red-green colour blindness; Needs review keeps its amber. */
 :root[data-palette="cb"]{--bad:#b0145f; --bad-soft:#fbe4ef; --ok:#1f5fd6; --ok-soft:#e3edfc;}
@@ -58,11 +59,11 @@
 /* Monotone: the whole page in greys, for people who see no colour. The statuses become three greys, darkest
    for Action required, told apart by lightness and by their icons (cross, eye, tick). */
 :root[data-palette="mono"]{filter:grayscale(1); --bad:#1c1c1c; --bad-soft:#d4d4d4; --rev:#4d4d4d; --rev-soft:#e8e8e8; --ok:#6e6e6e; --ok-soft:#f7f7f7;
-  --panel:#ffffff; --sunk:#f0f0f0; --line:#8a8a8a; --ink:#111111; --mute:#595959; --accent:#1c1c1c; --accent-ink:#ffffff; --accent-soft:#e6e6e6;}
+  --panel:#ffffff; --sunk:#f0f0f0; --line:#8a8a8a; --ink:#111111; --mute:#595959; --accent:#1c1c1c; --accent-fill:#1c1c1c; --accent-ink:#ffffff; --accent-soft:#e6e6e6;}
 @media (prefers-color-scheme:dark){:root[data-palette="mono"]:not([data-theme="light"]){--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;
-  --panel:#1e1e1e; --sunk:#2a2a2a; --line:#7a7a7a; --ink:#f5f5f5; --mute:#bdbdbd; --accent:#f2f2f2; --accent-ink:#111111; --accent-soft:#3a3a3a;}}
+  --panel:#1e1e1e; --sunk:#2a2a2a; --line:#7a7a7a; --ink:#f5f5f5; --mute:#bdbdbd; --accent:#f2f2f2; --accent-fill:#f2f2f2; --accent-ink:#111111; --accent-soft:#3a3a3a;}}
 :root[data-palette="mono"][data-theme="dark"]{--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;
-  --panel:#1e1e1e; --sunk:#2a2a2a; --line:#7a7a7a; --ink:#f5f5f5; --mute:#bdbdbd; --accent:#f2f2f2; --accent-ink:#111111; --accent-soft:#3a3a3a;}
+  --panel:#1e1e1e; --sunk:#2a2a2a; --line:#7a7a7a; --ink:#f5f5f5; --mute:#bdbdbd; --accent:#f2f2f2; --accent-fill:#f2f2f2; --accent-ink:#111111; --accent-soft:#3a3a3a;}
 /* In grey, shade alone cannot carry a status, so each gets a shape too: Action required is solid, Needs
    review outlined, Verified plain; the tile bars are solid, dashed and dotted. The sky is quietened so the
    cards stand clear of it, and the buttons are near black or near white instead of a muddy grey. */
@@ -135,7 +136,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outlin
 .grow{flex:1}
 .ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .ghost:hover{background:var(--sunk)}
-.btn{border:0;border-radius:10px;padding:10px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:600;background:var(--accent);color:var(--accent-ink)}
+.btn{border:0;border-radius:10px;padding:10px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:600;background:var(--accent-fill);color:var(--accent-ink)}
 .btn.alt{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}
 .btn:disabled{opacity:.5;cursor:default}
 .ico{width:1.05em;height:1.05em;flex:none;vertical-align:-.17em;margin-right:4px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -222,7 +223,7 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .steps{list-style:none;margin:6px 0 4px;padding:0}
 .step{display:flex;gap:12px;padding:0 0 14px;position:relative}
 .step:not(:last-child)::before{content:"";position:absolute;left:11px;top:26px;bottom:2px;width:2px;background:var(--line)}
-.step .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:0.8125rem;font-weight:700;display:grid;place-items:center}
+.step .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent-fill);color:var(--accent-ink);font-size:0.8125rem;font-weight:700;display:grid;place-items:center}
 .step>div{min-width:0;flex:1}.st{font-weight:600;margin:1px 0 6px}
 .step blockquote{margin:0;padding:8px 12px;border-left:3px solid var(--accent);background:var(--sunk);border-radius:0 8px 8px 0;font-size:0.8125rem;color:var(--mute)}
 .cap{font-size:0.8125rem;color:var(--mute);margin-top:6px}
@@ -296,7 +297,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .fb input,.fb textarea{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit}
 .fb input:focus,.fb textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
 .seg{display:flex;gap:6px;flex-wrap:wrap}.segb{border:1px solid var(--line);background:var(--sunk);border-radius:99px;padding:6px 14px;font-weight:600}
-.segb.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.segb.on{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--accent-ink)}
 .stars{display:flex;gap:2px}.star{background:none;border:0;font-size:1.75rem;line-height:1;color:var(--mute);padding:0 2px}.star.on{color:var(--accent)}
 .err{color:var(--bad);margin-top:6px}
 .thanks{text-align:center;padding:20px 8px}.thanks .ico{width:44px;height:44px;color:var(--ok);margin:0 auto 8px;display:block}.thanks b{display:block;font-size:1.125rem}.thanks span{display:block;color:var(--mute);margin:6px auto 16px;max-width:42ch}
@@ -306,7 +307,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .hb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .langwrap{position:relative;display:inline-block}
 .acctwrap{position:relative;display:inline-block}
-.avatar{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.75rem;line-height:1}
+.avatar{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent-fill);color:var(--accent-ink);font-weight:700;font-size:.75rem;line-height:1}
 .mhead{padding:8px 10px;overflow-wrap:anywhere}
 .mh{display:flex;align-items:center;gap:6px;padding:8px 10px 4px;font-size:0.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}.mh .ico{width:14px;height:14px}
 .mi .ico{width:16px;height:16px}
@@ -391,7 +392,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .lp-stage .tblwrap,.lp-stage .banner{width:100%}.lp-stage .actions{margin-top:0}.lp-stage td.f .ico{width:14px;height:14px;vertical-align:-2px}
 .lp-team{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:18px}
 .lp-member{align-items:flex-start}.lp-major{display:flex;flex-direction:column;font-size:0.8125rem;font-weight:600;color:var(--ink)}.lp-major .mute{font-weight:400}
-.lp-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:1.25rem}
+.lp-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent-fill);color:var(--accent-ink);font-weight:800;font-size:1.25rem}
 .lp-links{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:auto}
 .lp-link{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:0.875rem;text-decoration:none}.lp-link .ico{width:16px;height:16px}.lp-link:hover{text-decoration:underline}
 .lp-foot{margin-top:72px;border-top:1px solid var(--line);background:var(--panel)}
@@ -514,7 +515,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 @keyframes lplens{0%,100%{transform:translate(-120px,-20px)}50%{transform:translate(60px,30px)}}
 .lp-route{position:relative;height:34px;margin:0 12.5%}
 .lp-lane{position:absolute;left:0;right:0;top:50%;border-top:2px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
-.lp-boat{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 45%,transparent);transition:left .8s cubic-bezier(.4,.1,.2,1)}
+.lp-boat{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--accent-fill);display:grid;place-items:center;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 45%,transparent);transition:left .8s cubic-bezier(.4,.1,.2,1)}
 .lp-boat .ico{width:20px;height:20px;color:var(--accent-ink);margin:0}
 .lp-pipe[data-step="1"] .lp-boat{left:33.333%}.lp-pipe[data-step="2"] .lp-boat{left:66.666%}.lp-pipe[data-step="3"] .lp-boat{left:100%}
 .lp-faq{max-width:760px;margin:26px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--card);padding:6px 22px}
@@ -539,7 +540,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .tally .voy{position:relative;width:150px;height:24px;flex:none;margin-left:12px}
 .tally .voy::before{content:"";position:absolute;left:0;right:14px;top:50%;border-top:2px dashed color-mix(in srgb,var(--accent) 45%,transparent)}
 .tally .voy::after{content:"";position:absolute;left:0;top:calc(50% - 1px);height:3px;width:calc((100% - 14px) * var(--p) / 100);border-radius:2px;background:var(--ok);transition:width .4s}
-.tally .boat{position:absolute;top:50%;left:calc((100% - 14px) * var(--p) / 100);transform:translate(-50%,-55%);width:22px;height:22px;border-radius:50%;background:var(--accent);display:grid;place-items:center;transition:left .4s;z-index:1}
+.tally .boat{position:absolute;top:50%;left:calc((100% - 14px) * var(--p) / 100);transform:translate(-50%,-55%);width:22px;height:22px;border-radius:50%;background:var(--accent-fill);display:grid;place-items:center;transition:left .4s;z-index:1}
 .tally .boat .ico{width:13px;height:13px;color:var(--accent-ink);margin:0}
 .tally .port{position:absolute;right:0;top:50%;transform:translateY(-60%)}.tally .port .ico{width:15px;height:15px;color:var(--ok);margin:0}
 /* every email done: the boat is in port, so it takes the flag's place rather than sitting on it */
@@ -952,7 +953,7 @@ function nextPage(){
 }
 
 function langHTML(){
-  return `<div class="ov" data-a="langclose"><div class="dlg wide" role="dialog" aria-label="${t("More languages")}" data-a="stay">
+  return `<div class="ov" data-a="langclose"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="${t("More languages")}" data-a="stay">
     <div class="dlgh"><h2>${t("More languages")}</h2><button class="ghost" data-a="langclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="dlgb"><div class="thanks">${ICON.GLOBE}<b>${t("This is a demo")}</b><span>${t("English, Malay and Chinese work today. Adding more languages is planned for a future update.")}</span>
       <div class="rcard" style="text-align:left"><span class="rnum">${ICON.NEXT}</span><div><div class="rt">${t("Add more languages")}<span class="pill">${t("Planned")}</span></div><div class="small mute">${t("Load a language pack file, or let the AI translate the page into any language you choose.")}</div></div></div>
@@ -982,7 +983,7 @@ function startSignIn(){
 /* Open in your email app, on a demo email: its address belongs to a real company, so nothing is
    opened or sent. The reply stays ready to copy. Live mail has a real Open in Gmail link instead. */
 function mailDlgHTML(){
-  return `<div class="ov" data-a="mailclose"><div class="dlg wide" role="dialog" aria-label="${t("Open in your email app")}" data-a="stay">
+  return `<div class="ov" data-a="mailclose"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="${t("Open in your email app")}" data-a="stay">
     <div class="dlgh"><h2>${t("Open in your email app")}</h2><button class="ghost" data-a="mailclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="dlgb"><div class="thanks">${ICON.MAIL}<span>${t("This is a demo email, so nothing is opened or sent. In your own mailbox, this button opens the reply in Gmail, in the same thread, ready to send.")}</span>
       <div class="actions" style="justify-content:center"><button class="btn" data-a="copy">${S.draft&&S.copied===S.draft.id?t("Copied"):S.draft&&S.copyFailed===S.draft.id?t("Copy failed: select the text and copy it"):t("Copy the reply")}</button><button class="btn alt" data-a="mailclose">${t("Close")}</button></div></div></div></div></div>`;
@@ -990,7 +991,7 @@ function mailDlgHTML(){
 
 // Signed out, a report only reaches this browser: the reports queue takes rows from signed-in accounts.
 function reportSignInHTML(){
-  return `<div class="ov" data-a="reportclose"><div class="dlg wide" role="dialog" aria-label="${t("Sign in to report a problem")}" data-a="stay">
+  return `<div class="ov" data-a="reportclose"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="${t("Sign in to report a problem")}" data-a="stay">
     <div class="dlgh"><h2>${t("Sign in to report a problem")}</h2><button class="ghost" data-a="reportclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="dlgb"><div class="thanks">${ICON.FLAG}<span>${t("These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.")}</span>
       <div class="actions" style="justify-content:center"><button class="btn" data-a="reportsignin" ${S.authReady?"":"disabled"}>${t("Sign in with Google")}</button><button class="btn alt" data-a="reportclose">${t("Close")}</button></div></div></div></div></div>`;
@@ -1001,7 +1002,7 @@ const UP_TYPES = /\.(txt|docx|xlsx|pdf|edi)$/i, UP_MAX = 5*1024*1024;
 function uploadHTML(){
   const pick = (role, label)=>{ const f = S.upFiles[role];
     return `<div class="fl">${label}</div><label class="upfile" data-drop="${role}"><input type="file" data-up="${role}" accept=".txt,.docx,.xlsx,.pdf,.edi" ${S.uploading?"disabled":""}><span class="btn alt">${ICON.UPLOAD}${f?t("Change file"):t("Choose file")}</span><span class="nm ${f?"":"mute"} small">${f?esc(f.name):t("or drop it here")}</span></label>`; };
-  return `<div class="ov" data-a="uploadclose"><div class="dlg wide" role="dialog" aria-label="${t("Upload SI and BL files")}" data-a="stay">
+  return `<div class="ov" data-a="uploadclose"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="${t("Upload SI and BL files")}" data-a="stay">
     <div class="dlgh"><h2>${t("Upload SI and BL files")}</h2><button class="ghost" data-a="uploadclose" aria-label="${t("Close")}" ${S.uploading?"disabled":""}>${t("Close")}</button></div>
     <div class="dlgb"><p class="mute small">${t("Choose one Shipping Instruction and one draft Bill of Lading: .txt, .docx, .xlsx, .pdf or .edi, up to 5 MB each. No sign-in needed. The files are deleted as soon as they are checked.")}</p>
       ${pick("SI", t("Shipping Instruction"))}${pick("BL", t("Draft Bill of Lading"))}
@@ -1036,7 +1037,7 @@ function helpHTML(){
   const tabs = [["guide",T("Guide")],["support",T("Contact support")]]
     .map(([k,n])=>`<button class="tab ${S.tab===k?"on":""}" data-a="tab" data-k="${k}" role="tab" aria-selected="${S.tab===k}">${t(n)}</button>`).join("");
   const body = S.tab==="support" ? supportHTML() : guideHTML();
-  return `<div class="ov" data-a="helpclose"><div class="dlg wide" role="dialog" aria-label="${t("Help")}" data-a="stay">
+  return `<div class="ov" data-a="helpclose"><div class="dlg wide" role="dialog" aria-modal="true" aria-label="${t("Help")}" data-a="stay">
     <div class="dlgh sky">${SCENE}<h2>${t("Help")}</h2><button class="ghost" data-a="helpclose" aria-label="${t("Close")}">${t("Close")}</button></div>
     <div class="tabs" role="tablist">${tabs}</div><div class="dlgb">${body}</div></div></div>`;
 }
@@ -1546,6 +1547,26 @@ function refocus(focused){
   if(focused.start!==null){ try{ el.setSelectionRange(focused.start, focused.end); }catch(_){} }
   el.scrollTop = focused.top;
 }
+/* A dialog takes focus when it opens and keeps Tab inside it (aria-modal); closing it returns focus
+   to what opened it. One handler for every dialog, since each is drawn by render() (#147 B2). */
+const FOCUSABLE = 'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+const dialogFocus = {open:false, opener:null};
+function focusDialog(focusedBefore){
+  const dialog = document.querySelector('#app [role="dialog"]');
+  if(dialog && !dialogFocus.open){ dialogFocus.open = true; dialogFocus.opener = focusedBefore; }
+  if(dialog && !dialog.contains(document.activeElement)) dialog.querySelector(FOCUSABLE)?.focus({preventScroll:true});
+  if(!dialog && dialogFocus.open){ dialogFocus.open = false; refocus(dialogFocus.opener); dialogFocus.opener = null; }
+}
+function trapTab(ev){
+  const dialog = document.querySelector('#app [role="dialog"]');
+  if(ev.key!=="Tab" || !dialog) return false;
+  const items = [...dialog.querySelectorAll(FOCUSABLE)];
+  if(!items.length) return false;
+  const first = items[0], last = items[items.length-1], inside = dialog.contains(document.activeElement);
+  if(ev.shiftKey && (document.activeElement===first || !inside)){ ev.preventDefault(); last.focus(); return true; }
+  if(!ev.shiftKey && (document.activeElement===last || !inside)){ ev.preventDefault(); first.focus(); return true; }
+  return false;
+}
 function render(){
   const rootTheme = document.documentElement.dataset.theme;
   const isDark = rootTheme ? rootTheme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
@@ -1590,6 +1611,7 @@ function render(){
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   refocus(focused);
+  focusDialog(focused);
   if(brand&&q(".brand")) q(".brand").replaceWith(brand);
   else if(!logoIntro){ logoIntro=true; const m=q(".mark"); if(m){ m.classList.add("go"); setTimeout(()=>m.classList.remove("go"),4000); } }
   { const pane=q(".pane"), list=q(".list"), home=q(".home");
@@ -1812,6 +1834,7 @@ function stepKey(key){
   if(at>=0 && n) goTo(n);
 }
 document.addEventListener("keydown", ev=>{
+  if(trapTab(ev)) return;
   if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.resetList=true; render(); return; }
   if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.mailDlg||S.langMenu||(S.uploadDlg&&!S.uploading))){ S.help=false; S.langDlg=false; S.uploadDlg=false; S.reportDlg=false; S.mailDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && (ev.target.classList.contains("src")||ev.target.classList.contains("brand"))){ ev.preventDefault(); ev.target.click(); return; }
