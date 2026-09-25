@@ -170,6 +170,24 @@ def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
 ABSENT_FIELDS = {"present": False, "raw": None, "label_seen": None}
 
 
+def report_empty_extraction(email_id: str, role: str, raw_fields: Optional[Dict[str, Any]],
+                            parse_status: str) -> None:
+    """One technical report when a document gave no fields for a reason the retry
+    report does not cover (#114 item 5): the file could not be read, or the model
+    answered and not one field came back. No answer at all is already filed by
+    `reports.watching`, and a missing file is not a failure."""
+    step = f"Extraction ({role})"
+    if parse_status == ParseStatusType.Unreadable:
+        title, outcome = "file could not be read", "The file could not be read, so the email went to a person."
+    elif (parse_status == ParseStatusType.Ok and raw_fields is not None
+          and not any(field.get("present") for field in raw_fields.values())):
+        title, outcome = "nothing extracted", "The model answered, but no field came back, so the email went to a person."
+    else:
+        return
+    reports.file({"kind": reports.KIND, "email_ref": email_id, "title": f"{step}: {title}",
+                  "detail": outcome, "context": {"step": step, "tries": 1, "outcome": outcome}})
+
+
 async def extract_live(
     email_id: str,
     role: str,
@@ -189,6 +207,7 @@ async def extract_live(
         log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
         raw_fields = None
 
+    report_empty_extraction(email_id, role, raw_fields, parse_status)
     if not raw_fields:
         # A model that returned nothing is not evidence that the fields are
         # absent, so every field is marked missing and the comparator sends
