@@ -77,7 +77,8 @@ def say_what_is_switched_on() -> None:
         state(rules_first_enabled()),
     )
     # Mailboxes, the rate limit and the breakers live in this process's memory (#139).
-    if int(os.environ.get("WEB_CONCURRENCY") or 1) > 1:
+    workers = os.environ.get("WEB_CONCURRENCY", "1")
+    if not workers.isdigit() or int(workers) > 1:   # never parse-and-crash at startup on an odd value
         log.warning("WEB_CONCURRENCY is above 1, but mailboxes, the rate limit and the circuit breakers "
                     "are kept per process and not shared; run one worker until #139 lands")
     # It printed vision=on, but no request reads a scan: vision is an offline pass (#147 B3).
