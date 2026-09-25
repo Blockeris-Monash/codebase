@@ -399,7 +399,8 @@ window.I18N = {
   "You marked this as not a real difference.": "Anda telah menandakan ini sebagai bukan perbezaan sebenar.",
   "now matches": "kini sepadan",
   "still blank": "masih kosong",
-  "still differs": "masih berbeza"
+  "still differs": "masih berbeza",
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "Diperhalusi dengan AI Ship Happens daripada balasan yang ditulis lebih awal oleh Claude untuk demo."
  },
  "zh": {
   "The pages themselves. Tap one to open it full size.": "页面原件。点按即可全尺寸打开。",
@@ -799,6 +800,7 @@ window.I18N = {
   "You marked this as not a real difference.": "您已将此标记为并非真正的差异。",
   "now matches": "现在一致",
   "still blank": "仍为空",
-  "still differs": "仍有差异"
+  "still differs": "仍有差异",
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "由 Ship Happens 的 AI 在 Claude 为演示预先撰写的回复基础上润色。"
  }
 };
