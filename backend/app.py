@@ -58,12 +58,13 @@ def say_what_is_switched_on() -> None:
     # Retrieval needs a database AND a model. Reporting only the database said
     # "on" while replies were being drafted with no model behind them at all.
     log.info(
-        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s",
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s rules-first=%s",
         state(settings.supabase_configured()),
         state(settings.supabase_configured() and settings.gemini_key()),
         state(settings.gemini_key()),
         state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
         state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+        state(rules_first_enabled()),
     )
 
 

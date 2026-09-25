@@ -335,7 +335,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through the live pipeline. Its state, spinner, progress bar and glow went too,
   along with seven strings that no longer had anywhere to appear.
 
-- **Test count: 231 to 632 without a model key.** The 1.0.0 figure above is left
+- **Test count: 231 to 650 without a model key.** The 1.0.0 figure above is left
   as it was - it was true of that release and a changelog that edits its own
   history is worth nothing.
 
