@@ -28,6 +28,9 @@ def test_different_ports_are_a_mismatch(si: str, bl: str) -> None:
     ("BUSAN", "BUSAN, SOUTH KOREA"),
     ("MYPKG PORT KLANG", "PORT KLANG"),
     ("NHAVA SHEVA, INDIA", "nhava sheva, india"),
+    ("PORT KLANG, MALAYSIA (MYPKG)", "PORT KLANG MYPKG"),
+    ("SHANGHAI, CHINA", "CNSHA SHANGHAI"),
+    ("MYPKG PORT KLANG", "PORT KLANG, MALAYSIA"),
 ])
 def test_the_same_port_written_differently_is_a_match(si: str, bl: str) -> None:
     assert compare_single_field(PORT, si, bl) == "match"

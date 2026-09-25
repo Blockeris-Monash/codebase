@@ -76,11 +76,28 @@ class ComparisonResult(BaseModel):
 # Deterministic Normalization & Comparison Helpers
 # =====================================================================
 
-# A UN/LOCODE in brackets, "(KEMBA)". Bare five-letter words are left alone: the bare
-# alternative this used to have also deleted KLANG, NORTH, SOUTH, CHINA and every other
-# five-letter word, so PORT KLANG matched PORT DICKSON (#147 A3). No port value in the
-# dataset carries a bare code, and one that did would still match by the subset rule.
+# A UN/LOCODE in brackets, "(KEMBA)", is always stripped.
 LOCODE_DECOY = re.compile(r"\s*\(([A-Z]{5})\)\s*", re.I)
+# A bare one, "CNSHA SHANGHAI", only when it starts with a real ISO 3166 country code. The
+# old rule stripped every five-letter word, so KLANG, BUSAN and CHINA vanished and PORT
+# KLANG matched PORT DICKSON (#147 A3). NORTH and SOUTH start with codes (Norway, Somalia)
+# but are directions, and "MANILA NORTH HARBOUR" is not "MANILA SOUTH HARBOUR".
+BARE_LOCODE = re.compile(r"\b[A-Z]{2}[A-Z0-9]{3}\b")
+COUNTRY_CODES = frozenset("""
+AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS
+BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE
+EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM
+HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC
+LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA
+NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW
+SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO
+TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW
+""".split())
+NEVER_A_CODE = frozenset({"NORTH", "SOUTH"})
+
+
+def is_bare_locode(token: str) -> bool:
+    return token[:2] in COUNTRY_CODES and token not in NEVER_A_CODE
 
 
 def extract_meaningful_tokens(val: str | None) -> set[str]:
@@ -88,6 +105,7 @@ def extract_meaningful_tokens(val: str | None) -> set[str]:
     if not val:
         return set()
     cleaned = LOCODE_DECOY.sub("", val.upper())
+    cleaned = BARE_LOCODE.sub(lambda m: "" if is_bare_locode(m.group(0)) else m.group(0), cleaned)
     return set(re.findall(r"\b[A-Z0-9]{2,}\b", cleaned))
 
 

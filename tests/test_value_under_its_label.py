@@ -47,3 +47,17 @@ def test_a_value_not_whole_under_its_label_is_rejected(field: str, label: str, r
 ])
 def test_a_value_read_from_its_own_label_is_kept(field: str, label: str, raw: str) -> None:
     assert extracted(field, label, raw)["present"] is True
+
+
+def test_a_single_block_of_text_is_searched_whole() -> None:
+    """An SI request reaches the model as one ("Email Body", body) pair, so no pair carries
+    the label the model names; the value is looked for, whole, in the block itself."""
+    body = [("Email Body", "Shipper: ACME LTD\nGross Weight: 12,100 KG")]
+    fields = {name: {"present": False, "label_seen": None, "raw": None} for name in FIELD_NAMES}
+    fields["shipper"] = {"present": True, "label_seen": "Shipper", "raw": "ACME LTD"}
+    fields["gross_weight_kg"] = {"present": True, "label_seen": "Gross Weight", "raw": "100"}
+
+    checked = AiExtractor(lambda text: fields, tries=1).extract_fields("email_022", body)
+
+    assert checked["shipper"]["present"] is True
+    assert checked["gross_weight_kg"]["present"] is False

@@ -356,10 +356,15 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
-# Never starting inside another number: "326,000" is not a weight in "40.326,000".
-WEIGHT_NUMBER = r"(?<![\d.,])\d[\d,]*(?:\.\d+)?"
-# "NET 38,000 KG GROSS 40,326 KG": the gross weight is what follows the word.
-GROSS_WORD = "GROSS"
+# Never starting inside another number ("326,000" is not a weight in "40.326,000"), and
+# thousands grouped by commas or by spaces: "21 577 KG" is 21,577.
+WEIGHT_NUMBER = r"(?<![\d.,])(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?"
+WEIGHT_UNIT = r"(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?|MTS?|M/T|TONNES?|METRIC TONS?|LBS?|POUNDS?)"
+# A net weight written beside the gross one, before or after its number:
+# "NET 38,000 KG GROSS 40,326 KG", "21,577 KGS GROSS / 20,000 KGS NET". It is removed
+# before the gross weight is read.
+NET_WEIGHT = re.compile(rf"\bNET(?:\s+WEIGHT)?\W*{WEIGHT_NUMBER}\s*{WEIGHT_UNIT}?\b"
+                        rf"|{WEIGHT_NUMBER}\s*{WEIGHT_UNIT}[ \t/,;-]*NET\b(?!\W*[\d_])")
 POUNDS_TO_KG = 0.45359237
 # The number a unit is written against, in the order a document states its gross weight:
 # kilograms first, so "12,500 KGS (12.5 MT)" is the kilograms and "40,326 KG (NET: ___ MTS)"
@@ -373,20 +378,22 @@ WEIGHT_UNITS = (
 LABEL_UNIT = re.compile(r"\((KGS?|MTS?|M/T|TONNES?|LBS?)\)", re.I)
 
 
+def as_number(text: str) -> float:
+    return float(text.replace(",", "").replace(" ", ""))
+
+
 def clean_weight(text: str) -> str:
     """Kilograms, from the number written against a unit; with no unit, the largest number,
     since a weight dwarfs the container count written beside it ("2 x 20GP 40326").
 
     This used to join every digit in the value, so "2 x 20GP 40,326 KG" became 22040326,
     and any "MT" anywhere multiplied the lot by 1000 (#147 A3)."""
-    upper = text.upper()
-    if GROSS_WORD in upper:
-        upper = upper[upper.rindex(GROSS_WORD):]
+    upper = NET_WEIGHT.sub(" ", text.upper())
     for pattern, kilograms_per_unit in WEIGHT_UNITS:
         found = pattern.search(upper)
         if found:
-            return str(round(float(found.group(1).replace(",", "")) * kilograms_per_unit, 3))
-    numbers = [float(n.replace(",", "")) for n in re.findall(WEIGHT_NUMBER, upper)]
+            return str(round(as_number(found.group(1)) * kilograms_per_unit, 3))
+    numbers = [as_number(n) for n in re.findall(WEIGHT_NUMBER, upper)]
 
     return str(max(numbers)) if numbers else ""
 
@@ -521,12 +528,12 @@ def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
     p = Path(att_path_str)
     if att_path_str in OWN_FILES.get():
         return p if p.exists() else None
-    if p.is_absolute():
-        return None
-    # Look inside data/attachments/<filename>
+    # Look inside data/attachments/<filename>: the name only, so this never leaves that folder
     direct = DATA_DIR / "attachments" / p.name
     if direct.exists():
         return direct
+    if p.is_absolute():
+        return None
     # Look inside data/<relative_path>, without climbing out of it
     relative = (DATA_DIR / att_path_str).resolve()
     if relative.is_relative_to(DATA_DIR.resolve()) and relative.exists():

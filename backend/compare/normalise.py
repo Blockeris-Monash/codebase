@@ -12,12 +12,13 @@ from backend.contracts import ComparisonRow, VerdictType
 
 LOCODE = re.compile(r"\s*\(([A-Z]{5})\)\s*$")
 # A value that stands for "not known yet". Dotted and spelled-out forms too: "T.B.A",
-# "N.A.", "TO BE ADVISED" and "NIL" used to compare as real values, so a blank came out
+# "N.A.", and "TO BE ADVISED" used to compare as real values, so a blank came out
 # a mismatch rather than the missing value that outranks it (#147 A3). "TBA x 40HC" is
-# as unknown as "TBA"; "TBC LOGISTICS" is a company. The one copy: backend/app.py imports it from here.
+# as unknown as "TBA"; "TBC LOGISTICS" is a company. NONE and NIL stay values: "Notify party: NONE" on both
+# documents is an agreement, not a blank. The one copy: backend/app.py imports it from here.
 SENTINEL = re.compile(
     r"^\s*$"
-    r"|^(?:n\.?\s*/?\s*a\.?|nil|none|-+|to be (?:advised|confirmed))$"
+    r"|^(?:n\.?\s*/?\s*a\.?|-+|to be (?:advised|confirmed))$"
     r"|^t\.?\s*b\.?\s*[ac]\.?(?:\s*[x×]\s*\S+)?$"
     r"|^_+\s*\w*$",
     re.I)

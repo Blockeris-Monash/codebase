@@ -39,9 +39,12 @@ def is_under_its_label(raw: str, label_seen: str | None, pairs: LabelledPairs) -
     # Not glued to a letter, digit or number separator: "100" is not in "12,100".
     value = re.compile(rf"(?<![\w.,]){re.escape(squash(raw))}(?![\w]|[.,]\d)")
     wanted = plain_label(label_seen or "")
+    labelled = [text for label, text in pairs if is_same_label(plain_label(label), wanted)]
+    # No pair carries that label: the document is one block of text, as an SI request's
+    # email body is, and the label sits inside it. Whole tokens still apply there.
+    searched = labelled or [text for _, text in pairs]
 
-    return any(value.search(squash(text)) for label, text in pairs
-               if is_same_label(plain_label(label), wanted))
+    return any(value.search(squash(text)) for text in searched)
 
 
 def plain_label(label: str) -> str:

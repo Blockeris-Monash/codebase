@@ -77,3 +77,7 @@ def test_the_route_does_not_echo_another_files_fields(client: TestClient, tmp_pa
 @pytest.mark.parametrize("email_id", ["../../results/extracts/email_302", "a/b", "x" * 101])
 def test_an_email_id_that_is_not_a_plain_name_reads_no_cache(email_id: str) -> None:
     assert app_module.load_saved_extract(email_id, "SI") is None
+
+
+def test_an_absolute_path_to_a_dataset_file_elsewhere_still_finds_it_by_name() -> None:
+    assert app_module.resolve_attachment_path("/other/box/data/attachments/email_302_SI.xlsx") == DATASET_SI
