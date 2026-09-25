@@ -1116,6 +1116,22 @@ const hl = s=>{
 };
 const numChip = e=>{ const n = e.id.replace("email_",""), t = S.q.trim().replace(/^#/,""); return t && n.toLowerCase().includes(t.toLowerCase()) ? `<span class="badge b-none">#${hl(n)}</span>` : ""; };
 
+/* What a person did belongs to them: marks, replies, feedback and corrections are kept under the
+   id of whoever made them, and cleared when someone else signs in or they sign out, so the next
+   person on this browser never inherits them (#147 B2). A visitor who never signs in owns them
+   as "", and their first sign-in adopts them, as before. Language and colours are the device's. */
+const OWNER_KEY = "blockeris.owner";
+const PERSONAL_KEYS = ["blockeris.marks", "blockeris.sent", "blockeris.feedback", "blockeris.corrections"];
+function forgetPersonalData(){
+  try{ PERSONAL_KEYS.forEach(k=>localStorage.removeItem(k)); }catch(_){}
+  S.marks = {}; S.sent = {}; S.corr = {}; S.draft = null; S.toast = null;
+}
+function claimPersonalData(userId){
+  let owner = "";
+  try{ owner = localStorage.getItem(OWNER_KEY) || ""; }catch(_){}
+  if(owner && owner !== userId) forgetPersonalData();
+  try{ localStorage.setItem(OWNER_KEY, userId || ""); }catch(_){}
+}
 function loadMarks(){ try{ return JSON.parse(localStorage.getItem("blockeris.marks")||"{}"); }catch(_){ return {}; } }
 function loadSent(){ try{ return JSON.parse(localStorage.getItem("blockeris.sent")||"{}"); }catch(_){ return {}; } }
 function saveSent(){ try{ localStorage.setItem("blockeris.sent", JSON.stringify(S.sent)); }catch(_){} }
@@ -1906,6 +1922,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   S.authErr = window.Store?.authError?.() || null;
   S.authReady = !!window.Store?.onUser?.((user, event)=>{
     const wasSignedIn = !!S.user;
+    claimPersonalData(user ? user.id : "");
     S.user = user; S.userMenu = false; S.busy = null;
     if (!user) { S.liveEmails = []; S.liveLoaded = false; }
     if (!user) signInReturn = false;
