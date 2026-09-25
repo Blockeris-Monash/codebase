@@ -88,6 +88,15 @@ fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md
   server's disk, and the committed generated PDF is gone.
 - *(audit)* **The startup line no longer prints `vision=on`**: the live service
   never reads scans. Setting `SHIP_HAPPENS_VISION` logs a warning saying so.
+- *(audit)* **My mailbox is polled only while it is on screen**, one request at a
+  time, and an answer that arrives after sign-out is dropped. The poll redraws
+  the page only when the mailbox changed, and a redraw keeps focus, the cursor
+  and the selection where they were, so typing a reply is no longer interrupted.
+- *(audit)* **Dialogs are modal to assistive technology** and keep keyboard focus
+  inside until closed, then return it. White text on the orange accent is darker
+  underneath (`--accent-fill`, 4.7:1) to meet WCAG AA.
+- *(audit)* **Copy says "Copied" only when the browser copied**; otherwise it
+  says so and selects the text.
 
 ### Fixed
 
@@ -123,6 +132,11 @@ fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md
   two fields, and a null field, which crashed the comparator.
 - *(audit)* **Failures in reply drafting are logged** with their traceback, and
   a failed policy lookup files one technical report, instead of `print()`.
+- *(audit)* **The service worker caches only good responses**, gives up on the
+  network after 5 s, and never answers a script with the page. `CACHE_VERSION`
+  is v7.
+- *(audit)* **A refused mark, reply or read is logged** instead of looking saved:
+  every Supabase call in `store.js` checks the `error` supabase-js returns.
 
 ### Security
 
@@ -161,6 +175,14 @@ fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md
 - *(audit)* **The contracts' if-and-only-if rules are enforced**: in the JSON
   schemas (`allOf`), by `cli.validate_contracts`, and by the service's own
   `ComparisonResult`.
+- *(audit)* **Content security policy and security headers** on the page
+  (`frontend/vercel.json`, written by `python -m cli.csp`) and on every API
+  answer. supabase-js loads from its pinned UMD build with an integrity hash.
+  **Editing an inline script in `index.html` or `admin.html` now means running
+  `python -m cli.csp`**; the tests fail until you do.
+- *(audit)* **Signing out leaves nothing of the person on the browser.** Marks,
+  replies, feedback and corrections are kept under their owner's id and cleared
+  when someone else signs in.
 
 ## [1.1.0] — 2026-09-25
 
