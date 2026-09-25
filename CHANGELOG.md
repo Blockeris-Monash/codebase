@@ -7,6 +7,10 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.1.0] — 2026-09-25
+
 ### Added
 
 - **The service's log lines now reach somewhere a person can read them.**
@@ -284,6 +288,42 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   languages, and each row in the list carries the number of fields needing
   attention so the worst email is the one opened first.
 
+- **A kit for the timed manual-versus-system test.** The mentor's answer to
+  "what impact evidence would convince you" was to time a person checking by
+  hand against the system doing it. `cli/timed_test.py build` writes a packet of
+  ten pairs and `score` marks the filled-in sheet. Two things are built in
+  because a judge would look for them: the sample is stratified five OK, four
+  mismatch, one review, following the corpus rather than a round number, because
+  ten mismatches in a row teaches the reader to expect one and ten clean pairs
+  teaches them to stop looking; and the packet is written under role-only
+  filenames, because `docs.SI.name` is `email_520_SI.txt` and a reader given that
+  can look the answer up, which would measure typing speed. Accuracy is scored
+  alongside the seconds, since "three minutes and missed two of ten" is a
+  stronger sentence than any time on its own.
+
+- **An SI and a draft BL can be checked without signing in.** A visitor had to
+  have an account before the product would do anything at all, which is a poor
+  first thirty seconds for a judge with a laptop. Uploading a pair now runs the
+  full comparison and shows the verdict; signing in is asked for only when
+  something needs to be saved against a person.
+
+- **The demo data is an account, not a switch beside the search box.** It sat in
+  the toolbar as a toggle, which read as a filter over the mailbox rather than a
+  different source of mail. It now lives in the account menu next to the signed-in
+  mailbox, so the two read as what they are: two places email comes from.
+
+- **Every email says what the sender actually wants, in a title a person can
+  read.** The list showed the subject line as the sender wrote it, which on this
+  corpus means `AFRT - KOPER_SLOVENIA - YM(YMJAI630397524) - 5ALT-33803 -
+  5250073968 - INTERNATIONAL FOREST PRODUCTS LLC - OA`. It now reads **Draft BL
+  requested: INTERNATIONAL FOREST PRODUCTS LLC · Koper, Slovenia**. Underneath
+  are twelve intents sitting inside the four existing categories — check a draft
+  BL against its SI, a draft BL requested, attachments missing, a new shipping
+  instruction, GR missing, a question on charges, and so on. They are plain rules
+  in `backend/intent.py`, not a model: the classifier and its saved results are
+  untouched, so nothing about the score moves. Live Gmail mail gets the same
+  treatment as the saved corpus.
+
 ### Changed
 
 - **The labels are read before the model is asked.** Every document paid for a
@@ -360,6 +400,69 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Consequences handled in the same change rather than left to be found:
   `fixtures/` and `frontend/results.js` both carry evidence strings and are
   regenerated here, so the screen and the API cannot disagree.
+
+- **Classification is bounded by the clock, not by a count of tries.** It was four
+  tries with 1+2+4 seconds of backoff and a 120-second timeout on each, which is
+  487 seconds in the worst case with nothing on the page saying so. The budget is
+  now a single 25-second wall-clock deadline across every attempt: a try that
+  cannot finish inside what is left is not started, and a gateway that accepts
+  the connection and then hangs cannot push past it. `ClassificationFailed` also
+  carries the upstream status now, so a 429 and a 503 stop arriving on screen as
+  the same bare 502.
+
+- **A dead gateway is no longer retried on every single email.** With Qwen down,
+  each extraction still paid the full timeout before falling back, so a night of
+  outage cost fifteen seconds an email for nothing. A circuit breaker now opens
+  after three consecutive failures and, for the next sixty seconds, fails
+  immediately so the fallback runs with no wait at all. It reopens half-way after
+  the cooldown to test whether the gateway is back. It steps aside when there is
+  no Gemini key, because skipping the only model that could answer is worse than
+  waiting for it.
+
+- **One name for the Supabase secret.** Two people added the same credential under
+  two different names, so half the code read one and half the other and a correct
+  `.env` could still leave a feature dark. `SUPABASE_SERVICE_ROLE_KEY` is now the
+  only name anything reads. Settling it also closed a gap that let the test suite
+  write to the live reports queue: the guard cleared one of the names and the
+  fallback still accepted the other.
+
+- **Every model call has a limit, and one document's extraction has a budget.**
+  A call could wait 120 seconds and an extraction could chain several of them, so
+  a single email could hold the pipeline for minutes with nothing on screen
+  explaining the pause. Each call is now capped at 15 seconds and one document's
+  extraction at 45 seconds in total, which is a bound a person waiting can live
+  with rather than one the gateway chooses.
+
+- **The pipeline stops filing the same report over and over.** With the gateway
+  down, every email wrote an identical row and the queue filled in minutes — a
+  queue of hundreds of identical rows is one nobody opens. The same title for the
+  same email is now saved once in ten minutes, and one title at most three times;
+  the next row saved carries "N more like this were held back", so the count is
+  never lost, only the noise. Everything still goes to the log. Two failures that
+  previously only went to the log now reach the queue too: an email the mailbox
+  could not check, and a caller being rate limited — the latter with the address
+  masked to `203.0.113.x`.
+
+- **One place decides what is configured, and it says so at startup.** Credentials
+  were read from the environment in whichever module needed them, under whichever
+  name that module's author had picked. That is how reply drafting came to have
+  no model at all on a documented setup: it read `GEMINI_API_KEY` while
+  `.env.example` has always shown `GOOGLE_API_KEY`, so `client` was `None` and
+  drafting was not degraded but dead, with nothing on screen saying so. Every
+  credential now goes through `backend/settings.py`, a test fails if any module
+  reads one directly, and the service prints which optional features are on when
+  it starts, so a missing variable announces itself instead of being discovered
+  during a demo.
+
+- **The guidelines corpus is locked down in the migrations, not only by hand.**
+  `policies` had row-level security switched on in the live project but not in
+  `0003`, so a fresh deploy would have left 74 rows of company guidelines
+  readable by anyone holding the publishable key, which is committed in
+  `config.js`. A migration now enables it.
+
+- **Reporting a problem asks for a sign-in first.** A visitor could press it, and
+  the report went nowhere it could be attributed or acted on. The button now asks
+  for an account, so a report in the queue always has a person behind it.
 
 ### Fixed
 
@@ -463,6 +566,64 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   filter already passed it. Demo emails never carry that line, so the saved
   results do not move.
 
+- **The test suite was calling real models on any machine with a `.env`.** The
+  guard cleared `SUPABASE_SERVICE_ROLE_KEY` but not the other names the fallback
+  accepted, so on a developer's laptop the suite reached live providers: 66.9
+  seconds and failing where a clean run is 1.45 seconds and green. CI never saw
+  it, because CI has no `.env` — which is exactly the shape of bug that survives
+  a green pipeline. The guard now clears every name a credential can arrive
+  under.
+
+- **The top bar, the menus and the first mailbox load after signing in.** The
+  account menu could open behind the page, the top bar lost its layout at narrow
+  widths, and the mailbox showed zeros for a moment before its first load
+  finished rather than saying it was loading.
+
+- **An extraction that found nothing said nothing.** When every field came back
+  missing, the email escalated with no explanation of why. It now files a
+  technical report naming which of the two it was: nothing could be extracted,
+  or the file could not be read at all. Those need different fixes and the queue
+  could not tell them apart.
+
+- **A report could be filed as somebody else, or as the pipeline.** The insert
+  policy on `reports` checked only that a session existed, so a signed-in
+  reviewer could write a row carrying another person's id, or one marked
+  `technical` as though the pipeline had logged it. The policy now requires
+  `user_id = auth.uid() and kind = 'human'`, which is the database refusing it
+  rather than the page choosing not to ask. Reports also say whether they
+  actually reached the queue instead of reporting success on a failed write, and
+  each row is titled with the email it is about.
+
+- **A sign-in that did not finish now says why.** Google refuses an account that
+  is not on the OAuth consent screen's tester list, and it refuses *after* the
+  account chooser, so a correctly configured sign-in and a broken one looked
+  identical from outside: the page simply reappeared signed out with the reason
+  sitting unread in the address bar. That cost an evening. The return URL's
+  `error` and `error_description` are now read and shown — "This Google account
+  is not on the tester list for this app. Ask the team to add it, then try again."
+
+- **Three findings from the structure audit.** `reports.user_id` is a foreign key
+  and had no index, so `on delete set null` scanned the whole table; a new
+  migration adds one, rather than editing `0001`, which is already applied to the
+  live project. `allow_origins=["*"]` together with `allow_credentials=True` is a
+  pair a browser is required to reject; credentials are off, since no route here
+  uses a cookie or an auth header. And the schema's departure from the house SQL
+  conventions — `snake_case` and `uuid` rather than `PascalCase` and integer keys
+  — is now declared as a deliberate deviation, because `auth.uid()` returns a
+  `uuid` and every policy compares against it.
+
+- **Three things about My mailbox that made it look broken while it worked.**
+  It showed zeros before its first load finished rather than saying it was
+  loading; a mailbox email opened in a desktop mail app instead of Gmail, where
+  the thread actually is; and the landing page led with the demo inbox even for
+  someone signed in, who wanted their own mail.
+
+- **The landing scene.** The ship carries mixed cargo and documents rather than
+  containers alone, documents drift on the water, the waves stay whole through
+  their loop instead of tearing at the seam, the clouds drift, the night stars
+  twinkle, the birds fly, and the progress boat is drawn above the line it
+  travels and sits in port once every email is done.
+
 ## [1.0.0] — 2026-09-22
 
 First complete version: the Averis x Monash Hackathon 2026 submission. Reads a
@@ -527,5 +688,6 @@ out. The mutation check and the rules-reader agreement never read that key.
   measurement.
 - The review interface has not been tested with users.
 
-[Unreleased]: https://github.com/Blockeris-Monash/codebase/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Blockeris-Monash/codebase/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Blockeris-Monash/codebase/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Blockeris-Monash/codebase/releases/tag/v1.0.0
