@@ -59,10 +59,18 @@ def canonical_field(label: str) -> str | None:
     return next((f for f in LABEL_PATTERNS if is_label_match(plain, f)), None)
 
 
+# A number after the title: ": 3043223023", " NO. SIJ6060148", " #12".
+TITLE_NUMBER = re.compile(r"\s*(?::|\bNO\.?|#)\s*[A-Z0-9][A-Z0-9/-]*\s*$")
+
+
 def detect_doc_type(title: str) -> str | None:
     """Map a document's declared title onto SI or BL. Returns the raw title
     when it is neither, which is what makes wrong_doc_type detectable. Never
     looks at the filename - that lies on emails 501-505."""
     header = title.split("\n", 1)[0].strip().upper()
+    # "BL INSTRUCTION: 3043223023" and "BILL OF LADING NO. SIJ6060148" carry the
+    # document's number on the title line. The title is what comes before it; a
+    # title that is not SI or BL is still returned whole, so wrong_doc_type holds.
+    titled = TITLE_NUMBER.sub("", header).strip()
 
-    return DOC_HEADERS.get(header, header or None)
+    return DOC_HEADERS.get(header) or DOC_HEADERS.get(titled) or header or None
