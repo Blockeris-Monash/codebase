@@ -29,7 +29,7 @@ from backend.intent import about, email_intent
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
 from backend import gmail, reports
-from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
+from backend.compare.normalise import NAME_SPLIT, SENTINEL  # one rule each for where a name ends and what counts as blank, shared with the reference
 from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
@@ -121,7 +121,6 @@ FIELD_NAMES = [
     "gross_weight_kg",
 ]
 
-SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
 
 # =====================================================================
 # 1. Input/Output Request Models
