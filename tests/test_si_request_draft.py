@@ -8,17 +8,23 @@ Found reviewing #145 and still on main after it merged:
   text fills the Send box, so one click emailed a server path to the customer.
 - The reply said the PDF was attached; nothing can attach it.
 - The email id became the file name, so "../x" wrote the PDF outside its folder.
+
+And from the rest of the #145 review (#147 B1): the PDF is drawn in a bundled Unicode font
+with fpdf2's current calls, and it is returned as bytes, never left on the server's disk.
 """
 from __future__ import annotations
 
+import io
+import warnings
 from pathlib import Path
 
 import pytest
+from pypdf import PdfReader
 from fastapi.testclient import TestClient
 
 from backend import app as app_module
 from backend import si_request
-from backend.classify import ClassificationResult
+from backend.classify import ClassificationResult, EmailInput
 from backend.contracts import FIELD_NAMES
 
 
@@ -44,9 +50,12 @@ async def si_request_category(email) -> ClassificationResult:
 @pytest.fixture()
 def client(monkeypatch, tmp_path: Path) -> TestClient:
     monkeypatch.setattr(app_module, "classify", si_request_category)
-    monkeypatch.setattr(si_request, "RESULTS_DIR", tmp_path)
+    monkeypatch.chdir(tmp_path)   # anything written relative to the working directory lands here
 
     return TestClient(app_module.app)
+
+
+EMAIL = EmailInput(email_id="email_022", from_email="a@b.com", subject="SI", body="SI below", attachments=[])
 
 
 def post(client: TestClient, email_id: str = "email_022"):
@@ -84,10 +93,47 @@ def test_a_failed_draft_leaves_the_email_classified(client, monkeypatch) -> None
     assert response.json()["ClassificationResult"]["category"] == "SI_REQUEST"
 
 
-@pytest.mark.parametrize("email_id", ["../../escape", "/tmp/escape", "a/b/c"])
-def test_the_pdf_stays_in_its_folder(tmp_path: Path, monkeypatch, email_id: str) -> None:
-    monkeypatch.setattr(si_request, "RESULTS_DIR", tmp_path)
+def pdf_text(pdf: bytes) -> str:
+    return "".join(page.extract_text() for page in PdfReader(io.BytesIO(pdf)).pages)
 
-    written = Path(si_request.generate_pdf(Extractor().extract_fields(email_id, []), email_id))
 
-    assert written.parent == tmp_path
+def test_a_complete_si_gives_a_pdf_and_nothing_on_disk(tmp_path: Path, monkeypatch) -> None:
+    """The folder was made at import, relative to wherever the server started, and
+    nothing ever read or deleted what went into it."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(si_request, "extractor", Extractor())
+
+    _reply, pdf, _fields = si_request.process_si_request(EMAIL)
+
+    assert pdf.startswith(b"%PDF")
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_a_missing_field_asks_for_it_and_makes_no_pdf(monkeypatch) -> None:
+    class NoWeight(Extractor):
+        def extract_fields(self, email_id: str, pairs: list) -> dict:
+            return {**super().extract_fields(email_id, pairs),
+                    "gross_weight_kg": {"present": False, "label_seen": None, "raw": None}}
+
+    monkeypatch.setattr(si_request, "extractor", NoWeight())
+
+    reply, pdf, _fields = si_request.process_si_request(EMAIL)
+
+    assert "Gross Weight Kg" in reply
+    assert pdf is None
+
+
+def test_curly_quotes_dashes_and_accents_are_drawn_as_written() -> None:
+    """Latin-1 core fonts turned these into '?' or plain punctuation in the PDF."""
+    fields = Extractor("2 x 40’HC – Société Générale").extract_fields("email_022", [])
+
+    text = pdf_text(si_request.generate_pdf(fields))
+
+    assert "40’HC – Société Générale" in text
+
+
+def test_the_pdf_uses_no_call_fpdf2_has_deprecated() -> None:
+    """Arial, txt= and ln=True all warn today and break on a future fpdf2."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        si_request.generate_pdf(Extractor().extract_fields("email_022", []))

@@ -679,7 +679,7 @@ async def si_request_reply(email: EmailInput) -> Optional[str]:
     to the reply either: the reply is what the reviewer sends to the customer (#147)."""
     from backend.si_request import process_si_request
     try:
-        draft_reply, _pdf_path, _fields = await asyncio.to_thread(process_si_request, email)
+        draft_reply, _pdf, _fields = await asyncio.to_thread(process_si_request, email)
     except Exception as error:  # a model client, fpdf2 or the disk: the email still gets its category
         log.error("SI request draft failed for %s: %s", email.email_id, type(error).__name__)
         return None
@@ -752,7 +752,7 @@ async def process_email(
             drafted = await asyncio.to_thread(generate_rag_reply, email, classification.category)
             if drafted:
                 draft_reply, draft_grounded = drafted
-        elif classification.category == "SI_REQUEST":
+        elif classification.category == CategoryType.SiRequest:
             draft_reply = await si_request_reply(email)
 
         return {
