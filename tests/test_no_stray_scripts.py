@@ -35,3 +35,11 @@ def test_importing_the_backend_does_nothing_but_define(monkeypatch: pytest.Monke
         importlib.import_module(module.name)
 
     assert capsys.readouterr().out == ""
+
+
+def test_the_backend_never_imports_the_cli() -> None:
+    """cli imports backend; the other way round made each depend on the other (#147 B4)."""
+    offenders = [str(p.relative_to(ROOT)) for p in (ROOT / "backend").rglob("*.py")
+                 if "from cli" in p.read_text(encoding="utf-8") or "import cli" in p.read_text(encoding="utf-8")]
+
+    assert offenders == []

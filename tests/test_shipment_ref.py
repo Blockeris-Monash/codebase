@@ -13,7 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from cli.make_results import build_email, shipment_ref
+from backend.mail_view import shipment_ref
+from cli.make_results import build_email
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"

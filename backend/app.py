@@ -39,6 +39,7 @@ from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend.mail_view import DRAFT_REQUEST, clean_body, document, fallback_category, shipment_ref
 from backend import settings
 from backend.extract.rules import fields_from_pairs
 
@@ -766,7 +767,6 @@ async def sort_email(email: EmailInput) -> ClassificationResult:
     try:
         return await classify(email)
     except HTTPException as error:
-        from cli.make_results import fallback_category  # cli imports this module
         log.warning("classification failed for %s (%s), filed by the keyword rule", email.email_id, error.detail)
         return ClassificationResult(
             email_id=email.email_id, decided_by="rule", confidence=0.5, evidence=AI_DID_NOT_ANSWER,
@@ -899,7 +899,6 @@ def folder_for(address: str, gmail_id: str) -> Path:
 async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, Any]:
     """One live email as the page draws it: the same fields cli/make_results.py
     writes for a demo email, from the same /process-email the demo button calls."""
-    from cli.make_results import DRAFT_REQUEST, clean_body, document, shipment_ref  # cli imports this module
 
     email_id = gmail.mailbox_id(message.gmail_id)
     email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
@@ -934,7 +933,7 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     result = checked["ComparisonResult"]
     if result:
         compared = zip((DocumentRoleType.Si, DocumentRoleType.Bl), COMPARED_FILES.get())
-        docs = {role: document(Path(path), email_id, role) for role, path in compared if path}
+        docs = {role: document(Path(path)) for role, path in compared if path}
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
     return entry
@@ -1135,7 +1134,6 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
     so the page shows it on the same review screen."""
     import shutil
     import uuid
-    from cli.make_results import document  # cli imports this module
 
     files = {DocumentRoleType.Si: uploaded_bytes(upload.si), DocumentRoleType.Bl: uploaded_bytes(upload.bl)}
     email_id = f"upload_{uuid.uuid4().hex[:12]}"
@@ -1149,7 +1147,7 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
         OWN_FILES.set(frozenset(str(path) for path in paths.values()))
         pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
         result = (await run_pipeline(pair, live=False)).model_dump()
-        docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}
+        docs = {role: {**document(path), "name": Path(getattr(upload, role.lower()).name).name[:255]}
                 for role, path in paths.items()}
     finally:
         shutil.rmtree(folder, ignore_errors=True)

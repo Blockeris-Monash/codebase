@@ -1,7 +1,8 @@
 """cli.make_results: the UI's results file uses the team's real reader, extracts and comparator."""
 from pathlib import Path
 
-from cli.make_results import build_email, fallback_category
+from backend.mail_view import fallback_category
+from cli.make_results import build_email
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"

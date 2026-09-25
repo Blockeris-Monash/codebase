@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,8 +23,8 @@ from dotenv import load_dotenv
 import backend.app as pipeline
 from backend.compare.comparator import compare
 from backend.intent import about, email_intent
+from backend.mail_view import DRAFT_REQUEST, clean_body, document, fallback_category, shipment_ref
 from cli.demo_replies import demo_draft
-from backend.read.documents import document_title, read_document
 
 # Loaded here rather than relied on second-hand: this worked only because
 # importing backend.app happens to call load_dotenv, which breaks the moment
@@ -33,79 +32,14 @@ from backend.read.documents import document_title, read_document
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
-BODY_LIMIT = 1500
-
-COMPARE_ASK = re.compile(
-    r"(check|verify|compare|confirm)\w*\b.{0,40}\bdraft\s+BL\b.{0,40}\b(against|with|vs\.?)\b.{0,20}\bSI\b",
-    re.I | re.S,
-)
-# An email that asks someone to send the draft BL and has nothing attached. There is nothing to
-# compare yet, so the UI files it under its own folder instead of Needs review.
-DRAFT_REQUEST = re.compile(r"\b(send|provide)\b.{0,30}\bdraft\s+BL\b", re.I | re.S)
-SPAM = re.compile(r"bitcoin|exclusive offer|storage is|valued customer|increase your|approval required|prize|winner", re.I)
-INVOICE = re.compile(r"invoice|billing|charges|debit note|payment|\bsoa\b", re.I)
-SI_ASK = re.compile(r"\bSI\b|shipping instruction|draft\s+BL", re.I)
-
-# The shipment a message is about, so a reviewer can answer "Commercial is asking about
-# 5ALT-01226" without opening anything. Two shapes appear in this corpus and nothing else
-# does: an order reference (5ALT-01226) and a carrier booking reference (OOLU9284044566).
-#
-# The carrier half demands a run of four digits. Without it, "[A-Z]{4}[A-Z0-9]{6,}" also
-# matches INTERNATIONAL, OUTSTANDING and INVESTMENT - 13 English words in these subjects
-# alone, every one of them a false reference on a reviewer's screen.
-SHIPMENT_REF = re.compile(r"\b(?:\d[A-Z]{3}-\d{4,6}|[A-Z]{4}[A-Z0-9]*\d{4,}[A-Z0-9]*)\b")
-
-
-def shipment_ref(subject: str, body: str) -> str | None:
-    """The shipment this email is about, or None.
-
-    Subject before body, and first match within each, so the reference shown on a row is
-    the one already visible in the list rather than something found further down.
-    """
-    for text in (subject, body):
-        found = SHIPMENT_REF.search((text or "").upper())
-        if found:
-            return found.group(0)
-    return None
-
-
-def fallback_category(subject: str, body: str, n_attachments: int) -> str:
-    if n_attachments >= 1 or COMPARE_ASK.search(body):
-        return "BL_COMPARISON"
-    text = f"{subject} {body[:300]}"
-    if SPAM.search(text):
-        return "SPAM"
-    if INVOICE.search(text):
-        return "INVOICE_QUERY"
-    if SI_ASK.search(text):
-        return "SI_REQUEST"
-    return "GENERAL"
-
-
-def clean_body(body: str) -> str:
-    return re.sub(r"\n{3,}", "\n\n", body).strip()[:BODY_LIMIT]
 
 
 def role_of(path: str) -> str:
     return "SI" if "_SI." in Path(path).name else "BL"
 
 
-def document(path: Path, email_id: str, role: str) -> dict:
-    """What the UI needs from one attachment: shown text, and the inputs for a live re-check."""
-    saved = pipeline.load_saved_extract(email_id, role)
-    out = {"name": path.name, "format": path.suffix.lstrip("."), "title": None, "pairs": [],
-           "text": None, "parse_status": (saved or {}).get("parse_status", "ok")}
-    try:
-        out["title"] = document_title(path)
-        _, pairs = read_document(path)
-        out["pairs"] = [list(p) for p in pairs]
-    except Exception:  # unreadable files are Lane A's escalation, the comparator handles them
-        out["parse_status"] = "unreadable" if not saved else out["parse_status"]
-    if path.suffix == ".txt":
-        out["text"] = path.read_text(encoding="utf-8", errors="replace")
-    elif out["pairs"]:
-        out["text"] = "\n".join(f"{label}: {value}" for label, value in out["pairs"])
-    return out
+def saved_status(email_id: str, role: str) -> str | None:
+    return (pipeline.load_saved_extract(email_id, role) or {}).get("parse_status")
 
 
 def compared(email_id: str, docs: dict) -> dict:
@@ -140,7 +74,7 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
                      decided_by="fallback")
 
     if entry["category"] == "BL_COMPARISON":
-        docs = {role_of(rel): document(data_dir / rel, email_id, role_of(rel)) for rel in attachments}
+        docs = {role_of(rel): document(data_dir / rel, saved_status(email_id, role_of(rel))) for rel in attachments}
         result = compared(email_id, docs)
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)

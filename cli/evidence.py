@@ -26,7 +26,7 @@ from backend.contracts import FIELD_NAMES
 from backend.extract.rules import fields_from_pairs
 from backend.read.documents import read_document
 from cli import mutation_check
-from cli.make_results import fallback_category
+from backend.mail_view import fallback_category, shipment_ref
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,7 +90,6 @@ def waiting_summary(results: list[dict]) -> dict:
     close. `shipment_ref` is imported rather than re-implemented so the count
     cannot drift from what the review screen actually shows.
     """
-    from cli.make_results import shipment_ref
 
     waiting = [e for e in results if e.get("awaiting")]
     refs = {r for e in results if (r := shipment_ref(e["subject"], e.get("body", "")))}
