@@ -30,7 +30,8 @@ def branch(action: str) -> str:
 def test_the_landing_page_has_every_section_in_story_order() -> None:
     home = block("function homePage(){")
     ids = re.findall(r'id="(\w+)"', home)
-    story = ["problem", "how", "different", "results", "start", "team"]
+    # "Get started" sits right under the hero, so nobody scrolls past the whole story to start.
+    story = ["start", "problem", "how", "different", "results", "team"]
     assert [i for i in ids if i in story] == story
 
 

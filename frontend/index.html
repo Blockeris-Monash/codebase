@@ -306,6 +306,10 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .opt.off{opacity:.7}
 .opt .oi .ico{width:26px;height:26px;color:var(--accent)}
 .opt .btn{margin-top:auto}
+.upfile{position:relative;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;padding:12px;border:1px dashed var(--line);border-radius:10px;background:var(--sunk);cursor:pointer}
+.upfile input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.upfile:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.upfile .nm{overflow-wrap:anywhere;min-width:0}
 .ostat{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
 .how3{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .how3 li{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
@@ -836,11 +840,20 @@ function homePage(){
                [T("Is my Gmail safe?"),T("Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.")],
                [T("What is next?"),T("Reading scanned files, Outlook and other mailboxes, and a shared review queue for a team.")]];
   return `<main class="home">${DECO}<section class="lp-hero">${SCENE}<div class="lp-sailer">${SHIP_ART}</div><div class="hx hero2"><span class="lp-pill">${ICON.NEXT}${t("Averis x Monash Hackathon 2026 · Top 10 finalist")}</span>
-      <h1 class="wordmark">SHIP HAPPENS</h1><p class="lp-tag">${t("We catch it before it sails.")}</p>
+      <h1 class="wordmark">SHIP HAPPENS</h1><p class="lp-tag">${t("We catch it before it sails")}</p>
       <p class="lp-sub">${t("Check every Bill of Lading before it ships")}</p>
       <div class="actions">${u?`<button class="btn" data-a="mymailbox">${t("Open my mailbox")}</button>`:`<button class="btn" data-a="demoacct">${t("Sign in with demo account")}</button>`}<button class="btn ghostlight" data-a="howto">${t("See how it works")}</button></div></div></section>
   <div class="hx">
-    <div class="lp-strip ${rv("strip")}">${big("520",T("emails in the demo dataset"))}${big("7",T("fields compared in every check"))}${big("630/630",T("injected defects caught"))}${big("1.0000",T("on the organisers' own scorer"))}${big("3",T("languages on screen"))}</div>
+    <section id="start" class="lp-sec ${rv("start")}">${head(T("Get started"),T("Choose how to check your documents"))}
+    <div class="opts">
+      ${u?"":`<div class="opt main top-acc"><span class="oi">${ICON.MAIL}</span><b>${t("Try with demo data")}</b><span class="mute small">${t("{n} sample emails, already checked.",{n:RESULTS.length})}</span>
+        <div class="ostat">${stat("MISMATCH")}${stat("NEEDS_REVIEW")}${stat("OK")}</div><button class="btn" data-a="demoacct">${t("Sign in with demo account")}</button></div>`}
+      <div class="opt top-ok"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}</b><span class="mute small">${t("New emails are checked as they arrive, and replies go out from your Gmail.")}</span>${gmail}</div>
+      <div class="opt top-rev"><span class="oi">${ICON.UPLOAD}</span><b>${t("Upload SI and BL files")}</b><span class="mute small">${t("Choose a Shipping Instruction and a draft Bill of Lading to check them without an email. No sign-in needed.")}</span><button class="btn alt" data-a="upload">${t("Upload files")}</button></div>
+    </div></section>
+
+    <section id="proven" class="lp-sec ${rv("proven")}">${head(T("By the numbers"),T("How Ship Happens performs"))}
+      <div class="lp-strip">${big("520",T("emails in the demo dataset"))}${big("7",T("fields compared in every check"))}${big("630/630",T("injected defects caught"))}${big("1.0000",T("on the organisers' own scorer"))}${big("3",T("languages on screen"))}</div></section>
 
     <section id="problem" class="lp-sec ${rv("problem")}">${head(T("The problem"),T("Every draft BL is still checked by hand"),T("Seven fields, four file formats, one person comparing by eye."))}
       <div class="lp-papers">${paper("si",T("Shipping Instruction"),"si_raw")}${paper("bl",T("Draft Bill of Lading"),"bl_raw")}<span class="lp-lens">${ICO('<circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/>')}</span></div>
@@ -855,14 +868,6 @@ function homePage(){
       <div class="lp-strip lp-strip3">${big(String(n("OK")),LABEL.OK,"n-ok")}${big(String(n("MISMATCH")),LABEL.MISMATCH,"n-bad")}${big(String(n("NEEDS_REVIEW")),LABEL.NEEDS_REVIEW,"n-rev")}</div>
       <div class="lp-card lp-bars"><b>${t("Where the {n} differences were",{n:diffs})}</b>${fc.map(([f,v])=>`<div class="lp-bar"><span>${fld(f)}</span><i style="--w:${Math.round(v*100/top)}%"></i><b class="num">${v}</b></div>`).join("")}</div></section>
 
-    <section id="start" class="lp-sec ${rv("start")}">${head(T("Try it"),T("Where is your mail?"))}
-    <div class="opts">
-      ${u?"":`<div class="opt main top-acc"><span class="oi">${ICON.MAIL}</span><b>${t("Try with demo data")}</b><span class="mute small">${t("{n} sample emails, already checked.",{n:RESULTS.length})}</span>
-        <div class="ostat">${stat("MISMATCH")}${stat("NEEDS_REVIEW")}${stat("OK")}</div><button class="btn" data-a="demoacct">${t("Sign in with demo account")}</button></div>`}
-      <div class="opt top-ok"><span class="oi">${ICON.USER}</span><b>${t("Connect Gmail")}</b><span class="mute small">${t("New emails are checked as they arrive, and replies go out from your Gmail.")}</span>${gmail}</div>
-      <div class="opt off top-rev"><span class="oi">${ICON.UPLOAD}</span><b>${t("Upload SI and BL files")}<span class="pill">${t("Planned")}</span></b><span class="mute small">${t("Drop in a Shipping Instruction and a draft Bill of Lading to check them without an email.")}</span></div>
-    </div></section>
-
     <section id="team" class="lp-sec ${rv("team")}">${head(T("The team"),T("Built by Team Blockeris"),T("Five Monash University Malaysia students at the Averis x Monash Hackathon 2026."))}
       <div class="lp-team">${teamHTML()}</div></section>
 
@@ -870,7 +875,7 @@ function homePage(){
       <div class="lp-faq">${faq.map(([q,a])=>`<details><summary>${t(q)}${ICON.CHEV}</summary><p>${t(a)}</p></details>`).join("")}</div></section>
   </div>
   <footer class="lp-foot"><div class="hx"><div><b class="logo">SHIP HAPPENS</b><span class="mute small">${t("Ship happens. We catch it before it sails.")}</span></div>
-    <div class="lp-links">${u?`<button class="ghost" data-a="mymailbox">${t("Open my mailbox")}</button>`:`<button class="ghost" data-a="demoacct">${t("Sign in with demo account")}</button>`}<button class="ghost" data-a="next">${t("What's next")}</button><a class="lp-link" href="https://github.com/Blockeris-Monash/codebase" target="_blank" rel="noopener">${ICON.GITHUB}${t("Code on GitHub")}</a></div>
+    <div class="lp-links">${u?`<button class="ghost" data-a="mymailbox">${t("Open my mailbox")}</button>`:""}<a class="lp-link" href="https://github.com/Blockeris-Monash/codebase" target="_blank" rel="noopener">${ICON.GITHUB}${t("Code on GitHub")}</a></div>
     <span class="mute small">${t("Team Blockeris · Averis x Monash Hackathon 2026")}</span></div></footer></main>`;
 }
 
@@ -926,6 +931,42 @@ function reportSignInHTML(){
       <div class="actions" style="justify-content:center"><button class="btn" data-a="reportsignin" ${S.authReady?"":"disabled"}>${t("Sign in with Google")}</button><button class="btn alt" data-a="reportclose">${t("Close")}</button></div></div></div></div></div>`;
 }
 
+/* Upload an SI and a draft BL: no email and no sign-in, the same checks as a Gmail attachment. */
+const UP_TYPES = /\.(txt|docx|xlsx|pdf|edi)$/i, UP_MAX = 5*1024*1024;
+function uploadHTML(){
+  const pick = (role, label)=>{ const f = S.upFiles[role];
+    return `<div class="fl">${label}</div><label class="upfile" data-drop="${role}"><input type="file" data-up="${role}" accept=".txt,.docx,.xlsx,.pdf,.edi" ${S.uploading?"disabled":""}><span class="btn alt">${ICON.UPLOAD}${f?t("Change file"):t("Choose file")}</span><span class="nm ${f?"":"mute"} small">${f?esc(f.name):t("or drop it here")}</span></label>`; };
+  return `<div class="ov" data-a="uploadclose"><div class="dlg wide" role="dialog" aria-label="${t("Upload SI and BL files")}" data-a="stay">
+    <div class="dlgh"><h2>${t("Upload SI and BL files")}</h2><button class="ghost" data-a="uploadclose" aria-label="${t("Close")}" ${S.uploading?"disabled":""}>${t("Close")}</button></div>
+    <div class="dlgb"><p class="mute small">${t("Choose one Shipping Instruction and one draft Bill of Lading: .txt, .docx, .xlsx, .pdf or .edi, up to 5 MB each. No sign-in needed. The files are deleted as soon as they are checked.")}</p>
+      ${pick("SI", t("Shipping Instruction"))}${pick("BL", t("Draft Bill of Lading"))}
+      ${S.uploadErr?`<div class="err small" role="alert" style="margin-top:10px">${esc(t(S.uploadErr))}</div>`:""}
+      <div class="actions" style="margin-top:14px"><button class="btn" data-a="uploadgo" ${S.uploading||!S.upFiles.SI||!S.upFiles.BL?"disabled":""}>${S.uploading?t("Checking... this can take up to a minute"):t("Check files")}</button><button class="btn alt" data-a="uploadclose" ${S.uploading?"disabled":""}>${t("Cancel")}</button></div></div></div></div>`;
+}
+function pickFile(role, f){
+  if(!UP_TYPES.test(f.name)) S.uploadErr = T("Upload a .txt, .docx, .xlsx, .pdf or .edi file.");
+  else if(f.size > UP_MAX) S.uploadErr = T("Each file must be 5 MB or smaller.");
+  else { S.upFiles[role] = f; S.uploadErr = null; }
+  render();
+}
+const asUpload = f=>new Promise((ok, fail)=>{ const r = new FileReader(); r.onload = ()=>ok({name:f.name, data:String(r.result).split(",")[1]||""}); r.onerror = fail; r.readAsDataURL(f); });
+/* Checked uploads go to their own box, open on the result. Kept in this tab only. */
+async function checkFiles(){
+  S.uploading = true; S.uploadErr = null; render();
+  try{
+    const [si, bl] = await Promise.all([S.upFiles.SI, S.upFiles.BL].map(asUpload));
+    const res = await fetch(API_BASE + "/check-files", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({si, bl})});
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){ S.uploadErr = res.status===429 ? T("Too many checks in a minute. Wait a moment and try again.") : (typeof data.detail==="string" ? data.detail : T("The files could not be checked. Try again.")); return; }
+    data.from = t("Manual upload");
+    S.uploads.unshift(data); S.upFiles = {}; S.uploadDlg = false;
+    S.mailbox = "upload"; S.q = ""; S.page = 0; S.f = data.status; S.sel = data.id;
+    S.docs = true; S.body = false; S.how = false; S.draft = null; S.fade = true; S.resetList = true; S.resetPane = true;
+    location.hash = "#/inbox"; window.scrollTo(0,0);
+  }catch(_){ S.uploadErr = T("Could not reach the checker. Check your connection and try again."); }
+  finally{ S.uploading = false; render(); }
+}
+
 function helpHTML(){
   const tabs = [["guide",T("Guide")],["support",T("Contact support")]]
     .map(([k,n])=>`<button class="tab ${S.tab===k?"on":""}" data-a="tab" data-k="${k}" role="tab" aria-selected="${S.tab===k}">${t(n)}</button>`).join("");
@@ -943,16 +984,18 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
-const getEmail = id => (S.mailbox === "live" ? S.liveEmails.find(e=>e.id===id) : null) || byId[id];
-const count = k => (S.mailbox === "live" ? S.liveEmails : RESULTS).filter(folder(k).f).length;
+/* The emails of the mailbox on show: the demo data, My mailbox, or the files uploaded here. */
+const mailList = ()=>S.mailbox==="live" ? S.liveEmails : S.mailbox==="upload" ? S.uploads : RESULTS;
+const getEmail = id => (S.mailbox !== "demo" ? mailList().find(e=>e.id===id) : null) || byId[id];
+const count = k => mailList().filter(folder(k).f).length;
 /* My mailbox before its first answer: show that it is loading, not a row of zeros. */
 const loadingBox = ()=>S.mailbox==="live" && !S.liveLoaded;
 const items = ()=>{
-  const baseList = S.mailbox === "live" ? S.liveEmails : RESULTS;
+  const baseList = mailList();
   const term = S.q.trim().toLowerCase().replace(/^#/,"");
   // an email you just marked stays in the list until you open another one, so the list does not jump under you
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
@@ -1113,7 +1156,7 @@ function how(e){
   const cat = esc(e.category==="BL_COMPARISON" ? t("SI vs BL") : (OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase());
   const ai = e.decided_by!=="fallback";
   const pct = typeof e.class_confidence==="number" ? `<span class="pill">${t("{n}% sure",{n:Math.round(e.class_confidence*100)})}</span>` : "";
-  const steps = [step(1, ai ? `${t("The AI read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"})} ${pct}` : t("A keyword rule read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"}),
+  const steps = [e.uploaded ? step(1, t("You uploaded an SI and a draft BL"), `<div class="cap">${t("There is no email to sort, so the two files went straight to the check.")}</div>`) : step(1, ai ? `${t("The AI read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"})} ${pct}` : t("A keyword rule read the cover email and filed it under {cat}",{cat:"<b>"+cat+"</b>"}),
     `<blockquote>${esc(cut(e.body.replace(/\s+/g," ").trim(),240))}</blockquote>` +
     (ai && e.class_evidence ? `<div class="cap">${t("AI reason:")} ${esc(e.class_evidence)}</div>` : ai ? "" : `<div class="cap">${t("Not the AI. A simple rule on the subject and text.")}</div>`))];
   if(e.category!=="BL_COMPARISON"){
@@ -1163,13 +1206,14 @@ function actionsHTML(e){
       <div class="actions"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
       ${S.sendErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.sendErr)}</div>`:""}
       <div class="small mute" style="margin-top:8px">${isLive(e.id)?t("Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back."):t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
+  if(e.uploaded) return `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
   const step = NEXT_STEP[e.status==="MISMATCH" ? "MISMATCH" : e.review_reason];
   return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
 }
 
 function detail(e){
   const view = e;
-  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${who(e)} · ${e.id.replace("email_","#")}</div>${routeHTML(e)}${how(e)}`;
+  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
   let banner, tbl = "";
   if(e.awaiting){
     banner = `<div class="banner plain">${t("Draft BL requested")}<span>${t("The sender asked for the draft BL and nothing is attached, so there is nothing to compare yet.")}</span></div>`;
@@ -1189,7 +1233,7 @@ function detail(e){
   h += banner + actionsHTML(e) + tbl;
   h += scanHTML(e);
   if(e.docs) h += docsHTML(e, view.rows||[]);
-  h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
+  if(!e.uploaded) h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");
   h += `<button class="linkbtn report" data-a="report">${ICON.FLAG}${t("Report a problem with this result")}</button>`;
   return h + "</div>";
 }
@@ -1229,15 +1273,18 @@ const isHome = ()=>!signInReturn && (!location.hash || location.hash==="#/");
 function accountHTML(){
   if(!S.authReady || (!S.user && signInReturn)) return "";
   if(!S.user && isHome()) return `<button class="ghost hb" data-a="signin" aria-label="${t("Sign in with Google")}" title="${t("Sign in with Google")}">${ICON.USER}<span class="lbl">${t("Sign in")}</span></button>`;
-  const demo = !S.user || S.mailbox==="demo";
+  const demo = S.mailbox==="demo" || (!S.user && S.mailbox==="live"), up = S.mailbox==="upload";
   const meta = (S.user && S.user.user_metadata) || {}, email = (S.user && S.user.email) || "", name = meta.full_name || meta.name || email;
   const acct = (on, act, title, sub)=>`<button class="mi ${on?"on":""}" role="menuitemradio" aria-checked="${on}" data-a="${act}"><span class="mtick">${on?ICON.CHECKED:""}</span><span class="macct"><b>${title}</b>${sub?`<span class="mute small">${sub}</span>`:""}</span></button>`;
   const demoRow = acct(demo, "demoacct", t("Demo account"), t("{n} sample emails",{n:RESULTS.length}));
+  // Uploads work signed in or not; their box shows once there is something in it.
+  const upRow = (S.uploads.length ? acct(up, "uploadsbox", t("Manual uploads"), t("{n} checked here",{n:S.uploads.length})) : "") +
+    `<button class="mi" role="menuitem" data-a="upload"><span class="mtick">${ICON.UPLOAD}</span>${t("Upload SI and BL files")}</button>`;
   const items = S.user
-    ? `<div class="mhead"><span class="mute small">${t("Signed in as")}</span><br><b>${esc(email)}</b></div><div class="msep"></div>${acct(!demo, "mymailbox", t("My mailbox"), "")}${demoRow}<div class="msep"></div><button class="mi" role="menuitem" data-a="signout"><span class="mtick"></span>${t("Sign out")}</button>`
-    : `${demoRow}<div class="msep"></div><button class="mi" role="menuitem" data-a="signin"><span class="mtick">${ICON.USER}</span>${t("Sign in with Google")}</button>`;
-  const initial = demo ? "D" : (name.trim()[0]||"?").toUpperCase(), label = demo ? t("Demo account") : name.split(/[\s@]/)[0];
-  return `<span class="acctwrap"><button class="ghost hb" data-a="usermenu" aria-haspopup="menu" aria-expanded="${S.userMenu}" aria-label="${t("Account")}" title="${esc(demo?t("Demo account"):email)}"><span class="avatar" aria-hidden="true">${esc(initial)}</span><span class="lbl">${esc(label)}</span>${ICON.CHEV}</button>${S.userMenu?`<div class="menu" role="menu" aria-label="${t("Account")}">${items}</div>`:""}</span>`;
+    ? `<div class="mhead"><span class="mute small">${t("Signed in as")}</span><br><b>${esc(email)}</b></div><div class="msep"></div>${acct(!demo&&!up, "mymailbox", t("My mailbox"), "")}${demoRow}${upRow}<div class="msep"></div><button class="mi" role="menuitem" data-a="signout"><span class="mtick"></span>${t("Sign out")}</button>`
+    : `${demoRow}${upRow}<div class="msep"></div><button class="mi" role="menuitem" data-a="signin"><span class="mtick">${ICON.USER}</span>${t("Sign in with Google")}</button>`;
+  const initial = up ? "U" : demo ? "D" : (name.trim()[0]||"?").toUpperCase(), label = up ? t("Manual uploads") : demo ? t("Demo account") : name.split(/[\s@]/)[0];
+  return `<span class="acctwrap"><button class="ghost hb" data-a="usermenu" aria-haspopup="menu" aria-expanded="${S.userMenu}" aria-label="${t("Account")}" title="${esc(up?t("Manual uploads"):demo?t("Demo account"):email)}"><span class="avatar" aria-hidden="true">${esc(initial)}</span><span class="lbl">${esc(label)}</span>${ICON.CHEV}</button>${S.userMenu?`<div class="menu" role="menu" aria-label="${t("Account")}">${items}</div>`:""}</span>`;
 }
 
 
@@ -1257,7 +1304,7 @@ function render(){
                 y: (S.resetList || S.resetPane) ? null : window.scrollY};
   // A popup covers the page: when it closes, the page goes back to where it stood when it
   // opened, whatever reached it meanwhile, unless the popup took the reader somewhere else.
-  const popup = S.help||S.langDlg||S.reportDlg;
+  const popup = S.help||S.langDlg||S.reportDlg||S.uploadDlg;
   if(popup && !S.under) S.under = {...keep, at:location.hash+'|'+S.sel};
   if(!popup && S.under){ if(S.under.at===location.hash+'|'+S.sel) Object.assign(keep, S.under); S.under = null; }
   S.resetList = false; S.resetPane = false;
@@ -1278,9 +1325,9 @@ function render(){
   document.getElementById("app").innerHTML =
     `${onHome?"":onNext?APPBG_LIVE:APPBG}${signInErrorHTML()}${mailboxBarHTML()}<div class="top"><span class="brand" data-a="home" role="link" tabindex="0" title="${t("Home")}"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="Ship Happens logo"><defs><clipPath id="mk"><circle cx="32" cy="32" r="27.2"/></clipPath><clipPath id="sea"><rect x="0" y="0" width="64" height="50"/></clipPath></defs><g clip-path="url(#mk)"><g clip-path="url(#sea)"><g class="doc"><g transform="translate(0 6)"><path class="paper" d="M12.5 19q0-3 3-3h8l5 5V48h-16z"/><path class="line" stroke-width="1.5" d="M15.5 23h5"/><path class="line" stroke-width="1" d="M15.5 27.500h10M15.5 31h10M15.5 34.500h10M15.5 38h10M15.5 41.500h7"/></g></g></g></g><g class="ship"><path class="ink" d="M32 13v7" stroke="var(--ink)" stroke-width="1.3"/><path class="ink" d="M30 15.5h4" stroke="var(--ink)" stroke-width="1.1"/><rect class="ink" x="28" y="20" width="8" height="5" rx="1"/><rect class="ink" x="24.5" y="25" width="15" height="6" rx="1"/><rect class="ink" x="21" y="31" width="22" height="7" rx="1"/><path class="win" d="M23 33.5h1.6v1.6H23zM26 33.5h1.6v1.6H26zM29 33.5h1.6v1.6H29zM32 33.5h1.6v1.6H32zM35 33.5h1.6v1.6H35zM38 33.5h1.6v1.6H38z"/><path class="ink" d="M18 38h28l-5 14H23z"/><path class="keel" d="M32 39v13"/></g><path class="line trail" stroke-width="1.6" d="M22 28C30 19 40 14 50 13"/><g clip-path="url(#mk)"><g class="waves"><path class="line" stroke-width="3.2" d="M-34 51q10-6 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0"/><path class="line" stroke-width="1.6" opacity=".6" d="M-34 56q10-5 20 0t20 0t20 0t20 0t20 0t20 0t20 0t20 0"/></g></g><circle class="ring" cx="32" cy="32" r="28" pathLength="100" transform="rotate(-90 32 32)"/><g class="fly"><g transform="translate(40 3) scale(.95) rotate(45 12 12)"><path class="jet" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></g></g></svg><span class="logo">SHIP HAPPENS</span></span><span class="mute small">${t("Shipping documents")}</span><span class="grow"></span>${!onHome?`<button class="ghost hb" data-a="home" aria-label="${t("Home")}" title="${t("Home")}">${ICON.HOME}<span class="lbl">${t("Home")}</span></button>`:""}${accountHTML()}<button class="ghost hb" data-a="help" aria-label="${t("Help")}">${ICON.HELP}<span class="lbl">${t("Help")}</span></button><button class="ghost hb ${onNext?"on":""}" data-a="next" aria-label="${t("What's next")}" ${onNext?'aria-current="page"':""}>${ICON.NEXT}<span class="lbl">${t("What's next")}</span></button><span class="langwrap"><button class="ghost hb" data-a="settings" aria-haspopup="menu" aria-expanded="${S.langMenu}" aria-label="${t("Settings")}" title="${t("Settings")}">${ICON.GEAR}<span class="lbl">${t("Settings")}</span>${ICON.CHEV}</button>${S.langMenu?settingsHTML(isDark):""}</span></div>${onNext ? nextPage() : onHome ? homePage() : `
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
-     <div class="bar"><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${loadingBox()?"":tallyHTML()}
+     <div class="bar"><span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}${S.mailbox==="upload"?`<button class="btn alt" data-a="upload">${ICON.UPLOAD}${t("Upload more")}</button>`:""}<span class="grow"></span>${loadingBox()?"":tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${S.uploadDlg?uploadHTML():""}${S.busy?busyHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -1344,6 +1391,10 @@ document.addEventListener("click", ev=>{
   else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
   else if(a==="langclose"){ S.langDlg=false; }
   else if(a==="reportclose"){ S.reportDlg=false; }
+  else if(a==="upload"){ S.userMenu=false; S.uploadDlg=true; S.uploadErr=null; }
+  else if(a==="uploadclose"){ if(!S.uploading) S.uploadDlg=false; }
+  else if(a==="uploadgo"){ if(!S.uploading && S.upFiles.SI && S.upFiles.BL) checkFiles(); return; }
+  else if(a==="uploadsbox"){ S.userMenu=false; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="upload"){ S.mailbox="upload"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } }
   else if(a==="reportsignin"){ S.reportDlg=false; startSignIn(); return; }
   else if(a==="langnext"){ S.langDlg=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
@@ -1391,7 +1442,15 @@ document.addEventListener("change", ev=>{
   const a = ev.target.dataset.a;
   if(a==="sortsel"){ S.sort=ev.target.value; S.page=0; S.resetList=true; render(); }
   if(a==="kindsel"){ S.f=ev.target.value; S.page=0; S.sel=null; S.resetList=true; S.resetPane=true; render(); }
+  const up = ev.target.dataset.up;
+  if(up && ev.target.files && ev.target.files[0]) pickFile(up, ev.target.files[0]);
 
+});
+document.addEventListener("dragover", ev=>{ if(ev.target.closest && ev.target.closest("[data-drop]")) ev.preventDefault(); });
+document.addEventListener("drop", ev=>{
+  const zone = ev.target.closest && ev.target.closest("[data-drop]"); if(!zone) return;
+  ev.preventDefault(); const f = ev.dataTransfer && ev.dataTransfer.files[0];
+  if(f && !S.uploading) pickFile(zone.dataset.drop, f);
 });
 /* After Done or Send, open the next email in this folder so the reviewer keeps going. The Undo box
    leaves with the email, so Undo moves to a bar at the bottom for a few seconds. */
@@ -1421,7 +1480,7 @@ function sortHTML(){
   return pick("sortsel", t("Sort by"), [["worst",T("Most issues")],["least",T("Fewest issues")],["new",T("Most recent")],["old",T("Oldest")]].map(([v,n])=>[v,t(n)]), S.sort);
 }
 function tallyHTML(){
-  const work = (S.mailbox==="live" ? S.liveEmails : RESULTS).filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
+  const work = mailList().filter(todo), total = work.length, done = work.filter(e=>S.marks[e.id]).length;
   const p = total ? Math.round(done*100/total) : 0;
   return `<span class="tally small" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span class="num">${t("{done} of {total} done",{done,total})}</span><span class="voy ${total&&done===total?"arrived":""}" style="--p:${p}"><span class="boat">${ICON.SHIP}</span><span class="port">${ICON.FLAG}</span></span></span>`;
 }
@@ -1452,10 +1511,10 @@ function stepKey(key){
 }
 document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.resetList=true; render(); return; }
-  if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.reportDlg=false; S.langMenu=false; render(); return; }
+  if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.langMenu||(S.uploadDlg&&!S.uploading))){ S.help=false; S.langDlg=false; S.uploadDlg=false; S.reportDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && (ev.target.classList.contains("src")||ev.target.classList.contains("brand"))){ ev.preventDefault(); ev.target.click(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
-  if(typing||S.help||S.langDlg||S.reportDlg||S.busy||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
+  if(typing||S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.busy||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);

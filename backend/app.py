@@ -821,6 +821,76 @@ async def reply(request: ReplyRequest, authorization: Optional[str] = Header(Non
     return {"sent": True, "gmail_id": sent.get("id"), "thread_id": sent.get("threadId")}
 
 
+# =====================================================================
+# 8. Upload an SI and a draft BL, no sign-in needed (Meeting 7, job 10)
+# =====================================================================
+#
+# The person says which file is which, so there is no email to classify. The files
+# are read, compared the way a Gmail attachment is, and deleted before the answer
+# goes back: nothing uploaded is kept.
+
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/tmp/shiphappens-uploads"))
+UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+
+
+class UploadedFile(BaseModel):
+    name: str = Field(..., max_length=255)
+    data: str = Field(..., max_length=8_000_000)  # base64 of UPLOAD_MAX_BYTES, with room to spare
+
+
+class UploadRequest(BaseModel):
+    si: UploadedFile
+    bl: UploadedFile
+
+
+def uploaded_bytes(upload: UploadedFile) -> tuple[str, bytes]:
+    """The file's suffix and contents, or the reason it cannot be checked."""
+    import base64
+    import binascii
+    from backend.read.documents import reader_for
+
+    suffix = Path(upload.name).suffix.lower()
+    if not gmail.SAFE_SUFFIX.match(suffix) or reader_for(Path("x" + suffix)) is None:
+        raise HTTPException(status_code=415, detail="Upload a .txt, .docx, .xlsx, .pdf or .edi file.")
+    try:
+        data = base64.b64decode(upload.data, validate=True)
+    except (binascii.Error, ValueError) as error:
+        raise HTTPException(status_code=400, detail="The file did not arrive whole. Try again.") from error
+    if len(data) > UPLOAD_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Each file must be 5 MB or smaller.")
+    return suffix, data
+
+
+@app.post("/check-files")
+async def check_files(upload: UploadRequest) -> Dict[str, Any]:
+    """One SI and one draft BL, checked field by field, shaped like a mailbox entry
+    so the page shows it on the same review screen."""
+    import shutil
+    import uuid
+    from cli.make_results import document  # cli imports this module
+
+    files = {DocumentRoleType.Si: uploaded_bytes(upload.si), DocumentRoleType.Bl: uploaded_bytes(upload.bl)}
+    email_id = f"upload_{uuid.uuid4().hex[:12]}"
+    folder = UPLOAD_DIR / email_id
+    folder.mkdir(parents=True, exist_ok=True)
+    try:
+        # Named by role, never by the uploader's file name, which is not a safe path.
+        paths = {role: folder / f"{email_id}_{role}{suffix}" for role, (suffix, _) in files.items()}
+        for role, (_, data) in files.items():
+            paths[role].write_bytes(data)
+        pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
+        result = (await run_pipeline(pair, live=False)).model_dump()
+        docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}
+                for role, path in paths.items()}
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+
+    return {"id": email_id, "uploaded": True, "from": "", "subject": f"{docs['SI']['name']} and {docs['BL']['name']}",
+            "body": "", "n_attachments": 2, "category": "BL_COMPARISON", "decided_by": "upload",
+            "status": result["status"], "review_reason": result["review_reason"], "rows": result["rows"],
+            "defect_fields": result["defect_fields"], "evidence": result["evidence"], "docs": docs}
+
+
 # Last, so every name it reads is defined. One line naming what is switched on,
 # because each of these fails quietly when its variable is unset.
 say_what_is_switched_on()
