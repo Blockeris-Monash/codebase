@@ -69,3 +69,27 @@ def test_the_same_reference_from_two_senders_is_two_items_oldest_first() -> None
                       request("g3", "bob@old.example", "5ALT-01226", "Tue, 22 Sep 2026 09:00:00 +0000")]""")
 
     assert [(i["sender"], i["age"], i["n"]) for i in items] == [("old.example", 4, 2), ("new.example", 1, 1)]
+
+
+ACTIONS = """
+const S = {marks: {}, sent: {}, draft: null, drafting: null, sending: false, copied: null, copyFailed: null,
+           refining: false, refineErr: null, sendErr: null, draftErr: null};
+const t = s => s, esc = s => String(s), isLive = () => false, gmailLink = () => "#";
+const REPLY_ASKS = {}, NEXT_STEP = {}, ICON = new Proxy({}, {get: () => ""});
+""" + page_function("actionsHTML")
+
+REQUEST = '{id: "email_011", from: "ann@ship.example", subject: "Draft BL", awaiting: true, status: "NEEDS_REVIEW", review_reason: "missing_attachment", rows: []}'
+
+
+def test_a_reminder_opens_the_reply_box_on_the_request() -> None:
+    """The request email had no actions at all, so Draft a reminder opened it with no reply box."""
+    html = run_node(ACTIONS + f"""
+        S.draft = {{id: "email_011", to: "ann@ship.example", subject: "Draft BL", body: "Dear team", reminder: true}};
+        console.log(JSON.stringify(actionsHTML({REQUEST})));
+    """)
+
+    assert 'class="reply"' in html and "Remind the sender" in html and "Dear team" in html
+
+
+def test_a_request_with_no_reminder_open_still_shows_no_actions() -> None:
+    assert run_node(ACTIONS + f"console.log(JSON.stringify(actionsHTML({REQUEST})));") == ""
