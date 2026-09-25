@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from contextvars import ContextVar
 import logging
 import os
 import re
@@ -154,6 +155,11 @@ extractor = AiExtractor(with_fallback(qwen_breaker.wrap(qwen_model, skip_allowed
                                       gemini_model, first_timeout=15, enabled=lambda: bool(gemini_key())),
                         tries=2, deadline=45)
 
+# An email id becomes part of a file name below. A caller of /process-email can send any
+# string, and "../../x" used to reach any *_SI.json on the disk.
+SAFE_EMAIL_ID = re.compile(r"[A-Za-z0-9_-]{1,100}")
+
+
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     """The whole cached DocumentExtract, metadata included.
 
@@ -161,6 +167,8 @@ def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     comparator escalates any document missing them - which was every document,
     so every email came back NEEDS_REVIEW/unreadable.
     """
+    if SAFE_EMAIL_ID.fullmatch(email_id) is None:
+        return None
     extract_file = EXTRACTS_DIR / f"{email_id}_{role}.json"
     if not extract_file.exists():
         return None
@@ -470,18 +478,27 @@ async def classify(email: EmailInput) -> ClassificationResult:
 # 5. Routing Helpers: Attachment Resolution
 # =====================================================================
 
+# Files this server wrote itself for the work in hand: an upload, or a Gmail attachment.
+# Only these may be named by an absolute path. A caller of /process-email can name any
+# string, and an absolute path used to read anything on the disk - other people's
+# mailbox attachments included - and send its fields back (#147 A2).
+OWN_FILES: ContextVar[frozenset[str]] = ContextVar("own_files", default=frozenset())
+
+
 def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
-    """Finds the attachment file in data/attachments/ or local paths."""
+    """The attachment inside data/, or one of this request's own files; never anywhere else."""
     p = Path(att_path_str)
-    if p.is_absolute() and p.exists():
-        return p
+    if att_path_str in OWN_FILES.get():
+        return p if p.exists() else None
+    if p.is_absolute():
+        return None
     # Look inside data/attachments/<filename>
     direct = DATA_DIR / "attachments" / p.name
     if direct.exists():
         return direct
-    # Look inside data/<relative_path>
-    relative = DATA_DIR / att_path_str
-    if relative.exists():
+    # Look inside data/<relative_path>, without climbing out of it
+    relative = (DATA_DIR / att_path_str).resolve()
+    if relative.is_relative_to(DATA_DIR.resolve()) and relative.exists():
         return relative
     return None
 
@@ -759,6 +776,7 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     # is never in the saved results, so the normal path is saved result, rules, then model.
     # No draft: it is paid for, and most mail is never answered, so /draft-reply writes it
     # when the person asks (#149).
+    OWN_FILES.set(frozenset(paths))  # this task's own context: the files just saved from Gmail
     checked = await process_email(email, live=False, draft=False)
     found = checked["ClassificationResult"]
 
@@ -982,6 +1000,7 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
         paths = {role: folder / f"{email_id}_{role}{suffix}" for role, (suffix, _) in files.items()}
         for role, (_, data) in files.items():
             paths[role].write_bytes(data)
+        OWN_FILES.set(frozenset(str(path) for path in paths.values()))
         pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
         result = (await run_pipeline(pair, live=False)).model_dump()
         docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}
