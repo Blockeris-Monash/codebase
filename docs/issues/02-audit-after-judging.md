@@ -1029,3 +1029,76 @@ test_embed.py` would spend quota, and `sample.py` runs on import.
 - A test asserts that no `test_*.py` exists outside `tests/`, and that no
   module under `backend/` does work at import beyond definitions. The second
   is checked by importing every backend module with the network blocked.
+
+---
+
+# D1–D3 — built from the specs in #147 section D
+
+On 25 Sep the plan changed to "D1, D2 and D3 now". B4.2–B4.8, B5, D4, D5 and
+EDIFACT wait. The specs in #147 stand as written. What follows is only what
+those specs leave open, decided here.
+
+## D1 — Revision compare
+
+- **No `ambiguous_revision` reason.** The #147 order of trust ends with "the
+  later file in attachment order", and attachment order always exists, so the
+  "none of these decides" case cannot happen. The contracts' review reasons stay
+  the organisers' four.
+- **The revision block is optional** in contract 04 and in the pydantic model,
+  and absent unless an email carries two BLs. `SubmissionEntry` is unchanged,
+  so nothing the scorer reads can move.
+- **B3.7 already chooses the revision** (marker, else the later file). D1 adds
+  the comparison of the earlier draft and the labels. The date on the document
+  is not used: no document in the corpus carries one in a readable field.
+- **Labels,** per field, from `compare(SI, v1)` and `compare(SI, v2)`, where
+  "right" means the verdict is `match`:
+
+  | v1 | v2 | label |
+  |---|---|---|
+  | wrong | right | fixed |
+  | wrong | wrong | still wrong |
+  | right | wrong | new mistake |
+  | right | right | unchanged |
+
+- **An earlier draft that cannot be read:** the email is compared against v2
+  alone, the block says the previous draft could not be read, and no labels are
+  given.
+
+## D2 — Chase list
+
+- **Built in the page** from the entries it already holds: the demo's
+  `awaiting` emails and live mail with the same flag. There is no new table and
+  no new endpoint, which the #147 spec allows until the list has to survive a
+  restart.
+- **An item** is (sender domain, shipment reference). An email with no
+  reference is grouped by sender domain as "no reference".
+- **Age** comes from `received_at` for live mail. Demo emails have no date, so
+  they show "unknown".
+- **Closing:** a later email from the same sender domain that carries the same
+  reference and a readable BL closes the item. The sender alone never closes
+  one.
+- **Draft a reminder** reuses the reply box, with a written template. No model
+  call.
+
+## D3 — Teach it per customer
+
+- **`compare()` stays pure.** The service loads the customer's taught pairs at
+  its edge and passes them in. `make_results`, the mutation check and CI stay
+  offline and reproducible.
+- **The guard lives in the database and in Python, and they must agree:**
+  - `taught_names_match(a, b)` in SQL is a `CHECK` on the table, so a bad rule
+    is refused however it is written;
+  - `same_name_but_form()` in `normalise.py` is used by the comparator and the
+    tests;
+  - a test runs both over the same table of pairs on a local Postgres, and is
+    skipped without one.
+- **Only admins write.** Row-level security checks the signed-in email against
+  `admins`, the same test the reports queue uses. The page writes through
+  supabase-js and the service reads with the service key.
+- **customer_key** is the SI email's sender domain, lower case.
+- **The service reads the rules** through Supabase's REST API with a 60 s cache
+  per customer. If the read fails, the check runs with no rules, which is the
+  pre-D3 behaviour, and the failure is logged.
+- **The mutation check stays 630 of 630.** The guard refuses every pair a
+  planted defect makes (a different company, a dropped letter), and a test
+  proves it over every mutation in the check.
