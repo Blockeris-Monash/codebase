@@ -9,7 +9,7 @@ def glyph_ship(size):
     """The Ship Happens mark: the same ship the app draws in its header.
 
     Traced from the inline SVG in frontend/index.html, which works in a 64-unit
-    box — mast, funnel, two deck houses, a row of windows and a trapezoid hull.
+    box: mast, funnel, two deck houses, a row of windows and a trapezoid hull.
     Redrawn here rather than rasterised because the shapes are all rectangles
     and one polygon, and pulling in an SVG renderer for that would be a
     dependency for a script that runs once.
@@ -69,7 +69,7 @@ def tile(px, radius_frac, bleed):
     # so it takes the simplified mark at a larger fraction.
     draw_glyph, fraction = (glyph_ship_small, 0.80) if px <= SMALL_ICON_PX else (glyph_ship, 0.58)
     gs = int(big * fraction)
-    # Always draw the glyph large, then scale down — small geometry breaks Pillow
+    # Always draw the glyph large, then scale down: small geometry breaks Pillow
     g = draw_glyph(1024).resize((gs, gs), Image.LANCZOS)
     img.alpha_composite(g, ((big-gs)//2, (big-gs)//2))
     return img.resize((px, px), Image.LANCZOS)

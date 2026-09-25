@@ -2,7 +2,7 @@
 
 The mentor asked for a timed manual-versus-system comparison as the impact
 evidence. A badly built one is worse than none, because a judge will take it
-apart — so the two things that would invalidate it are held here.
+apart, so the two things that would invalidate it are held here.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_the_reader_is_given_the_same_names_the_scorer_expects() -> None:
     """The sheet tells them to write "Gross weight". The results carry
     `gross_weight_kg`, which a naive underscore swap turns into "gross weight
-    kg" — so every correct answer would score as wrong, and the test would
+    kg", so every correct answer would score as wrong, and the test would
     report a human accuracy far below the truth."""
     assert FIELD_NAMES["gross_weight_kg"] == "Gross weight"
     assert FIELD_NAMES["container_count"] == "Containers"

@@ -1,4 +1,4 @@
-"""Lane A — every attachment format reaches the same labelled pairs."""
+"""Lane A: every attachment format reaches the same labelled pairs."""
 from __future__ import annotations
 
 from pathlib import Path

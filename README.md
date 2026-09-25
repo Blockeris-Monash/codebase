@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 0 failed, 80 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,10 +108,10 @@ python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 0 failed, 80 skipped (skips need a model key)
 ```
 
-If the tests print 932 passed, you are done — that is the whole system checked
+If the tests print 0 failed, you are done: that is the whole system checked
 offline, with no key and no network. The 80 skips are the tests that reach a
 model over the network; they stay skipped unless you ask for them by name.
 
@@ -135,7 +135,7 @@ says what it proved:
 
 That is a selection; the run prints all seventeen areas.
 
-Five further tests reach a model over the network and are **skipped unless you
+The 80 skipped tests reach a model over the network and are **skipped unless you
 ask for them by name** — `SHIP_HAPPENS_LIVE=1` plus the matching key. A key on
 its own is not enough, deliberately: a Gemini or Qwen key left in the
 environment from another project used to unskip them, fire live calls and fail,
@@ -194,6 +194,11 @@ Python 3.12.
 `GET /mailbox` and `POST /reply` are the live mailbox: they read the signed-in
 person's own Gmail and send a reply in the original thread, and both need a
 Google token sent by the browser, never a key in the environment.
+`POST /draft-reply` drafts a reply for one checked mailbox email when the person
+asks (same Google token; Gemini first, Qwen as backup), and `POST /refine`
+rewrites a draft to an instruction such as "shorter". `POST /check-files` checks
+an uploaded SI and draft BL with no sign-in, and `POST /recompare` compares one
+field again after a reviewer fixes a reading, with no model call.
 
 `cli.demo_pipeline` above builds that body for you. `/translate` renders an
 email into English, Malay or Chinese; it has no caller in the review app, whose
@@ -311,7 +316,8 @@ serves. Anything you run by hand is under `cli/`.
 backend/
 ├── contracts.py      the five contract types, one source of truth
 ├── app.py            FastAPI service: /health, /classify, /extract-clean-compare,
-│                    /process-email, /translate
+│                    /process-email, /translate, /mailbox, /reply, /draft-reply,
+│                    /refine, /check-files, /recompare
 ├── translate.py      the /translate endpoint's model call
 ├── classify.py       stage 1 - email to category
 ├── read/             stage 2 - file bytes to (label, value) pairs
@@ -397,7 +403,7 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 What we would build next, in order. None of it is in this version.
 
 **1. Act on the 91 we cannot compare.** Of the 220 emails routed to comparison,
-129 arrive with both documents and **91 are waiting on a draft Bill of Lading
+129 are ready to check (124 with both documents attached) and **91 are waiting on a draft Bill of Lading
 that has not been sent yet**. We already file those on their own rather than as
 review cases; the next step is to do something with them. A chase list: who owes
 which draft BL, against which shipment reference — 80 of the 91 already carry

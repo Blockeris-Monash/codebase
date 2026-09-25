@@ -1,4 +1,4 @@
-"""X12 EDI 304 — the format real shipping runs on, none of it in the dataset.
+"""X12 EDI 304: the format real shipping runs on, none of it in the dataset.
 
 Tested against a real published carrier specification rather than a sample
 we invented. See tests/samples/Edi304Sample.edi.

@@ -1,6 +1,6 @@
 """Typed shapes for the five stage contracts.
 
-Mirrors `contracts/0N-*.schema.json`. The schema stays authoritative — these
+Mirrors `contracts/0N-*.schema.json`. The schema stays authoritative: these
 exist so the pipeline is type-checked and editors complete field names. When
 a schema changes, change the matching TypedDict in the same commit.
 """
@@ -84,11 +84,11 @@ EmailRecord = TypedDict("EmailRecord", {
     "body": str,
     "attachments": list[Attachment],
 })
-"""Contract 1 — loader output."""
+"""Contract 1: loader output."""
 
 
 class ClassificationResult(TypedDict):
-    """Contract 2 — one per email, all 520."""
+    """Contract 2: one per email, all 520."""
     email_id: str
     category: str
     decided_by: str
@@ -103,7 +103,7 @@ class ExtractedField(TypedDict):
 
 
 class DocumentExtract(TypedDict):
-    """Contract 3 — one per attachment."""
+    """Contract 3: one per attachment."""
     email_id: str
     declared_role: str
     source_path: str
@@ -123,7 +123,7 @@ class ComparisonRow(TypedDict):
 
 
 class ComparisonResult(TypedDict):
-    """Contract 4 — the seven-row table."""
+    """Contract 4: the seven-row table."""
     email_id: str
     status: str
     review_reason: str | None
@@ -133,7 +133,7 @@ class ComparisonResult(TypedDict):
 
 
 class SubmissionEntry(TypedDict):
-    """Contract 5 — exactly the sample_submission.json shape."""
+    """Contract 5: exactly the sample_submission.json shape."""
     category: str
     status: str
     review_reason: str | None
@@ -142,7 +142,7 @@ class SubmissionEntry(TypedDict):
 
 
 class Scenario(TypedDict):
-    """One entry of cli/Scenarios.json — which email a fixture uses and why."""
+    """One entry of cli/Scenarios.json: which email a fixture uses and why."""
     name: str
     email_id: str
     category: str
