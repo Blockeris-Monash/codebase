@@ -42,7 +42,7 @@ def test_the_popup_says_why_and_offers_sign_in() -> None:
 def test_the_popup_is_drawn_and_can_be_closed() -> None:
     assert '${S.reportDlg?reportSignInHTML():""}' in INDEX
     assert 'else if(a==="reportclose"){ S.reportDlg=false; }' in INDEX
-    assert 'else if(a==="reportsignin"){ S.reportDlg=false; window.Store?.signIn(); return; }' in INDEX
+    assert 'else if(a==="reportsignin"){ S.reportDlg=false; startSignIn(); return; }' in INDEX
     assert "S.reportDlg=false; S.langMenu=false; render(); return; }" in INDEX
 
 
