@@ -808,3 +808,224 @@ insecure context) still says "Copied".
 
 **Test.** Both sites await `writeText` and set their "copied" state only in the
 resolved branch. Run with node and a stub clipboard that rejects.
+
+---
+
+# B4 — Architecture and operations
+
+## B4.1 In-memory state is bounded, and a second worker is announced
+
+**Problem.** `MAILBOXES`, `ORIGINALS`, `FAILURES`, the rate limiter and the
+breakers live in one process's memory, and nothing is ever evicted from the
+first three. With two workers, or after a restart:
+- a poll can land on a process that never checked the mail;
+- the rate limit counts per process;
+- a breaker opens in one process only.
+
+**Scope.** #139 already tracks scaling, meaning a shared store. This item makes
+the single process safe to run for weeks, and makes it announce that it is on
+its own.
+
+**Approach.**
+- **`BoundedStore`** (`backend/state.py`, stdlib) is a dict with a time-to-live
+  and a cap on the number of entries. The least recently used entry is dropped
+  first, and every read refreshes it.
+  - It replaces each mailbox's entries, the originals and the failure counts.
+  - Defaults: 24 h and 500 messages per mailbox; 1,000 mailboxes.
+  - All three limits are env-configurable with those defaults.
+- **At startup**, `WEB_CONCURRENCY` above 1 (the variable uvicorn, gunicorn and
+  Render use) logs one warning. It names the state that will not be shared and
+  points to #139.
+
+**Rejected alternative.** Redis now. A new service and a new secret, for a
+deployment that runs one instance. That is #139's decision.
+
+**Tests.**
+- Entries expire after the TTL.
+- The cap drops the least recently used entry.
+- A read refreshes an entry.
+- The warning is logged exactly when `WEB_CONCURRENCY` exceeds 1.
+
+## B4.2 Gmail attachments and bodies are not kept for the life of the process
+
+**Problem.** A checked message's attachments stay in
+`/tmp/shiphappens-mailbox/<hash>/<id>/` for good. The entry already carries
+each document's text and pairs, so nothing reads the files again. Bodies stay
+in `ORIGINALS` for good too.
+
+**Approach.**
+- The attachment folder is deleted as soon as the check has built the entry,
+  including when the check fails.
+- `ORIGINALS` is a `BoundedStore` (B4.1), so a body lives only as long as its
+  entry. `/draft-reply` needs the body while the email is on screen, not
+  forever.
+- D7, scheduled deletion, stays out, as you decided.
+
+**Tests.**
+- After a check, the message's folder is gone and the entry still shows both
+  documents.
+- After a failed check, the folder is gone as well.
+
+## B4.3 A migration runner: the Supabase CLI
+
+**Problem.** Migrations are pasted into the SQL editor by hand, and nothing
+records which ones have been applied. Two different files are numbered 0007.
+`0003` fails on a second run (`create table policies`).
+
+**Approach.**
+- **Files move** to `supabase/migrations/<version>_<name>.sql`. Each version is
+  the file's first-commit time in git, so the order is the order they were
+  written in, and the two 0007s become distinct versions.
+- **The CLI records what is applied.** `supabase db push` applies pending files
+  in order and records each in `supabase_migrations.schema_migrations`.
+  `supabase/config.toml` is the minimal file the CLI needs.
+- **Every file can be re-run:** `if not exists`, `create or replace`, and
+  `drop ... if exists` before a create. That matters for the hand-applied
+  history below.
+- **A runbook** in `supabase/README.md`:
+  1. install the CLI;
+  2. run `supabase link`;
+  3. mark what was already applied by hand, using
+     `supabase migration repair --status applied <versions>`;
+  4. run `supabase db push`.
+
+  The CLI cannot know what the SQL editor applied, so the runbook gives a
+  query that shows which objects exist. You decide the repair list, not this
+  branch.
+- **Verified locally:** every file applies in order on a Postgres 16 with
+  pgvector and a stub `auth` schema, then applies a second time without error.
+  That is also a test, skipped when no Postgres is available.
+
+**Rejected alternative.** A psycopg runner with its own ledger. You chose the
+CLI, which is the standard tool for a Supabase project.
+
+**Refactor sweep.** Every test, doc, CHANGELOG line and code-standards note
+that names `backend/db/migrations/` is updated.
+
+## B4.4 Health: liveness and readiness
+
+**Problem.** `/health` checks nothing. That is right for liveness, because
+Render restarts a service whose health check fails, and a paused Supabase must
+not cause a restart loop. But nothing checks readiness.
+
+**Approach.**
+- **`/health` is unchanged:** liveness only.
+- **New `/ready`:** one check per dependency, each with a 3 s timeout:
+  - the dataset and saved results are readable (required);
+  - Supabase answers, if it is configured (optional).
+
+  It returns 200 with each check's result, or 503 when a required check fails.
+  No secret and no error text is echoed; each check reports `ok` or `failed`.
+- Render's health check path stays `/health`. `/ready` is for monitors and for
+  people.
+
+**Tests.**
+- `/ready` answers 200 with the data present.
+- `/ready` answers 503 when the data directory is missing.
+- An optional check failing does not turn the answer into 503.
+- `/health` is unchanged.
+
+## B4.5 `backend` and `cli` stop importing each other; `app.py` is split
+
+**Problem.** `backend/app.py` imports `fallback_category`, `DRAFT_REQUEST`,
+`clean_body`, `document` and `shipment_ref` from `cli/make_results.py`, and
+`cli` imports `backend`. `app.py` is about 1,150 lines, holding routes, the
+mailbox, uploads and the cleaners.
+
+**Approach.**
+- **First, the cycle.**
+  - The five helpers move to `backend/mail_view.py` ("what the page draws for
+    one email"). `cli/make_results.py` imports them from there.
+  - A test asserts that no module under `backend/` imports `cli`.
+- **Then the split**, as the last commits on the branch, as you decided.
+  - Routers go in `backend/api/`: `pipeline.py` (extract, clean, compare,
+    classify, translate, recompare), `mailbox.py` (mailbox, draft-reply, reply,
+    refine), `upload.py` (check-files) and `health.py`.
+  - `backend/app.py` keeps the app, the middleware and `include_router`.
+  - The test suite patches names on `backend.app`, so every patch target moves
+    in the same commit.
+
+## B4.6 CI: lint, types, audit, and supply-chain hygiene (#140)
+
+**Problem.**
+- No lint, type check, `pip-audit` or `bandit`.
+- No `permissions:` block, so the token is broader than needed.
+- Actions are pinned by tag, which their owner can move.
+- The #159 near miss: a broken `i18n.js` reached a merge commit. It was caught
+  only because CI happened to run the JSON parse.
+
+**Approach.**
+- **`permissions: contents: read`.**
+- **Each action pinned** to a full commit SHA, with its tag in a comment.
+- **A `lint` job**, separate from the tests, so a style failure never hides a
+  test failure:
+  - `ruff check` with the default rules plus `B` (bugbear) and `S` (bandit's
+    rules inside ruff). Existing findings are fixed, or kept with a reason,
+    not blanket-ignored.
+  - `mypy` on a ratchet. The modules that pass today are listed in
+    `pyproject.toml`, and a module joins the list once it passes, never
+    leaves. A single clean run of the whole backend would mean rewriting code
+    this branch has no reason to touch.
+  - `pip-audit -r requirements.txt`.
+  - `bandit -r backend cli -ll` (medium and above).
+  - `node --check` on `i18n.js`, `store.js`, `sw.js`, `config.js` and every
+    inline script in both pages, extracted by a small stdlib helper.
+  - `python -m cli.csp --check`.
+- **The same checks locally, before a commit.** `.githooks/pre-commit` runs the
+  node checks and the i18n parse. `git config core.hooksPath .githooks` turns
+  it on, and CONTRIBUTING says so. No `pre-commit` package is needed.
+- **Handed to you:** branch protection requiring CI to pass before a merge. It
+  is a GitHub setting, not a file.
+
+## B4.7 A lockfile with hashes, and no pytest in production
+
+**Problem.** About 95 transitive dependencies float, there are no hashes, and
+`pytest` is in `requirements.txt`, so Render installs it.
+
+**Approach.**
+- **Two input files:**
+  - `requirements.in` holds the runtime's direct dependencies, exactly the
+    pins there today;
+  - `requirements-dev.in` holds `-r requirements.in` plus pytest, ruff, mypy,
+    pip-audit and bandit.
+- **Both are compiled with `uv pip compile --generate-hashes --universal
+  --python-version 3.11`** into `requirements.txt` and `requirements-dev.txt`.
+  Universal resolution covers 3.11 and 3.12 on every platform.
+- **Install commands:**
+  - Render still runs `pip install -r requirements.txt`, which now installs
+    exactly the locked set, hash-checked.
+  - CI installs `requirements-dev.txt`.
+- **A test** keeps the compiled file in step with the `.in` file: every direct
+  pin in the `.in` file appears in the lock, and the lock has a hash on every
+  line.
+
+## B4.8 Tests that read `index.html` as text
+
+**Problem.**
+- About 35% of tests assert on the page's source text, not on what it does.
+- The prompt-injection test's mock makes its own assertion circular.
+
+**Approach.**
+- **Fix the circular test** so it asserts on what reaches the model, not on
+  the fake.
+- **`tests/js_runner.py`**, added in B2, runs the page's real functions in
+  node with no npm dependency. New frontend tests use it. B2's eight changes
+  are all tested this way.
+- **The existing source-text tests stay** until they are rewritten. Deleting
+  them removes a guard, and rewriting 36 files is its own change. A count in
+  the spec's closing notes tracks them.
+- **A DOM-level runner** (jsdom or Playwright) would be a new dependency. It is
+  offered, not added.
+
+## B4.9 Stray scripts
+
+**Problem.** `test_embed.py`, `scratch/test_rag.py`, `scratch/test_pdf.py`,
+`scratch/test_si_request.py` and `backend/extract/sample.py` make live model
+calls when imported, and the first four match `test_*.py`. `pytest
+test_embed.py` would spend quota, and `sample.py` runs on import.
+
+**Approach.**
+- Delete all five.
+- A test asserts that no `test_*.py` exists outside `tests/`, and that no
+  module under `backend/` does work at import beyond definitions. The second
+  is checked by importing every backend module with the network blocked.
