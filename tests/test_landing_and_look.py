@@ -28,8 +28,9 @@ def branch(action: str) -> str:
 
 
 def test_the_site_opens_on_the_landing_page() -> None:
-    route = re.search(r"const onHome = .*\n", SCRIPT).group(0)
+    route = re.search(r"const isHome = .*\n", SCRIPT).group(0)
     assert '!location.hash' in route and '"#/"' in route
+    assert "const onHome = isHome();" in block("function render(){")
     assert "homePage()" in block("function render(){")
 
 

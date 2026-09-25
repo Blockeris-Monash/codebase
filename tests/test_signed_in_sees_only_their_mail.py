@@ -47,7 +47,7 @@ def test_signed_in_the_account_menu_switches_between_your_mail_and_the_demo_acco
 
 def test_signed_out_the_inbox_shows_the_demo_account_with_a_way_to_sign_in() -> None:
     menu = account_menu()
-    assert 'if(!S.user && onHome())' in menu  # the landing page keeps its plain Sign in button
+    assert 'if(!S.user && isHome())' in menu  # the landing page keeps its plain Sign in button
     assert 'data-a="signin"' in menu
 
 
@@ -107,3 +107,16 @@ def test_the_screen_while_a_sign_in_arrives_shows_no_nan_and_no_demo_switch() ->
     wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
     assert "if (!user) signInReturn = false;" in wiring[:wiring.index("\n  });")]
     assert 'if(!S.authReady || (!S.user && signInReturn)) return "";' in INDEX  # no Sign in button either
+
+
+def test_the_landing_page_never_flashes_between_google_and_my_mailbox() -> None:
+    """Back from Google, supabase-js clears the token with `location.hash = ''`, which
+    fires hashchange: the page drew the landing page for an empty address, then the
+    inbox once the sign-in landed. While a sign-in arrives the address is not the
+    landing page, and the inbox address is set before the signed-in page is drawn."""
+    assert 'const isHome = ()=>!signInReturn && (!location.hash || location.hash==="#/");' in INDEX
+    assert "const onHome = isHome();" in INDEX  # render() reads the same rule
+    wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
+    wiring = wiring[:wiring.index("\n  });")]
+    set_inbox = wiring.index('history.replaceState(null, "", location.pathname + "#/inbox");')
+    assert set_inbox < wiring.index("render();"), "the inbox address must be set before the first render"
