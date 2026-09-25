@@ -7,6 +7,7 @@ from google import genai
 from backend import reports, settings
 from backend.classify import EmailInput
 from backend.extract.fallback import with_fallback
+from backend.extract.circuit_breaker import CircuitBreaker
 
 # backend/settings.py is the one place that decides which environment variable
 # names count. Read directly here, this module disagreed with the rest of the
@@ -24,6 +25,8 @@ else:
     supabase = None
 
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+qwen_reply_breaker = CircuitBreaker()
 
 def strip_dangerous_tags(text: str) -> str:
     """Basic programmatic sanitization to mitigate LLM05 (Improper Output Handling)"""
@@ -78,7 +81,7 @@ def qwen_generate(prompt: str, system_instruction: str) -> str:
     }
 
     request = urllib.request.Request(f"{base_url}/v1/messages", data=json.dumps(body).encode(), headers=headers)
-    with urllib.request.urlopen(request, timeout=120) as response:
+    with urllib.request.urlopen(request, timeout=float(os.environ.get('QWEN_TIMEOUT_SECONDS', 15))) as response:
         reply = json.load(response)
         
     reply_text = "".join(block.get("text", "") for block in reply["content"])
@@ -139,8 +142,9 @@ GLOBETRANS POLICY CONTEXT:
         return gemini_generate(text, system_instruction)
         
     generate_fn = with_fallback(
-        try_qwen, 
+        qwen_reply_breaker.wrap(try_qwen, skip_allowed=lambda: bool(GEMINI_API_KEY)), 
         try_gemini, 
+        first_timeout=15,
         enabled=lambda: bool(GEMINI_API_KEY)
     )
 
