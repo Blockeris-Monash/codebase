@@ -295,10 +295,8 @@ window.I18N = {
   "Reply sent from your Gmail": "Balasan dihantar dari Gmail anda",
   "Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back.": "Hantar balasan menghantar e-mel ini dari Gmail anda, dalam perbualan yang sama. Semak dahulu: e-mel yang telah dihantar tidak boleh ditarik balik.",
   "Sending...": "Menghantar...",
-  "Sign in with Google again to see your mailbox.": "Log masuk dengan Google sekali lagi untuk melihat peti mel anda.",
   "Sign in with Google again to send from your Gmail.": "Log masuk dengan Google sekali lagi untuk menghantar dari Gmail anda.",
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "Log masuk melalui Google, dan kami tidak menyimpan kata laluan atau kunci Gmail. Aplikasi ini boleh membaca peti masuk anda dan menghantar balasan yang anda tekan Hantar. Ia tidak boleh memadam atau mengubah e-mel anda.",
-  "Signed in as {name}.": "Log masuk sebagai {name}.",
   "Open in Gmail": "Buka dalam Gmail",
   "Loading your mailbox...": "Memuatkan peti mel anda...",
   "Writes a draft reply, and sends it from your own Gmail when you press Send": "Menulis draf balasan, dan menghantarnya dari Gmail anda sendiri apabila anda menekan Hantar",
@@ -331,7 +329,10 @@ window.I18N = {
   "Get started": "Mula",
   "Choose how to check your documents": "Pilih cara menyemak dokumen anda",
   "By the numbers": "Dalam angka",
-  "How Ship Happens performs": "Prestasi Ship Happens"
+  "How Ship Happens performs": "Prestasi Ship Happens",
+  "Gmail access lasts an hour. Reconnect Gmail to see your mailbox.": "Akses Gmail bertahan sejam. Sambung semula Gmail untuk melihat peti mel anda.",
+  "Reconnect Gmail": "Sambung semula Gmail",
+  "Checking {n} emails. Each one shows here as soon as it is checked.": "Menyemak {n} e-mel. Setiap satu dipaparkan di sini sebaik sahaja disemak."
  },
  "zh": {
   "What the scan says": "扫描件上的内容",
@@ -627,10 +628,8 @@ window.I18N = {
   "Reply sent from your Gmail": "回复已从您的 Gmail 发出",
   "Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back.": "“发送回复”会从您的 Gmail 在同一对话中发出此邮件。请先检查：邮件发出后无法撤回。",
   "Sending...": "正在发送...",
-  "Sign in with Google again to see your mailbox.": "请重新使用 Google 登录以查看您的邮箱。",
   "Sign in with Google again to send from your Gmail.": "请重新使用 Google 登录以从您的 Gmail 发送。",
   "Sign-in goes through Google, and we store no passwords and no Gmail keys. The app can read your inbox and send the replies you press Send on. It cannot delete or change your mail.": "登录通过 Google 完成，我们不保存密码，也不保存 Gmail 密钥。本应用可以读取您的收件箱，并发送您按下“发送”的回复。它无法删除或更改您的邮件。",
-  "Signed in as {name}.": "已登录为 {name}。",
   "Open in Gmail": "在 Gmail 中打开",
   "Loading your mailbox...": "正在加载您的邮箱...",
   "Writes a draft reply, and sends it from your own Gmail when you press Send": "撰写回复草稿，并在您按下“发送”时从您自己的 Gmail 发出",
@@ -663,6 +662,9 @@ window.I18N = {
   "Get started": "开始使用",
   "Choose how to check your documents": "选择检查文件的方式",
   "By the numbers": "数据一览",
-  "How Ship Happens performs": "Ship Happens 的表现"
+  "How Ship Happens performs": "Ship Happens 的表现",
+  "Gmail access lasts an hour. Reconnect Gmail to see your mailbox.": "Gmail 访问权限有效期为一小时。请重新连接 Gmail 以查看您的邮箱。",
+  "Reconnect Gmail": "重新连接 Gmail",
+  "Checking {n} emails. Each one shows here as soon as it is checked.": "正在检查 {n} 封邮件。每封检查完毕后会立即显示在这里。"
  }
 };
