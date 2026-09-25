@@ -509,6 +509,12 @@ async def process_email(
             # A thread, not a direct call: it waits on the AI for up to 120 s, and a blocking
             # call here would stop every other request (#96).
             draft_reply = await asyncio.to_thread(generate_rag_reply, email, classification.category)
+        elif classification.category == "SI_REQUEST":
+            from backend.si_request import process_si_request
+            draft_reply, pdf_path, extracted_fields = await asyncio.to_thread(process_si_request, email)
+            # if pdf_path is generated, we can append a note or somehow tell the frontend
+            if pdf_path:
+                draft_reply += f"\n\n[SYSTEM NOTE: {pdf_path} was generated successfully.]"
 
         return {
             "email_id": email.email_id,
