@@ -288,3 +288,282 @@ from the #145 review:
   - one field missing gives the missing-fields reply and no PDF
   - a non-Latin-1 value draws
   - the extractor raising gives `draft_reply=None`, never a 500
+
+---
+
+# B3 — Pipeline gaps
+
+Every item here is about data we have not seen, so none may move a submitted
+number. The invariants above run after each commit.
+
+`results.js` also carries display text: the reader's pairs and the raw and
+normalised values. A reader fix that adds a continuation line to a pair changes
+those bytes without changing a verdict. So the check becomes: every email's
+category, status, review reason, defect fields and row verdicts equal `main`'s,
+and any change to row text is listed and explained in the commit.
+
+## Where the rules live
+
+There are four places, and each fix below lands in every one that applies:
+
+| Where | Used by |
+|---|---|
+| `backend/read/documents.py` | the readers, every path |
+| `backend/compare/normalise.py` | the reference path (`rules.py`, fixtures, the edge-case runner) and, from now on, the shared helpers |
+| `app.py` `clean_*` | production normalising, before `compare()` |
+| `comparator.py` `compare_single_field` | the production verdict |
+
+A new rule is written once, in `normalise.py`, and called from the other
+places. It is never copied.
+
+## B3.1 A party name wrapped onto a second line (xfail `edge_b8`)
+
+**Problem.**
+- `CONSIGNEE: MOORIM SP` followed by the indented line `CO., LTD` is one
+  name, but the reader keeps only the first line.
+- The BL writes `MOORIM SP CO., LTD` on one line, so the pair is a false
+  mismatch.
+- Word and PDF have the same shape, with the wrap as a ` | ` segment.
+
+**Approach.**
+- The `.txt` reader keeps indented continuation lines (B3.2).
+- Name normalising then joins a following segment to the first only when that
+  segment is made entirely of legal-form words: CO, COMPANY, LTD, LIMITED, INC,
+  CORP, PTE, PVT, PTY, SDN, BHD, GMBH, AG, SA, SRL, BV, NV, LLC, PLC and KK,
+  with or without dots, commas or a leading `&`.
+- An address line (`656, GANGNAM-DAERO`) never qualifies, so the name still
+  ends where it did for every document in the dataset.
+- The rule is one function, `party_name()`, in `normalise.py`. `clean_entity`
+  and `normalise_name` both call it and keep their own final trimming, so
+  their normalised strings for dataset values stay byte-for-byte what they
+  were.
+
+**Rejected alternatives.**
+- **Join every continuation line.** The address would become part of the name,
+  and every SI/BL pair that splits the address differently becomes a mismatch.
+- **Join a line that has no digits.** City lines ("SEOUL, SOUTH KOREA") have
+  none.
+
+**Tests.**
+- `edge_b8` passes and its `known_gap` is removed.
+- `party_name` joins `CO., LTD`, `PTE. LTD.` and `& CO`, and does not join an
+  address or a city.
+- A name really cut short against a full one is still a mismatch
+  (`MOORIM SP` against `MOORIM SP CO., LTD`).
+
+## B3.2 A value on the line after its label (.txt and PDF)
+
+**Problem.**
+- `.txt`: `read_txt` splits each line on `:`. For `Consignee:` with the name
+  on the next line, the pair is `("Consignee", "")`, which is blank, so the
+  email escalates as missing_value on a field that is filled. The docstring
+  already promises that "an indented line continues the value above". The code
+  never did it.
+- PDF: a label line with a trailing colon (`Consignee:`) is not recognised as
+  a label, because `canonical_field("Consignee:")` does not match, so the
+  lines beneath it are dropped.
+
+**Approach.**
+- **`read_txt`:**
+  - An indented, non-blank line continues the current pair's value, joined
+    with `\n`.
+  - An unindented line without a colon continues the value only when that
+    value is still empty, which is the label-on-its-own-line case.
+  - A blank line ends the current pair.
+  - An unindented `x: y` line starts a new pair, as today.
+- **`_pdf_pairs`:** a line that is a label once its trailing colon is removed
+  is a label line. The trailing colon is dropped from the label it records.
+
+**Rejected alternative.** Append every unindented colon-less line to the value
+above. A free-text line under `Description of Goods` is harmless, but under
+`Gross Weight` it would be read by the weight parser.
+
+**Tests.** `.txt` and PDF cases for a label alone with its value beneath, an
+indented continuation, and a blank line ending the value. Every existing
+reader test still passes.
+
+## B3.3 A four-column Word table
+
+**Problem.** `read_docx` takes the first cell of a row as the label and joins
+the rest as its value. `Shipper | APRIL | Consignee | MOORIM` becomes
+`("Shipper", "APRIL | Consignee | MOORIM")`: the consignee is lost and the
+shipper is wrong. `read_xlsx` has the same line.
+
+**Approach.** One shared `row_pairs(cells)`:
+- A row whose first cell is not a known label keeps today's behaviour.
+- A row whose first cell is a label is split at every later cell that is a
+  known label and has a cell after it. Each label takes the cells up to the
+  next label as its value.
+- `read_docx` and `read_xlsx` both call it. It is the second occurrence, so it
+  is extracted.
+
+**Tests.**
+- A four-column row gives two pairs, in Word and in Excel.
+- A two-column row is unchanged.
+- A row whose first cell is not a label is unchanged.
+
+## B3.4 Container count compares only the first number
+
+**Problem.** Both paths compare the leading integer, so `1×20GP + 1×40HC`
+against `1×20GP + 2×40HC` is 1 = 1: OK.
+
+**Approach.**
+- `container_groups(value)` in `normalise.py` reads every `N x SIZE` group
+  (`x`, `X`, `×` or `*`, any spacing, and any type letters after the size)
+  into a count per size, and writes it canonically (`20:1+40:2`).
+- When both sides have groups, they must be equal. When either side has none
+  (`2`, `TWO CONTAINERS`), the leading integer decides, as today.
+- The reference normaliser returns the canonical string, and the production
+  comparator calls the same function. They cannot drift.
+
+**Sized, not typed.** `40HC` against `40HQ`, or `20GP` against `20DV`, are
+synonyms in the trade. Comparing the type letters would call them a defect.
+The field is a count, so it is compared per size.
+
+**Tests.**
+- The issue's pair is a mismatch.
+- `2 x 40'HC` against `2 X 40HC` is a match.
+- `2` against `2 x 40HC` is a match (the fallback).
+- `1 x 20GP + 1 x 40HC` against `1 x 40HC + 1 x 20GP` is a match (order).
+
+## B3.5 Decimal-comma weights (xfail `edge_b3c`)
+
+**Problem.** `21.577,00 KG` is read as 21.577 kg.
+
+**Approach.** `parse_number(text)` in `normalise.py` decides by which
+separator comes last, which is the standard disambiguation:
+- `1.234,56` or `1.234.567`: European. The dots group thousands, and a comma
+  after them is the decimal point.
+- `1,234.56` or `1,234`: the dataset's form, and today's behaviour.
+- A lone `21.577` stays 21.577. It is truly ambiguous, and today's reading is
+  kept, so no dataset value moves.
+
+`WEIGHT_NUMBER` in `app.py` gains the European shape, so the number is found
+at all, and `as_number` and `normalise_weight` both call `parse_number`.
+
+**Tests.**
+- `edge_b3c` passes.
+- `21.577,00`, `1.234.567` and `21 577,5` are read the European way.
+- `40,326`, `40,326.5` and `12.5` read as today.
+
+## B3.6 Document titles need an exact first line
+
+**Problem.** `detect_doc_type` looks the first line up in a dict. `SHIPPING
+INSTRUCTIONS`, `DRAFT BILL OF LADING` and `SEA WAYBILL` are therefore the
+"wrong document".
+
+**Approach.** Two anchored patterns, tried SI first, because "BILL OF LADING
+INSTRUCTION" is an SI:
+- SI: `(SHIPPING|BILL OF LADING|B/?L) INSTRUCTIONS?`, then anything.
+- BL: optional `DRAFT`, then `BILL OF LADING`, `B/L` or `SEA WAYBILL`, with
+  anything after it except `INSTRUCTION`.
+
+Anything else still returns its own title, so wrong_doc_type keeps naming
+`COMMERCIAL INVOICE` or `PACKING LIST`.
+
+**Tests.**
+- The five new titles map correctly.
+- Every title in the corpus maps as today (mutation and rules-first).
+- `COMMERCIAL INVOICE` still comes back as itself.
+
+## B3.7 A revised BL in the same email (xfail `edge_a7`)
+
+**Problem.** The service takes the first file with `_BL.` in its name. When
+`email_908_BL.txt` sits beside `email_908_BL_REVISED.txt`, the first draft is
+compared and the revision is ignored: a false mismatch. An amended SI, or
+several SIs, are handled the same way.
+
+**Approach.**
+- For each role, the candidate files are those with the role in their name. A
+  revision is chosen as:
+  1. a file whose name or title carries a revision marker (`REVISED`,
+     `AMENDED`, `REV`, `V2` and up, `(2)`), the highest number winning;
+  2. otherwise the last candidate in attachment order.
+- The evidence says which file was used and which was set aside:
+  `Revised BL email_908_BL_REVISED.txt used; email_908_BL.txt set aside.` The
+  reviewer is never left wondering.
+- **Not here (D1):** no `ambiguous_revision` reason and no revision block.
+  Both change contract 04.
+
+**Tests.**
+- `edge_a7` passes.
+- An amended SI is chosen the same way.
+- With no marker, the later file wins.
+- Two shipments (`edge_a8`) are unaffected.
+
+## B3.8 SAME AS CONSIGNEE, TO ORDER and TO ORDER OF a bank
+
+**Problem.**
+- A notify party written `SAME AS CONSIGNEE` on one document and as the
+  consignee's name on the other is a false mismatch.
+- `TO THE ORDER OF MAYBANK` against `TO ORDER OF MAYBANK` is a false mismatch.
+
+**Approach.**
+- **Notify party:** `SAME AS CONSIGNEE` (and `SAME AS CNEE`) is replaced by
+  that document's own consignee value before normalising. This happens in
+  `compare()` and `comparison_result()`. The raw value on screen stays as
+  written.
+- **Order wording:** `TO THE ORDER OF`, `TO ORDER OF` and `ORDER OF` normalise
+  to one form, `TO ORDER OF`. Plain `TO ORDER` stays `TO ORDER`. This is done
+  in `party_name`.
+- **Deliberately unchanged:** `TO ORDER` against `TO ORDER OF <bank>` stays a
+  mismatch. A negotiable BL consigned to a bank is not the same instruction as
+  one to order.
+
+**Tests.**
+- Each false mismatch above now matches.
+- `SAME AS CONSIGNEE` against a *different* name is still a mismatch.
+- `TO ORDER` against `TO ORDER OF BANK` is still a mismatch.
+
+## B3.9 The comparator crashes on a null field
+
+**Problem.** `si_fields.get(name, {})` returns `None` when the key is present
+with a null value, and `.get` on it raises. `fields: null` raises the same way.
+
+**Approach.** Use `or {}` at both levels, in the comparator and in
+`apply_cleaner`. A null field is treated as absent, so it becomes missing and
+escalates, and never crashes.
+
+**Tests.** A null field, and a null `fields`, each give NEEDS_REVIEW
+missing_value, not an exception.
+
+## B3.10 The contract validator enforces the if-and-only-if rules
+
+**Problem.** Contracts 04 and 05 describe the rules in prose, and nothing
+checks them:
+- `review_reason` is non-null if and only if the status is NEEDS_REVIEW;
+- `defect_fields` is non-empty if and only if the status is MISMATCH;
+- `has_defect` is true if and only if the status is MISMATCH.
+
+**Approach.**
+- **The rules go into the schemas as standard JSON Schema:** `allOf` of
+  `if`/`then`/`else`, each rule carrying a `description`. Any standard
+  validator now enforces them, not only ours.
+- **The stdlib validator gains** `allOf`, `if`/`then`/`else`, `const`,
+  `minItems` and `maxItems`. A failed rule reports its description
+  (`status is NEEDS_REVIEW if and only if review_reason is set`), not a
+  generic subschema error.
+- **Production enforces them too:** the pydantic `ComparisonResult` gets a
+  model validator, so the service cannot build a result that breaks its own
+  contract.
+
+**Tests.**
+- Each rule, broken each way, is reported with its description.
+- Every fixture, and every result in `results.js`, still validates.
+
+## B3.11 `SHIP_HAPPENS_VISION=1` does nothing live
+
+**Problem.** Nothing in the service calls `read_scan`. The demo's scan
+readings come from `results/vision/` through `cli/make_scans.py`. Yet the
+startup line prints `vision=on`.
+
+**Decision:** make the line true. Don't wire vision into live mail yet.
+- The scan readings are designed never to decide a verdict ("Nothing here
+  decides a verdict"). Wiring them live means a new entry field, the page
+  showing live scan readings, and cost controls on a paid call per scanned
+  attachment. That is a feature with its own spec, not a fix.
+- The startup line drops `vision`. If `SHIP_HAPPENS_VISION` is set, one
+  warning says that the live service does not read scans, and where the demo
+  readings come from.
+
+**Tests.** With the variable set, no `vision=on` is logged and the warning is.
