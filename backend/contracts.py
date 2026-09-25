@@ -6,11 +6,11 @@ a schema changes, change the matching TypedDict in the same commit.
 """
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 from typing import TypedDict
 
 
-class CategoryType(StrEnum):
+class CategoryType(str, Enum):
     BlComparison = "BL_COMPARISON"
     SiRequest = "SI_REQUEST"
     InvoiceQuery = "INVOICE_QUERY"
@@ -18,33 +18,33 @@ class CategoryType(StrEnum):
     Spam = "SPAM"
 
 
-class StatusType(StrEnum):
+class StatusType(str, Enum):
     Ok = "OK"
     Mismatch = "MISMATCH"
     NeedsReview = "NEEDS_REVIEW"
 
 
-class ReviewReasonType(StrEnum):
+class ReviewReasonType(str, Enum):
     WrongDocType = "wrong_doc_type"
     MissingAttachment = "missing_attachment"
     Unreadable = "unreadable"
     MissingValue = "missing_value"
 
 
-class VerdictType(StrEnum):
+class VerdictType(str, Enum):
     Match = "match"
     Mismatch = "mismatch"
     Missing = "missing"
 
 
-class ParseStatusType(StrEnum):
+class ParseStatusType(str, Enum):
     Ok = "ok"
     Unreadable = "unreadable"
     Missing = "missing"
     NotAttempted = "not_attempted"
 
 
-class FormatType(StrEnum):
+class FormatType(str, Enum):
     Txt = "txt"
     Pdf = "pdf"
     Docx = "docx"
@@ -53,12 +53,12 @@ class FormatType(StrEnum):
                     # extract stage is format-independent
 
 
-class DocumentRoleType(StrEnum):
+class DocumentRoleType(str, Enum):
     Si = "SI"
     Bl = "BL"
 
 
-class DecidedByType(StrEnum):
+class DecidedByType(str, Enum):
     Rule = "rule"
     Llm = "llm"
 

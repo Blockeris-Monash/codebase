@@ -943,3 +943,13 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
 # Last, so every name it reads is defined. One line naming what is switched on,
 # because each of these fails quietly when its variable is unset.
 say_what_is_switched_on()
+class RefineRequest(BaseModel):
+    email: EmailInput
+    current_draft: str
+    instruction: str
+
+@app.post("/refine")
+async def refine_draft_endpoint(request: RefineRequest) -> Dict[str, Any]:
+    from backend.reply import refine_rag_reply
+    draft_reply = await asyncio.to_thread(refine_rag_reply, request.email, request.current_draft, request.instruction)
+    return {"draft_reply": draft_reply}
