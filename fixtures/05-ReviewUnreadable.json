@@ -45,12 +45,12 @@
         "shipper": {
           "present": true,
           "label_seen": "Shipper",
-          "raw": "APRIL FINE PAPER TRADING"
+          "raw": "APRIL FINE PAPER TRADING\nON BEHALF OF VITAL SOLUTIONS PTE LTD; 77 ROBINSON ROAD, #21-01; SINGAPORE 068896"
         },
         "consignee": {
           "present": true,
           "label_seen": "To the Order of",
-          "raw": "AL GURG STATIONERY LLC"
+          "raw": "AL GURG STATIONERY LLC\nP.O. BOX 5069; DUBAI, UNITED ARAB EMIRATES"
         },
         "notify_party": {
           "present": true,

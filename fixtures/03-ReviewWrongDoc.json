@@ -45,12 +45,12 @@
         "shipper": {
           "present": true,
           "label_seen": "Shipper",
-          "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE"
+          "raw": "APRIL FINE PAPER TRADING (MIDDLE EAST) FZE\n#813, 4 EA, DUBAI AIRPORT FREE ZONE; P.O. BOX: 293775, DUBAI, UNITED ARAB EMIRATES"
         },
         "consignee": {
           "present": true,
           "label_seen": "CONSIGNEE",
-          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD."
+          "raw": "KPP-ANTALIS (SINGAPORE) PTE. LTD.\n8 TEMASEK BOULEVARD; #42-01 SUNTEC TOWER 3; SINGAPORE 038988"
         },
         "notify_party": {
           "present": true,

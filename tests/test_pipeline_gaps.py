@@ -6,6 +6,8 @@ upload would meet.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from backend import app as app_module
@@ -13,6 +15,7 @@ from backend.compare.comparator import compare
 from backend.compare.normalise import compare_row, normalise
 from backend.contracts import FIELD_NAMES
 from backend.extract.rules import comparison_result
+from backend.read.documents import _pdf_pairs, read_txt
 from backend.read.labels import detect_doc_type
 
 
@@ -185,3 +188,46 @@ def test_same_as_consignee_is_still_shown_as_written() -> None:
 ])
 def test_order_wording_is_one_form(si: str, bl: str, verdict: str) -> None:
     assert every_path("consignee", {"consignee": si}, {"consignee": bl}) == {verdict}
+
+
+# --- B3.2 ------------------------------------------------------------------
+
+def txt_pairs(tmp_path: Path, text: str) -> dict[str, str]:
+    path = tmp_path / "doc.txt"
+    path.write_text(text, encoding="utf-8")
+    return dict(read_txt(path))
+
+
+def test_a_txt_value_on_the_line_below_its_label_is_read(tmp_path: Path) -> None:
+    """Consignee: with the name beneath it was ("Consignee", ""), a blank on a filled field."""
+    pairs = txt_pairs(tmp_path, "Consignee:\nMOORIM SP CO., LTD\n\nVessel: X\n")
+
+    assert pairs["Consignee"] == "MOORIM SP CO., LTD"
+    assert pairs["Vessel"] == "X"
+
+
+def test_an_indented_line_continues_the_value_above(tmp_path: Path) -> None:
+    pairs = txt_pairs(tmp_path, "Shipper: APRIL FAR EAST (M) SDN BHD\n  TOWER 2, AVENUE 5\nNotify: UAB NOVAKOPA\n")
+
+    assert pairs["Shipper"] == "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5"
+    assert pairs["Notify"] == "UAB NOVAKOPA"
+
+
+def test_an_unindented_line_after_a_filled_value_is_not_absorbed(tmp_path: Path) -> None:
+    """Free text under Gross Weight must not reach the weight parser."""
+    pairs = txt_pairs(tmp_path, "Gross Weight: 21,577 KG\nSAY TWENTY ONE THOUSAND KG ONLY\n")
+
+    assert pairs["Gross Weight"] == "21,577 KG"
+
+
+def test_a_pdf_label_with_a_trailing_colon_takes_the_lines_beneath() -> None:
+    pairs = dict(_pdf_pairs(["Consignee:", "MOORIM SP CO., LTD", "656, GANGNAM-DAERO", "Notify Party", "UAB NOVAKOPA"]))
+
+    assert pairs["Consignee"] == "MOORIM SP CO., LTD | 656, GANGNAM-DAERO"
+    assert pairs["Notify Party"] == "UAB NOVAKOPA"
+
+
+def test_a_name_ends_at_its_line_break_on_the_reference_path() -> None:
+    """Whitespace was collapsed before the split, so the address was glued onto the name."""
+    assert normalise("shipper", "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5") == "APRIL FAR EAST (M) SDN BHD"
+    assert normalise("port_of_loading", "PORT KLANG\nMMSS 2507") == "PORT KLANG"

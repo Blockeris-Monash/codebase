@@ -55,10 +55,23 @@ def _read_member(archive: zipfile.ZipFile, name: str) -> str:
 
 
 def read_txt(path: Path) -> LabelledPairs:
-    """One `label: value` per line; an indented line continues the value above."""
+    """One `label: value` per line. An indented line continues the value above, and a
+    label with nothing after its colon takes the lines beneath it; a blank line ends a
+    value. An unindented line under a filled value is not taken: under Gross Weight it
+    would reach the weight parser (#147 B3)."""
     pairs: LabelledPairs = []
+    is_open = False
     for line in path.read_text(encoding="utf-8", errors="replace").split("\n"):
+        text = line.strip()
+        if not text:
+            is_open = False
+            continue
+        if is_open and (line[0].isspace() or not pairs[-1][1]):
+            label, value = pairs[-1]
+            pairs[-1] = (label, f"{value}\n{text}" if value else text)
+            continue
         label, separator, value = line.partition(":")
+        is_open = bool(separator)
         if separator:
             pairs.append((label.strip(), value.strip()))
 
@@ -202,10 +215,12 @@ def _pdf_pairs(lines: list[str]) -> LabelledPairs:
         if is_pair:
             in_table = False
 
-        if is_pair or (not in_table and _is_label(line)):
+        # "Consignee:" alone on its line is a label too, with its value beneath (#147 B3).
+        bare = line.rstrip(":").strip()
+        if is_pair or (not in_table and _is_label(bare)):
             if label is not None:
                 pairs.append((label, CELL_SEPARATOR.join(collected)))
-            label, collected = (None, []) if is_pair else (line, [])
+            label, collected = (None, []) if is_pair else (bare, [])
             if is_pair:
                 pairs.append((before.strip(), after.strip()))
             continue

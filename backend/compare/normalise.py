@@ -134,7 +134,8 @@ def normalise(field: str, raw: str | None) -> str | None:
     """Return the comparable form, or None when the value is absent."""
     if raw is None:
         return None
-    value = re.sub(r"\s+", " ", raw).strip()
+    # Spaces and tabs only: a line break is where a name ends and its address starts.
+    value = re.sub(r"[^\S\r\n]+", " ", raw).strip()
     if SENTINEL.match(value):
         return None
     if field in NAME_FIELDS:
