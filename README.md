@@ -156,7 +156,9 @@ the same whichever machine you are on.
 cd frontend && python -m http.server 8099
 ```
 
-Open <http://localhost:8099>. Static, so no backend and no key.
+Open <http://localhost:8099>. Static, so no backend and no key for the demo data.
+Opened on localhost, the page calls the API on this machine at port 8000
+(`frontend/config.js`), so start that too to use My mailbox or refine a draft.
 
 **One email through all five stages**, printed as it goes:
 
@@ -167,12 +169,12 @@ python -m cli.demo_pipeline email_004
 **The API**:
 
 ```bash
-python -m uvicorn backend.app:app --port 8010
+python -m uvicorn backend.app:app --port 8000
 ```
 
-Open <http://localhost:8010/docs>. `GET /health` and
+Open <http://localhost:8000/docs>. `GET /health` and
 `POST /extract-clean-compare` answer with no key, from the saved extracts in
-`results/extracts/`. Ports are suggestions; anything free will do.
+`results/extracts/`. The review app looks for the API on port 8000; the app's own port is free to pick.
 
 ### If you want the live model path
 
