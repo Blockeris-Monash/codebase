@@ -397,7 +397,7 @@
       "defect_fields": []
     },
     "why": "The name wraps onto the next line in the SI; it is the same name.",
-    "known_gap": "The reader keeps only the first line of a value, so a name wrapped onto the next line is cut to MOORIM SP: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {

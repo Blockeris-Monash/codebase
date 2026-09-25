@@ -231,3 +231,25 @@ def test_a_name_ends_at_its_line_break_on_the_reference_path() -> None:
     """Whitespace was collapsed before the split, so the address was glued onto the name."""
     assert normalise("shipper", "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5") == "APRIL FAR EAST (M) SDN BHD"
     assert normalise("port_of_loading", "PORT KLANG\nMMSS 2507") == "PORT KLANG"
+
+
+# --- B3.1 ------------------------------------------------------------------
+
+@pytest.mark.parametrize("written, name", [
+    ("MOORIM SP\nCO., LTD\n656, GANGNAM-DAERO", "MOORIM SP CO., LTD"),
+    ("VITAL SOLUTIONS | PTE. LTD. | 77 ROBINSON ROAD", "VITAL SOLUTIONS PTE. LTD."),
+    ("BALL\n& CO\nENFIELD NSW 2136", "BALL & CO"),
+    ("BALL & DOGGETT AUSTRALIA PTY LTD\n43-45 METROPOLITAN ROAD", "BALL & DOGGETT AUSTRALIA PTY LTD"),
+    ("MOORIM SP CO., LTD\nSEOUL, SOUTH KOREA", "MOORIM SP CO., LTD"),
+])
+def test_a_name_wrapped_onto_a_legal_form_line_is_one_name(written: str, name: str) -> None:
+    assert normalise("consignee", written) == name
+    assert app_module.clean_entity(written) == name.strip(" ,.;:")
+
+
+@pytest.mark.parametrize("si, bl, verdict", [
+    ("MOORIM SP\nCO., LTD", "MOORIM SP CO., LTD", "match"),
+    ("MOORIM SP", "MOORIM SP CO., LTD", "mismatch"),     # a name really cut short is still caught
+])
+def test_a_wrapped_name_compares_as_one(si: str, bl: str, verdict: str) -> None:
+    assert every_path("consignee", {"consignee": si}, {"consignee": bl}) == {verdict}

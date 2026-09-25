@@ -6,6 +6,7 @@ see the comparison-rules decision log.
 """
 from __future__ import annotations
 
+import itertools
 import re
 from collections import Counter
 
@@ -55,9 +56,28 @@ def notify_as_meant(notify_raw: str | None, consignee_raw: str | None) -> str | 
     return consignee_raw if notify_raw and SAME_AS_CONSIGNEE.match(notify_raw) else notify_raw
 
 
+# The words a company's legal form is written in. A line of nothing else is the name wrapping,
+# "MOORIM SP" then "CO., LTD", never the first line of an address (#147 B3).
+LEGAL_FORMS = frozenset("CO COMPANY LTD LIMITED INC CORP CORPORATION PTE PVT PTY SDN BHD GMBH AG SA SRL "
+                        "BV NV LLC PLC KK".split())
+
+
+def is_legal_form(segment: str) -> bool:
+    words = [word.replace(".", "") for word in re.split(r"[\s,&]+", segment.upper())]
+    return any(words) and all(word in LEGAL_FORMS for word in words if word)
+
+
+def party_name(value: str) -> str:
+    """The name at the head of a party block: its first line, plus any lines after it that
+    hold only a legal form. Excel and Word keep name and address in one cell."""
+    segments = re.split(NAME_SPLIT, value)
+    wrapped = list(itertools.takewhile(is_legal_form, segments[1:]))
+    return " ".join([segments[0], *wrapped])
+
+
 def normalise_name(value: str) -> str:
     """Name only — Excel stores name and address in one cell."""
-    return order_form(re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,"))
+    return order_form(re.sub(r"\s+", " ", party_name(value)).upper().strip(" ,"))
 
 
 def normalise_port(value: str) -> str:
