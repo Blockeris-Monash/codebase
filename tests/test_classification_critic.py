@@ -182,7 +182,7 @@ def test_the_live_endpoint_asks_on_the_critics_own_key_and_model(monkeypatch, fi
     run of second opinions from using up what the backup needs when Qwen is down."""
     asked: list[dict] = []
 
-    def qwen_reply(url: str, headers: dict, body: dict) -> dict:
+    def qwen_reply(url: str, headers: dict, body: dict, timeout=None) -> dict:
         text = json.dumps({"category": "GENERAL", "confidence_tier": "0.65", "evidence": "berthing"})
         return {"content": [{"type": "text", "text": text}]}
 

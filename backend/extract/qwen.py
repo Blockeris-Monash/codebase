@@ -26,9 +26,11 @@ DEFAULT_TIMEOUT_SECONDS = 15.0
 Post = Callable[[str, dict, dict], dict]
 
 
-def http_post(url: str, headers: dict, body: dict) -> dict:
+def http_post(url: str, headers: dict, body: dict, timeout: float | None = None) -> dict:
+    """One call. `timeout` lets a caller with a deadline give a try less than the usual limit."""
     request = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
-    timeout = float(os.environ.get("QWEN_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
+    usual = float(os.environ.get("QWEN_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
+    timeout = usual if timeout is None else min(timeout, usual)
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
