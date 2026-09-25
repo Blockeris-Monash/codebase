@@ -303,8 +303,6 @@ window.I18N = {
   "This is a demo": "Ini demo",
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "Bahasa Inggeris, Melayu dan Cina berfungsi hari ini. Menambah lebih banyak bahasa dirancang untuk kemas kini akan datang.",
   "See what's next": "Lihat apa seterusnya",
-  "Colour-blind friendly themes": "Tema mesra buta warna",
-  "Extra colour themes for people with colour blindness, so Action required, Needs review and Verified can be told apart without relying on red and green.": "Tema warna tambahan untuk orang yang buta warna, supaya Tindakan diperlukan, Perlu disemak dan Disahkan dapat dibezakan tanpa bergantung pada merah dan hijau.",
   "Sign in": "Log masuk",
   "Sign in with Google": "Log masuk dengan Google",
   "Account": "Akaun",
@@ -361,7 +359,8 @@ window.I18N = {
   "Draft a reply": "Draf balasan",
   "Drafting...": "Sedang mendraf...",
   "Sign in with Google again to draft a reply.": "Log masuk dengan Google sekali lagi untuk mendraf balasan.",
-  "No draft: {reason}": "Tiada draf: {reason}"
+  "No draft: {reason}": "Tiada draf: {reason}",
+  "Colour-blind friendly": "Mesra buta warna"
  },
  "zh": {
   "What the scan says": "扫描件上的内容",
@@ -665,8 +664,6 @@ window.I18N = {
   "This is a demo": "这是演示",
   "English, Malay and Chinese work today. Adding more languages is planned for a future update.": "目前支持英文、马来文和中文。添加更多语言已列入后续更新计划。",
   "See what's next": "查看下一步",
-  "Colour-blind friendly themes": "色盲友好主题",
-  "Extra colour themes for people with colour blindness, so Action required, Needs review and Verified can be told apart without relying on red and green.": "为色盲用户提供额外的配色主题，这样无需依赖红色和绿色，也能分辨“需要处理”“需要审核”和“已核实”。",
   "Sign in": "登录",
   "Sign in with Google": "使用 Google 登录",
   "Account": "账户",
@@ -723,6 +720,7 @@ window.I18N = {
   "Draft a reply": "起草回复",
   "Drafting...": "正在起草...",
   "Sign in with Google again to draft a reply.": "请重新使用 Google 登录以起草回复。",
-  "No draft: {reason}": "未能起草：{reason}"
+  "No draft: {reason}": "未能起草：{reason}",
+  "Colour-blind friendly": "色盲友好"
  }
 };
