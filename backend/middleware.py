@@ -16,10 +16,12 @@ guessed at.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 import uuid
 from collections import defaultdict, deque
+from typing import NamedTuple
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -43,20 +45,48 @@ TOO_MANY_REQUESTS = 429
 # 30 requests a minute on polling alone and the demo starts answering 429.
 #
 # What is worth protecting is the model quota the whole team shares. These are
-# the routes that spend it; /mailbox, /reply, /health and the docs do not, and
-# a new cheap route added later is not throttled by accident.
+# the routes that spend it; /reply, /health and the docs do not, and a new cheap
+# route added later is not throttled by accident. /mailbox does spend it (a poll
+# starts checks on new mail) and has its own budget below.
 LIMITED_PATHS = frozenset({"/process-email", "/classify", "/translate",
                            "/extract-clean-compare", "/check-files", "/draft-reply"})
+
+# /mailbox is polled every 10 s per open tab, so it gets its own budget, and it is
+# counted per signed-in person rather than per address: a venue's wifi puts everyone
+# behind one address. Each poll can start model checks on new mail, and billing is on.
+MAILBOX_PATH = "/mailbox"
+MAX_MAILBOX_REQUESTS_PER_WINDOW = 20
+
+# Cloudflare sits in front of Render and writes this header itself, replacing any
+# value the caller sent, so unlike the left of X-Forwarded-For it cannot be forged.
+CONNECTING_IP_HEADER = "cf-connecting-ip"
+# Past this many tracked callers, the ones idle for a whole window are forgotten, so
+# a stream of made-up callers cannot grow the table without end.
+MAX_TRACKED_CALLERS = 10_000
 
 _seen: dict[str, deque[float]] = defaultdict(deque)
 
 
 def caller(request: Request) -> str:
-    """The forwarded address where there is one - Render sits behind a proxy,
-    so request.client.host is the proxy for every caller alike."""
+    """Who is calling, as far as the proxies in front can vouch for it.
+
+    Render sits behind Cloudflare, so request.client.host is a proxy for every
+    caller alike. The leftmost X-Forwarded-For entry is whatever the caller wrote,
+    so changing it on every request used to dodge the limit entirely. The rightmost
+    entry is the one the nearest proxy appended, and is the fallback."""
+    connecting = request.headers.get(CONNECTING_IP_HEADER, "").strip()
+    if connecting:
+        return connecting
     forwarded = request.headers.get("x-forwarded-for", "")
 
-    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+    return forwarded.split(",")[-1].strip() or (request.client.host if request.client else "unknown")
+
+
+def mailbox_caller(request: Request) -> str:
+    """One budget per Google token, hashed so no token is held in memory."""
+    token = request.headers.get("authorization", "")
+
+    return "mailbox:" + hashlib.sha256(token.encode()).hexdigest()[:16]
 
 
 def caller_shape(address: str) -> str:
@@ -69,17 +99,42 @@ def caller_shape(address: str) -> str:
     return "unknown"
 
 
-def is_over_limit(who: str, now: float) -> bool:
-    """A sliding window. Old entries are dropped on every call, so the memory
-    held is bounded by the callers seen inside one window."""
+def forget_idle_callers(now: float) -> None:
+    """Drop every caller with nothing inside the window."""
+    idle = [who for who, recent in _seen.items() if not recent or now - recent[-1] > WINDOW_SECONDS]
+    for who in idle:
+        del _seen[who]
+
+
+def is_over_limit(who: str, now: float, limit: int = MAX_REQUESTS_PER_WINDOW) -> bool:
+    """A sliding window. Old entries are dropped on every call, and idle callers
+    once the table is large, so the memory held stays bounded."""
+    if len(_seen) > MAX_TRACKED_CALLERS:
+        forget_idle_callers(now)
     recent = _seen[who]
     while recent and now - recent[0] > WINDOW_SECONDS:
         recent.popleft()
-    if len(recent) >= MAX_REQUESTS_PER_WINDOW:
+    if len(recent) >= limit:
         return True
     recent.append(now)
 
     return False
+
+
+class Budget(NamedTuple):
+    """Whose window a request counts against, and how many it may hold."""
+    who: str
+    limit: int
+
+
+def limited_caller(request: Request) -> Budget | None:
+    """The budget this request counts against, or None for a route that spends nothing."""
+    if request.url.path == MAILBOX_PATH:
+        return Budget(mailbox_caller(request), MAX_MAILBOX_REQUESTS_PER_WINDOW)
+    if request.url.path in LIMITED_PATHS:
+        return Budget(caller(request), MAX_REQUESTS_PER_WINDOW)
+
+    return None
 
 
 async def tag_and_limit(request: Request, call_next):
@@ -89,18 +144,19 @@ async def tag_and_limit(request: Request, call_next):
     REQUEST_ID.set(request_id)
     started = time.monotonic()
 
-    if request.url.path in LIMITED_PATHS and is_over_limit(caller(request), time.monotonic()):
+    budget = limited_caller(request)
+    if budget is not None and is_over_limit(budget.who, time.monotonic(), budget.limit):
         log.warning("rate limited %s on %s [%s]", caller(request), request.url.path, request_id)
         # A technical report for the admin queue; reports holds back the repeats (#114).
         reports.file({"kind": reports.KIND, "email_ref": None, "title": "Rate limited",
                       "detail": f"A caller from {caller_shape(caller(request))} went past "
-                                f"{MAX_REQUESTS_PER_WINDOW} requests in {WINDOW_SECONDS:g}s on "
+                                f"{budget.limit} requests in {WINDOW_SECONDS:g}s on "
                                 f"{request.url.path} and was refused. Request {request_id} is in the log.",
                       "context": {"step": "Rate limit", "path": request.url.path,
                                   "caller": caller_shape(caller(request)), "request_id": request_id}})
         return JSONResponse(
             status_code=TOO_MANY_REQUESTS,
-            content={"detail": f"More than {MAX_REQUESTS_PER_WINDOW} requests in "
+            content={"detail": f"More than {budget.limit} requests in "
                                f"{WINDOW_SECONDS:g}s. Wait a moment and try again."},
             headers={REQUEST_ID_HEADER: request_id})
 
