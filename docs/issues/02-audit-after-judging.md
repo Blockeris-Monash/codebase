@@ -1103,3 +1103,35 @@ those specs leave open, decided here.
 - **The mutation check stays 630 of 630.** The guard refuses every pair a
   planted defect makes (a different company, a dropped letter), and a test
   proves it over every mutation in the check.
+
+---
+
+# Added to #168 after checking #147 and #162 again
+
+#162's A1–A3, A6–A8, B1 and B2 have their own PRs (#163–#167) and stay there. What
+nobody holds yet, and matters most before real mail:
+
+1. **The CI guard from B4.6** (its lint and lockfile half stays a future step):
+   - `permissions: contents: read`;
+   - actions pinned to commit SHAs;
+   - a `frontend` job that runs `node --check` on every script and every inline
+     script, parses `i18n.js` as JSON, and runs `cli.csp --check`.
+
+   A broken `i18n.js` got into #159's merge commit, and #164–#167 now conflict
+   in exactly those files.
+2. **B4.2 as specified above:** a checked message's attachment folder is
+   deleted, success or failure.
+3. **#162 A9, retry a failed mailbox email.**
+   - `POST /mailbox/retry` with `{email_id}` forgets the failure count and the
+     "could not be checked" entry for that message, in the caller's own mailbox
+     only (the address comes from the Google token, as everywhere).
+   - The next poll checks it again.
+   - The entry shows **Check again**.
+   - It counts against the same `/mailbox` rate limit.
+4. **B5, the OWASP document.** Each claim is brought in line with the code:
+   - the vector database exists;
+   - reply drafting is masked since B1;
+   - the rate limit is described as it now works;
+   - no `file:///` links.
+
+   Anything still untrue is listed as a known gap, not claimed.
