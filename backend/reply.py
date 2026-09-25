@@ -105,7 +105,7 @@ def gemini_generate(prompt: str, system_instruction: str) -> str:
     return response.text
 
 def generate_rag_reply(email: EmailInput, category: str) -> Optional[str]:
-    """Generate a reply using retrieved policy context. Tries Qwen first, then Gemini."""
+    """Generate a reply using retrieved policy context. Tries Gemini first, then Qwen."""
     
     # 1. Retrieve Context
     query = email.body

@@ -11,7 +11,7 @@ while the second model works, so a stalled gateway costs first_timeout seconds a
 gateway's own much longer retry chain.
 
 Every call is recorded for the technical reports (backend/reports.py), named by `names`.
-Every caller today stands Gemini behind Qwen, hence the default.
+Every caller except reply drafting stands Gemini behind Qwen, hence the default.
 """
 from __future__ import annotations
 
