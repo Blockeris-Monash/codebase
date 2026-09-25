@@ -75,14 +75,15 @@ def test_every_setting_the_code_reads_is_written_down() -> None:
     assert undocumented == [], f"read by the code, missing from .env.example: {undocumented}"
 
 
-def test_the_two_names_for_the_supabase_secret_both_work() -> None:
-    """One credential had two names across two modules, and only one was
-    documented. Both are accepted, canonical first, so neither a new deployment
-    nor one set up before the rename is left without a client."""
+def test_the_supabase_secret_has_exactly_one_name() -> None:
+    """It briefly had two - SUPABASE_KEY in reply.py, SUPABASE_SERVICE_ROLE_KEY
+    in reports.py - and a deployment that set the documented one had retrieval
+    silently off. The alias existed only while an environment still used it."""
     from backend import settings
 
-    assert settings.SUPABASE_SECRET_NAMES[0] == "SUPABASE_SERVICE_ROLE_KEY"
-    assert "SUPABASE_KEY" in settings.SUPABASE_SECRET_NAMES
+    assert settings.SUPABASE_SECRET_NAMES == ("SUPABASE_SERVICE_ROLE_KEY",)
+    for source in ("backend/reply.py", "backend/reports.py", "backend/app.py"):
+        assert "SUPABASE_KEY" not in (ROOT / source).read_text(encoding="utf-8"), source
 
 
 def test_the_service_says_which_optional_features_are_off() -> None:
@@ -172,3 +173,17 @@ def test_no_module_reads_a_credential_around_the_accessor() -> None:
     offenders = [o for o in offenders if not o.startswith("backend/extract/gemini.py")]
 
     assert offenders == [], f"reads a credential directly: {offenders}"
+
+
+def test_the_test_run_cannot_write_to_the_live_queue() -> None:
+    """Tests fail models on purpose and every failure files a report. The guard
+    has to clear every name the secret is accepted under, not only the canonical
+    one - otherwise a machine set up the way the deployment notes describe would
+    post fake failures into the team's queue."""
+    import os
+
+    from backend import settings
+
+    for name in settings.SUPABASE_SECRET_NAMES:
+        assert os.environ.get(name) is None, f"{name} is still set inside the test run"
+    assert settings.supabase_secret() is None

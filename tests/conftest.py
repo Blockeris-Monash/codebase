@@ -36,8 +36,15 @@ def attachments(data_dir: Path) -> Path:
 def no_reports_reach_the_real_queue(monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests make models fail on purpose, and each failure files a technical
     report. A developer's .env may hold the service key, so without this a test
-    run would fill the team's admin queue with fake failures."""
-    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    run would fill the team's admin queue with fake failures.
+
+    Cleared through settings.SUPABASE_SECRET_NAMES rather than by name, so an
+    alias added there later is covered here without anyone remembering to.
+    """
+    from backend.settings import SUPABASE_SECRET_NAMES
+
+    for name in SUPABASE_SECRET_NAMES:
+        monkeypatch.delenv(name, raising=False)
 
 
 # --- verification report ------------------------------------------------

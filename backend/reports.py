@@ -156,9 +156,8 @@ def file(row: dict[str, Any], own_email_only: bool = False) -> None:
     does not repeat one written within the window. `own_email_only`: the title is
     about this email alone, so the cap per title does not apply."""
     log.warning("technical report: %s [%s]", row["title"], row["email_ref"] or "no email")
-    # Through settings so this module agrees with the rest about what counts as
-    # configured: the same secret is also accepted under the older name
-    # SUPABASE_KEY, which reply.py used before the two were reconciled.
+    # Through settings so this module agrees with the rest of the service about
+    # what counts as configured.
     url, key = settings.supabase_url(), settings.supabase_secret()
     if not (url and key):
         say_reports_are_off()
