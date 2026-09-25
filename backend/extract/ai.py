@@ -52,16 +52,28 @@ class AiExtractor:
     model: ModelCall
     tries: int = DEFAULT_TRIES
     wait: float = DEFAULT_WAIT_SECONDS
+    deadline: float | None = None  # seconds for all tries together; None means no limit
 
     def ask_model(self, email_id: str, text: str) -> dict[str, ExtractedField] | None:
-        """Retry a failing model; None means it never answered."""
+        """Retry a failing model; None means it never answered.
+
+        No retry starts once `deadline` seconds have passed, or would pass during the
+        wait before it. A call already running is not cut short here: each model call
+        has its own timeout for that."""
+        give_up_at = None if self.deadline is None else time.monotonic() + self.deadline
         for attempt in range(1, self.tries + 1):
             try:
                 return self.model(text)
             except Exception as error:
                 log.warning("%s attempt %d/%d failed: %s", email_id, attempt, self.tries, error)
-                if attempt < self.tries:
-                    time.sleep(self.wait * attempt)
+            if attempt == self.tries:
+                break
+            pause = self.wait * attempt
+            if give_up_at is not None and time.monotonic() + pause >= give_up_at:
+                log.warning("%s gave up after attempt %d/%d: the %gs deadline has passed",
+                            email_id, attempt, self.tries, self.deadline)
+                break
+            time.sleep(pause)
 
         return None
 

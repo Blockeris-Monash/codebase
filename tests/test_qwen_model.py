@@ -69,3 +69,39 @@ def test_missing_key_is_a_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(RuntimeError, match="QWEN_API_KEY"):
         qm.qwen_model("doc", post=lambda url, headers, body: reply_for())
+
+
+class FakeResponse:
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return b"{}"
+
+
+def timeout_used(monkeypatch: pytest.MonkeyPatch) -> float:
+    seen: list[float] = []
+
+    def fake_urlopen(request: object, timeout: float) -> FakeResponse:
+        seen.append(timeout)
+        return FakeResponse()
+
+    monkeypatch.setattr(qm.urllib.request, "urlopen", fake_urlopen)
+    qm.http_post("https://example.test/v1/messages", {}, {})
+    return seen[0]
+
+
+def test_one_call_waits_15_seconds_at_most(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("QWEN_TIMEOUT_SECONDS", raising=False)
+
+    assert timeout_used(monkeypatch) == 15
+
+
+def test_the_wait_per_call_can_be_set_in_the_environment(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("QWEN_TIMEOUT_SECONDS", "40")
+
+    assert timeout_used(monkeypatch) == 40

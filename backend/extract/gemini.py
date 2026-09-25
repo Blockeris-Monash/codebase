@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from backend.contracts import ExtractedField
 
 DEFAULT_MODEL = "gemini-3.5-flash"
+# Gemini answers when Qwen is slow, so it gets the same limit per call as Qwen (#111).
+TIMEOUT_MS = 15_000
 KEY_NAMES = ("GOOGLE_API_KEY", "GEMINI_API_KEY")
 
 PROMPT = """You extract fields from one shipping document (a Shipping Instruction or a Bill of Lading), given as lines of "label: value".
@@ -56,7 +58,8 @@ def gemini_json(contents: str, system: str | None = None,
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=key or api_key())
+    client = genai.Client(api_key=key or api_key(),
+                          http_options=types.HttpOptions(timeout=TIMEOUT_MS))
     response = client.models.generate_content(
         model=model or os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
         contents=contents,
@@ -77,7 +80,8 @@ def gemini_model(text: str) -> dict[str, ExtractedField]:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=api_key())
+    client = genai.Client(api_key=api_key(),
+                          http_options=types.HttpOptions(timeout=TIMEOUT_MS))
     response = client.models.generate_content(
         model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
         contents=PROMPT + text,

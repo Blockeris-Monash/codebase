@@ -115,10 +115,12 @@ class PairedInput(BaseModel):
 # =====================================================================
 
 # Qwen first. If it fails or stalls, Gemini answers (with_fallback), but only when a Gemini key
-# is set: without one, Qwen is used exactly as before, however slow it is. With a second
-# provider behind, two tries are enough.
-extractor = AiExtractor(with_fallback(qwen_model, gemini_model, enabled=lambda: bool(gemini_key())),
-                        tries=2)
+# is set. With a second provider behind, two tries are enough. Each call gives up after 15 s,
+# and no retry starts after 45 s: a document the model cannot read in time goes to a person
+# rather than leaving the reviewer at a spinner for minutes (#111).
+extractor = AiExtractor(with_fallback(qwen_model, gemini_model, first_timeout=15,
+                                      enabled=lambda: bool(gemini_key())),
+                        tries=2, deadline=45)
 
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     """The whole cached DocumentExtract, metadata included.
