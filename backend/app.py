@@ -614,11 +614,18 @@ async def sort_email(email: EmailInput) -> ClassificationResult:
             category=fallback_category(email.subject, email.body, len(email.attachments)))
 
 
+# The categories whose reply the AI writes. SI requests and SI vs BL emails get a template.
+DRAFTED = ("INVOICE_QUERY", "GENERAL")
+
+
 @app.post("/process-email", response_model=ProcessedEmail)
 async def process_email(
     email: EmailInput,
     live: bool = Query(
         False, description="Set to true to force live Qwen AI calls instead of cached extracts"
+    ),
+    draft: bool = Query(
+        True, description="Set to false to skip the AI reply draft (the live mailbox drafts on request)"
     ),
 ) -> Dict[str, Any]:
     """1-Click End-to-End Entrypoint:
@@ -643,7 +650,7 @@ async def process_email(
     # 3. Non-comparison branch (SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM)
     if classification.category != "BL_COMPARISON":
         draft_reply = None
-        if classification.category in ("INVOICE_QUERY", "GENERAL"):
+        if classification.category in DRAFTED and draft:
             from backend.reply import generate_rag_reply
             # A thread, not a direct call: it waits on the AI for up to 120 s, and a blocking
             # call here would stop every other request (#96).
@@ -740,7 +747,9 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
                        body=message.body[:100_000], attachments=paths[:50])
     # Not live=True: that forces the model and skips the rules-first reader (#122). A Gmail id
     # is never in the saved results, so the normal path is saved result, rules, then model.
-    checked = await process_email(email, live=False)
+    # No draft: it is paid for, and most mail is never answered, so /draft-reply writes it
+    # when the person asks (#149).
+    checked = await process_email(email, live=False, draft=False)
     found = checked["ClassificationResult"]
 
     entry = {"id": email_id, "from": message.sender, "subject": message.subject,
@@ -748,6 +757,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
              "category": found["category"], "decided_by": found["decided_by"],
              "class_confidence": found["confidence"], "class_evidence": found["evidence"],
              "draft_reply": checked.get("draft_reply")}
+    if found["category"] in DRAFTED:
+        entry["can_draft"] = True
     ref = shipment_ref(message.subject, message.body)
     if ref:
         entry["ref"] = ref
@@ -830,6 +841,39 @@ async def mailbox(response: Response, authorization: Optional[str] = Header(None
 
     response.headers["X-Mailbox-Pending"] = str(sum(1 for a, _ in WORKING if a == address))
     return [done[g] for g in ids if g in done]
+
+
+class DraftRequest(BaseModel):
+    email_id: str = Field(..., max_length=100)
+
+
+@app.post("/draft-reply")
+async def draft_reply(request: DraftRequest, authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+    """The AI's reply draft for one checked email, written when the person asks for it (#149).
+    Written once: the draft is kept on the email, so asking again costs nothing."""
+    token = bearer(authorization)
+    gmail_id = gmail.gmail_id_of(request.email_id)
+    try:
+        async with gmail.Gmail(token) as box:
+            address = await box.address()
+    except gmail.GmailError as error:
+        raise gmail_failure(error) from error
+    entry = MAILBOXES.get(address, {}).get(gmail_id or "")
+    original = ORIGINALS.get(address, {}).get(gmail_id or "")
+    if entry is None or original is None:
+        raise HTTPException(status_code=404, detail="That email is not in your mailbox.")
+    if not entry.get("draft_reply"):
+        if not entry.get("can_draft"):
+            raise HTTPException(status_code=422, detail="This email's reply is written from a template.")
+        from backend.reply import generate_rag_reply
+        email = EmailInput(email_id=entry["id"], from_email=original.sender[:255],
+                           subject=original.subject[:1000], body=original.body[:100_000], attachments=[])
+        # A thread: the model can take a while, and the event loop serves everyone (#96).
+        written = await asyncio.to_thread(generate_rag_reply, email, entry["category"])
+        if not written:
+            raise HTTPException(status_code=502, detail="The AI could not draft a reply just now. Try again, or write one yourself.")
+        entry["draft_reply"] = written
+    return {"email_id": entry["id"], "draft_reply": entry["draft_reply"]}
 
 
 class ReplyRequest(BaseModel):

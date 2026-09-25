@@ -148,4 +148,4 @@ def test_polling_the_mailbox_is_not_throttled() -> None:
 def test_the_routes_that_spend_model_quota_are_the_ones_limited() -> None:
     """That quota is shared by the whole team and the URL is public."""
     assert LIMITED_PATHS == {"/process-email", "/classify", "/translate",
-                             "/extract-clean-compare", "/check-files"}
+                             "/extract-clean-compare", "/check-files", "/draft-reply"}
