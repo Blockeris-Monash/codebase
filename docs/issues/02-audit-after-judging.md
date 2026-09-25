@@ -31,13 +31,16 @@ with a test that fails without it.
 
 ## Invariants, checked after every commit
 
-None of these may move. A change to `results.js` means a submitted number has
-moved: stop and ask.
+None of these may move. A change to a verdict in `results.js` means a submitted
+number has moved: stop and ask.
 
 ```bash
-pytest                                   # the suite
+pytest                                   # the suite, on 3.11 and 3.12
 python -m cli.validate_contracts         # PASS
-python -m cli.make_results && git diff --exit-code frontend/results.js
+python -m cli.make_results               # then compare with main's results.js:
+                                         # byte-identical, or every category, status,
+                                         # review reason, defect field and row verdict
+                                         # unchanged (B3 readers add display text only)
 python -m cli.mutation_check             # 630 of 630
 python -m cli.rules_first_check          # different verdict 0
 ```

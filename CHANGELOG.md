@@ -9,8 +9,10 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Entries marked *(audit)* are from #147. None of them changes a result on the
 provided dataset: rules-first agrees 124 of 124, the mutation check catches 630
-of 630, and `results.js` rebuilds byte-identical. Each fix has tests that fail
-without it.
+of 630, and `results.js` rebuilds with every category, status, reason, defect
+field and row verdict unchanged (the section B reader fixes add continuation
+lines to the raw `pairs` it displays, and nothing else). Each fix has tests that
+fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md`.
 
 ### Added
 
@@ -50,6 +52,10 @@ without it.
   `backend/db/migrations/0007_correction_kind.sql` in Supabase** to add the
   `kind` and `side` columns. Until then the report still arrives, but the page
   says the correction was not sent.
+- *(audit)* **A drafted reply says when no company policy stood behind it.**
+  `/process-email` returns `draft_grounded` and `/draft-reply` returns
+  `grounded`; the page shows "No company policy matched this email. Check the
+  facts before sending." under such a draft.
 
 ### Changed
 
@@ -64,6 +70,24 @@ without it.
   (#146), and when the AI does not answer, the keyword rule files the rest
   instead of the email coming back "could not be checked". My mailbox reads the
   documents by rule first, as the saved results do.
+- *(audit)* **A document is recognised by its title's wording.** `SHIPPING
+  INSTRUCTIONS`, `DRAFT BILL OF LADING`, `SEA WAYBILL` and a title followed by its
+  number are an SI or a BL, not the wrong document.
+- *(audit)* **An email with a revised BL or an amended SI is compared against the
+  latest revision**, marked in its name or title (REVISED, AMENDED, V3, "(2)"),
+  else the last attached. The evidence names the file used and those set aside,
+  and the review screen shows the documents that were compared.
+- *(audit)* **`SAME AS CONSIGNEE` is compared as that document's consignee**, and
+  `TO THE ORDER OF`, `TO ORDER OF` and `ORDER OF` are one form. `TO ORDER`
+  against `TO ORDER OF` a bank is still a mismatch. Edge case b6 now expects OK
+  (decided 25 Sep).
+- *(audit)* **Containers are counted per size** when either document breaks the
+  count down (`1x20GP + 2x40HC`); otherwise the total decides, as before.
+- *(audit)* **The Draft BL PDF for an SI request is drawn in DejaVu Sans**
+  (bundled, with its licence) and returned as bytes: nothing is written to the
+  server's disk, and the committed generated PDF is gone.
+- *(audit)* **The startup line no longer prints `vision=on`**: the live service
+  never reads scans. Setting `SHIP_HAPPENS_VISION` logs a warning saying so.
 
 ### Fixed
 
@@ -86,6 +110,19 @@ without it.
   consignee and "100" passed out of "12,100".
 - *(audit)* **Render builds with the Python CI tests.** It ignored `runtime.txt` and ran
   3.14; `.python-version` pins 3.12.3.
+- *(audit)* **Policy retrieval works.** `gemini-embedding-001` answered with 3072
+  numbers for a `vector(768)` column, so retrieval always returned nothing.
+  Ingest and retrieval now share `backend/embeddings.py`, which asks for 768.
+  **Run `backend/db/migrations/0008_policies_ingest_once.sql` in Supabase, then
+  `python -m tools.ingest_policies`.** Ingest is now safe to re-run: it upserts
+  on a hash of each chunk and removes chunks no longer in the manual.
+- *(audit)* **Pipeline gaps found by the edge cases**, all three former xfails:
+  a party name wrapped onto a legal-form line (`MOORIM SP` / `CO., LTD`), a
+  decimal-comma weight (`21.577,00 KG`), and the revised BL above. Also a value
+  on the line beneath its label (`.txt` and PDF), a Word or Excel row holding
+  two fields, and a null field, which crashed the comparator.
+- *(audit)* **Failures in reply drafting are logged** with their traceback, and
+  a failed policy lookup files one technical report, instead of `print()`.
 
 ### Security
 
@@ -114,6 +151,16 @@ without it.
   PDF outside its folder. All four are fixed.
 - *(audit)* **A profile's email must be the sign-in email** (migration `0007`). Setting
   it to someone else's address made that person's first sign-in fail.
+- *(audit)* **Reply drafting and refining mask personal data** before any
+  model or the embedding API sees it, and restore it in the draft.
+- *(audit)* **A customer's email cannot plant policy in the reply prompt.** The
+  retrieved policy sits in the system instruction and the email is fenced in
+  its own tag, which the email cannot close.
+- *(audit)* **Every Gemini call has a timeout**: reply drafting stops at 20 s and
+  the scan reader at 60 s, instead of waiting as long as Google holds the socket.
+- *(audit)* **The contracts' if-and-only-if rules are enforced**: in the JSON
+  schemas (`allOf`), by `cli.validate_contracts`, and by the service's own
+  `ComparisonResult`.
 
 ## [1.1.0] — 2026-09-25
 
