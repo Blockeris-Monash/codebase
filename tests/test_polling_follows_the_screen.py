@@ -11,7 +11,9 @@ from __future__ import annotations
 from tests.js_runner import FRONTEND, run_node
 
 PAGE = (FRONTEND / "index.html").read_text(encoding="utf-8")
-POLLER = PAGE[PAGE.index("const POLL_MS = "):PAGE.index("/* Mail from the person's own Gmail has a gmail_ id.")]
+# The constants sit above the page's first render(), the functions further down.
+CONSTANTS = PAGE[PAGE.index("const POLL_MS = "):PAGE.index("render();", PAGE.index("const POLL_MS = "))]
+POLLER = CONSTANTS + PAGE[PAGE.index("function stopPolling(){"):PAGE.index("/* Mail from the person's own Gmail has a gmail_ id.")]
 
 HARNESS = """
 const S = {mailbox: "live", user: {id: "u"}, liveEmails: [], liveLoaded: false, pending: 0};

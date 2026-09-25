@@ -1902,6 +1902,13 @@ document.addEventListener("keydown", ev=>{
 });
 window.addEventListener("hashchange", render);
 ONE_PANE.addEventListener("change", render);   // the All done note moves between list and pane
+/* My mailbox is polled only while it is on screen (My mailbox chosen, the inbox showing, the tab
+   visible), one request at a time, the next only after this one settles. An answer that lands
+   after sign-out or after leaving is dropped: it belongs to an older generation (#147 B2).
+   Declared before the first render(): render() ends with syncPolling(), which reads these. */
+const POLL_MS = 10000;
+const poll = {timer:null, inflight:null, generation:0, lastBody:null};
+const mailboxOnScreen = ()=>S.mailbox==="live" && !!S.user && !isHome() && location.hash!=="#/next" && document.visibilityState==="visible";
 render();
 
 /* Signed in, marks made on another device appear after the first paint.
@@ -1912,12 +1919,6 @@ window.Store?.pull(S.marks)?.then(function (merged) {
   S.marks = merged; saveMarks(); render();
 });
 
-/* My mailbox is polled only while it is on screen (My mailbox chosen, the inbox showing, the tab
-   visible), one request at a time, the next only after this one settles. An answer that lands
-   after sign-out or after leaving is dropped: it belongs to an older generation (#147 B2). */
-const POLL_MS = 10000;
-const poll = {timer:null, inflight:null, generation:0, lastBody:null};
-const mailboxOnScreen = ()=>S.mailbox==="live" && !!S.user && !isHome() && location.hash!=="#/next" && document.visibilityState==="visible";
 function stopPolling(){
   poll.generation++; clearTimeout(poll.timer); poll.timer = null; poll.lastBody = null;
   if(poll.inflight){ poll.inflight.abort(); poll.inflight = null; }

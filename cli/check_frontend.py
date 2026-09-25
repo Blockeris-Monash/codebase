@@ -6,7 +6,8 @@ A merge commit on #159 left four missing commas in frontend/i18n.js and code twi
 index.html. The browser would have thrown on load and language switching would have
 stopped; only an unrelated test happened to catch it. This runs `node --check` on every
 script file and on every inline <script> in the pages, parses the translations the way
-the page reads them, and checks the security headers are current (cli/csp.py).
+the page reads them, starts the page in a fake browser to catch anything thrown on
+load, and checks the security headers are current (cli/csp.py).
 
 Exits 1 on the first kind of failure it finds, naming the file. Needs node, which CI's
 runner has; run by CI and by .githooks/pre-commit.
@@ -26,6 +27,9 @@ from cli import csp
 FRONTEND = Path(__file__).resolve().parents[1] / "frontend"
 SCRIPT_FILES = ("i18n.js", "store.js", "sw.js", "config.js", "scans.js")
 PAGES = ("index.html", "admin.html")
+# Runs the page's scripts in load order in a fake browser: a parse check cannot see a value
+# read before its line has run, which broke sign-in on #168.
+BOOT = Path(__file__).resolve().parents[1] / "tests" / "js" / "boot_page.mjs"
 INLINE = re.compile(r"<script(?![^>]*\bsrc=)([^>]*)>(.*?)</script>", re.S)
 
 
@@ -68,6 +72,9 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as workdir:
         targets = [(name, FRONTEND / name) for name in SCRIPT_FILES] + inline_scripts(Path(workdir))
         failures += [f"{name}: {why}" for name, path in targets if (why := node_check(path, node))]
+    booted = subprocess.run([node, str(BOOT), str(FRONTEND)], capture_output=True, text=True, check=False)
+    thrown = json.loads(booted.stdout.strip().splitlines()[-1]) if booted.returncode == 0 else [booted.stderr.strip()]
+    failures += [f"the page throws while starting: {error}" for error in thrown]
     if (why := translations_parse()):
         failures.append(f"i18n.js is not valid JSON: {why}")
     if (FRONTEND / "vercel.json").read_text(encoding="utf-8") != csp.rendered(csp.with_headers(
