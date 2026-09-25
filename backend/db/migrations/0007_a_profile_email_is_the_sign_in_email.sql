@@ -38,4 +38,5 @@ update users u
    set email = a.email
   from auth.users a
  where u.id = a.id
+   and a.email is not null
    and lower(u.email) is distinct from lower(a.email);

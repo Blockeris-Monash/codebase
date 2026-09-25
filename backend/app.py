@@ -356,7 +356,10 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
-WEIGHT_NUMBER = r"\d[\d,]*(?:\.\d+)?"
+# Never starting inside another number: "326,000" is not a weight in "40.326,000".
+WEIGHT_NUMBER = r"(?<![\d.,])\d[\d,]*(?:\.\d+)?"
+# "NET 38,000 KG GROSS 40,326 KG": the gross weight is what follows the word.
+GROSS_WORD = "GROSS"
 POUNDS_TO_KG = 0.45359237
 # The number a unit is written against, in the order a document states its gross weight:
 # kilograms first, so "12,500 KGS (12.5 MT)" is the kilograms and "40,326 KG (NET: ___ MTS)"
@@ -377,6 +380,8 @@ def clean_weight(text: str) -> str:
     This used to join every digit in the value, so "2 x 20GP 40,326 KG" became 22040326,
     and any "MT" anywhere multiplied the lot by 1000 (#147 A3)."""
     upper = text.upper()
+    if GROSS_WORD in upper:
+        upper = upper[upper.rindex(GROSS_WORD):]
     for pattern, kilograms_per_unit in WEIGHT_UNITS:
         found = pattern.search(upper)
         if found:

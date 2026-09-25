@@ -42,6 +42,8 @@ def test_a_value_not_whole_under_its_label_is_rejected(field: str, label: str, r
     ("gross_weight_kg", "Gross Weight", "12,100 KG"),
     ("container_count", "Containers", "2 x 40HC"),
     ("port_of_loading", "Port of Loading", "PORT  KLANG"),
+    ("consignee", "Consignee:", "BETA TRADING"),
+    ("consignee", "CONSIGNEE (NAME)", "BETA TRADING"),
 ])
 def test_a_value_read_from_its_own_label_is_kept(field: str, label: str, raw: str) -> None:
     assert extracted(field, label, raw)["present"] is True

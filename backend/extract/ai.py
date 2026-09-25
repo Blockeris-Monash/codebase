@@ -38,10 +38,21 @@ def is_under_its_label(raw: str, label_seen: str | None, pairs: LabelledPairs) -
     named none."""
     # Not glued to a letter, digit or number separator: "100" is not in "12,100".
     value = re.compile(rf"(?<![\w.,]){re.escape(squash(raw))}(?![\w]|[.,]\d)")
-    wanted = squash(label_seen or "").lower()
+    wanted = plain_label(label_seen or "")
 
     return any(value.search(squash(text)) for label, text in pairs
-               if squash(label).lower().startswith(wanted))
+               if is_same_label(plain_label(label), wanted))
+
+
+def plain_label(label: str) -> str:
+    """A label as words only: "Consignee (Name):" and "CONSIGNEE" are the same label."""
+    return " ".join(re.sub(r"\([^)]*\)|[^\w\s/]", " ", label).split()).lower()
+
+
+def is_same_label(in_document: str, named: str) -> bool:
+    """Either one starts with the other, so a model that shortens or completes a label
+    still finds it; an empty name matches every pair."""
+    return in_document.startswith(named) or named.startswith(in_document)
 
 
 def is_misplaced(name: str, value: ExtractedField, pairs: LabelledPairs) -> bool:

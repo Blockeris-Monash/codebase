@@ -168,7 +168,10 @@ async def tag_and_limit(request: Request, call_next):
     if request.url.path not in QUIET_PATHS:
         elapsed = time.monotonic() - started
         level = logging.WARNING if response.status_code >= SERVER_ERROR else logging.INFO
-        log.log(level, "%s %s -> %s in %.2fs",
-                request.method, request.url.path, response.status_code, elapsed)
+        # The caller's network, never the whole address: after a deploy this line shows
+        # whether callers really differ, i.e. that cf-connecting-ip is reaching us.
+        log.log(level, "%s %s -> %s in %.2fs from %s",
+                request.method, request.url.path, response.status_code, elapsed,
+                caller_shape(caller(request)))
 
     return response
