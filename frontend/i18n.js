@@ -398,6 +398,7 @@ window.I18N = {
   "now matches": "kini sepadan",
   "still blank": "masih kosong",
   "still differs": "masih berbeza",
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "Diperhalusi dengan AI Ship Happens daripada balasan yang ditulis lebih awal oleh Claude untuk demo.",
   "No mismatch detected.": "Tiada ketidakpadanan dikesan."
  },
  "zh": {
@@ -797,6 +798,7 @@ window.I18N = {
   "now matches": "现在一致",
   "still blank": "仍为空",
   "still differs": "仍有差异",
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "由 Ship Happens 的 AI 在 Claude 为演示预先撰写的回复基础上润色。",
   "No mismatch detected.": "未发现不一致。"
  }
 };
