@@ -104,6 +104,50 @@
     }
   }
 
+  // A reviewer confirmed, dismissed or fixed a field. The correction is kept
+  // for the impact numbers; a `report` (dismiss, fix, or undoing one) also goes
+  // to the admin queue, because the result on screen no longer matches what
+  // the pipeline decided and somebody should know why.
+  //
+  // True only when every row landed, so the page never says "sent" for a
+  // correction the database refused.
+  async function pushCorrection(emailRef, correction, report) {
+    const c = sb(), u = await user();
+    if (!c || !u) return false;
+    let landed = true;
+    // The report goes first and on its own: the admin hearing about a change
+    // must not depend on the corrections table accepting its row.
+    if (report) {
+      try {
+        const { error } = await c.from("reports").insert({
+          user_id: u.id, kind: "human", email_ref: emailRef,
+          title: report.title, detail: report.detail, context: report.context || null,
+        });
+        if (error) throw error;
+      } catch (error) {
+        console.warn("correction report not filed:", error);
+        landed = false;
+      }
+    }
+    try {
+      // No `mark` here: correcting a field is not the same as finishing the email.
+      const { data, error } = await c.from("reviews")
+        .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef) },
+                { onConflict: "user_id,email_ref" })
+        .select("id").single();
+      if (error) throw error;
+      const saved = await c.from("corrections").insert({
+        review_id: data.id, field: correction.field, kind: correction.kind, side: correction.side || null,
+        was: correction.was, corrected: correction.corrected,
+      });
+      if (saved.error) throw saved.error;
+    } catch (error) {
+      console.warn("correction not mirrored to the database:", error);
+      landed = false;
+    }
+    return landed;
+  }
+
   // --- the reports queue (/admin) -----------------------------------------
   // Both of these are guarded by row-level security, not by the caller. A
   // session that is not in `admins` gets an empty list from the database
@@ -264,7 +308,7 @@
     return { code: code, detail: detail.replace(/\+/g, " ") };
   }
 
-  window.Store = { pushMark, pushReply, pushReport, pull, signIn, signOut, onUser, authError, googleToken,
+  window.Store = { pushMark, pushReply, pushReport, pushCorrection, pull, signIn, signOut, onUser, authError, googleToken,
                    isAdmin, listReports, currentUser: user,
                    ACCESS_DENIED, MARK_OK, MARK_BACK };
 })();

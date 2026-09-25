@@ -35,12 +35,14 @@ def folder_order(folder: str, marks: dict[str, str] | None = None, sort: str = "
     js = "\n".join([
         (FRONTEND / "results.js").read_text(encoding="utf-8"),
         "const T = s=>s;",
-        f"const S = {{q:'', f:{json.dumps(folder)}, sort:{json.dumps(sort)}, sel:null, mailbox:'demo', marks:{json.dumps(marks or {})}}};",
+        f"const S = {{q:'', f:{json.dumps(folder)}, sort:{json.dumps(sort)}, sel:null, mailbox:'demo', marks:{json.dumps(marks or {})}, corr:{{}}}};",
         block("const FOLDERS = [", "\n];\n"),
         re.search(r"const folder = .*\n", SCRIPT).group(0),
         re.search(r"const issues = .*\n", SCRIPT).group(0),
         re.search(r"const RANKED = .*\n", SCRIPT).group(0),
+        re.search(r"const rawList = .*\n", SCRIPT).group(0),
         re.search(r"const mailList = .*\n", SCRIPT).group(0),
+        block("function withCorrections(e){", "\n}\n"),
         block("const items = ()=>{"),
         "console.log(JSON.stringify(items().map(e=>[e.id, issues(e)])));",
     ])
@@ -98,7 +100,7 @@ def test_sort_by_is_a_dropdown_with_most_issues_first() -> None:
 
 def test_the_actions_come_before_the_fields_table() -> None:
     detail = block("function detail(e){", "\n}\n")
-    assert "h += banner + actionsHTML(e) + tbl;" in detail
+    assert "h += banner + actionsHTML(view) + tbl" in detail
     assert "table(view.rows)" not in detail.split("h += banner")[1], "the table is added somewhere else too"
 
 
