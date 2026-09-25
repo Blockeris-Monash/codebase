@@ -44,7 +44,8 @@ window.SCANS = {
    "untrusted": [
     "notify_party",
     "port_of_loading"
-   ]
+   ],
+   "page": "scans/email_512_BL.webp"
   },
   "SI": {
    "fields": {
@@ -86,7 +87,8 @@ window.SCANS = {
    },
    "untrusted": [
     "port_of_loading"
-   ]
+   ],
+   "page": "scans/email_512_SI.webp"
   }
  },
  "email_513": {
@@ -131,7 +133,8 @@ window.SCANS = {
    "untrusted": [
     "consignee",
     "port_of_loading"
-   ]
+   ],
+   "page": "scans/email_513_BL.webp"
   },
   "SI": {
    "fields": {
@@ -176,7 +179,8 @@ window.SCANS = {
     "consignee",
     "port_of_loading",
     "port_of_discharge"
-   ]
+   ],
+   "page": "scans/email_513_SI.webp"
   }
  },
  "email_514": {
@@ -218,7 +222,8 @@ window.SCANS = {
      "raw": "22,825 KG"
     }
    },
-   "untrusted": []
+   "untrusted": [],
+   "page": "scans/email_514_BL.webp"
   },
   "SI": {
    "fields": {
@@ -261,7 +266,8 @@ window.SCANS = {
    "untrusted": [
     "port_of_loading",
     "port_of_discharge"
-   ]
+   ],
+   "page": "scans/email_514_SI.webp"
   }
  }
 };

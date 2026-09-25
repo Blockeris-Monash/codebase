@@ -217,6 +217,10 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .scanbox{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card)}
 .scanbox h3{margin:0 0 4px;font-size:0.9375rem}
 .scanbox .cap{margin:0 0 10px}
+.scanpages{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.scanpage{display:block;text-decoration:none;color:inherit}
+.scanpage img{display:block;width:100%;max-height:320px;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:8px;background:#fff}
+.scanpage .cap{margin:4px 0 0}
 .docs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .doc{min-width:0}
 .doch{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:4px}
@@ -1137,7 +1141,20 @@ function scanHTML(e){
   return `<div class="scanbox"><h3>${t("What the scan says")}</h3>` +
     `<p class="cap">${t("Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.",{n:doubted})}</p>` +
     `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead>` +
-    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div></div>`;
+    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div>` +
+    scanPagesHTML(scan) + `</div>`;
+}
+
+/* The scanned pages themselves (cli/make_scans.py), so a value marked "not verified" can be
+   checked against the page rather than trusted or reopened from the attachment. */
+const SCAN_PAGES = [{role:"SI", name:T("Shipping Instruction"), alt:T("The scanned Shipping Instruction page")},
+                    {role:"BL", name:T("Draft Bill of Lading"), alt:T("The scanned draft Bill of Lading page")}];
+function scanPagesHTML(scan){
+  const pages = SCAN_PAGES.filter(p=>scan[p.role]?.page);
+  if(!pages.length) return "";
+  return `<p class="cap">${t("The pages themselves. Tap one to open it full size.")}</p><div class="scanpages">` +
+    pages.map(p=>`<a class="scanpage" href="${esc(scan[p.role].page)}" target="_blank" rel="noopener"><img src="${esc(scan[p.role].page)}" loading="lazy" alt="${t(p.alt)}"><span class="cap">${t(p.name)}</span></a>`).join("") +
+    `</div>`;
 }
 
 function docsHTML(e, rows){

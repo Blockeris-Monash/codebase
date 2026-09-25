@@ -4,6 +4,9 @@ window.I18N = {
  "ms": {
   "What the scan says": "Apa yang tertulis pada imbasan",
   "not verified": "belum disahkan",
+  "The pages themselves. Tap one to open it full size.": "Halaman itu sendiri. Ketik untuk membukanya dalam saiz penuh.",
+  "The scanned Shipping Instruction page": "Halaman Arahan Penghantaran yang diimbas",
+  "The scanned draft Bill of Lading page": "Halaman draf Bil Muatan yang diimbas",
   "Could not be checked": "Tidak dapat disemak",
   "This email could not be read or checked. Open it in Gmail.": "E-mel ini tidak dapat dibaca atau disemak. Bukanya dalam Gmail.",
   "This exact value does not appear anywhere in these documents, so it is probably a misreading.": "Nilai tepat ini tidak muncul di mana-mana dalam dokumen ini, jadi kemungkinan besar ia tersalah baca.",
@@ -365,6 +368,9 @@ window.I18N = {
   "Colour-blind friendly": "Mesra buta warna"
  },
  "zh": {
+  "The pages themselves. Tap one to open it full size.": "页面原件。点按即可全尺寸打开。",
+  "The scanned Shipping Instruction page": "扫描的装运指示页面",
+  "The scanned draft Bill of Lading page": "扫描的提单草稿页面",
   "Could not be checked": "无法检查",
   "This email could not be read or checked. Open it in Gmail.": "无法读取或检查此邮件。请在 Gmail 中打开。",
   "What the scan says": "扫描件上的内容",
