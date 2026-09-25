@@ -86,17 +86,70 @@ def test_the_memory_held_is_bounded_by_one_window() -> None:
     assert len(middleware._seen["4.4.4.4"]) == 1
 
 
-def test_the_forwarded_address_is_used_not_the_proxy() -> None:
-    """Render sits behind a proxy, so request.client.host is the same for every
-    caller - limiting on it would throttle everyone together."""
-    from starlette.datastructures import Headers
-    from backend.middleware import caller
+def fake_request(headers: dict[str, str], path: str = "/process-email"):
+    from starlette.datastructures import Headers, URL
 
     class FakeRequest:
-        headers = Headers({"x-forwarded-for": "9.9.9.9, 10.0.0.1"})
-        client = None
+        pass
 
-    assert caller(FakeRequest()) == "9.9.9.9"
+    request = FakeRequest()
+    request.headers = Headers(headers)
+    request.client = None
+    request.url = URL(f"https://example.test{path}")
+
+    return request
+
+
+def test_cloudflares_connecting_address_is_used_not_the_forwarded_chain() -> None:
+    """Render sits behind Cloudflare, which writes cf-connecting-ip itself."""
+    from backend.middleware import caller
+
+    request = fake_request({"cf-connecting-ip": "9.9.9.9", "x-forwarded-for": "6.6.6.6, 9.9.9.9"})
+
+    assert caller(request) == "9.9.9.9"
+
+
+def test_without_cloudflare_the_address_the_proxy_appended_is_used() -> None:
+    """The leftmost X-Forwarded-For entry is whatever the caller wrote (#147 A2)."""
+    from backend.middleware import caller
+
+    assert caller(fake_request({"x-forwarded-for": "6.6.6.6, 9.9.9.9"})) == "9.9.9.9"
+
+
+def test_rotating_a_forged_forwarded_header_does_not_reset_the_limit() -> None:
+    from backend.middleware import caller
+
+    start = time.monotonic()
+    answers = [is_over_limit(caller(fake_request({"x-forwarded-for": f"6.6.6.{n}, 8.8.8.8"})), start)
+               for n in range(MAX_REQUESTS_PER_WINDOW + 1)]
+
+    assert answers[-1] is True
+
+
+def test_the_mailbox_is_limited_per_signed_in_person() -> None:
+    from backend.middleware import MAX_MAILBOX_REQUESTS_PER_WINDOW, limited_caller
+
+    start = time.monotonic()
+    same_person = fake_request({"authorization": "Bearer token-a", "cf-connecting-ip": "1.2.3.4"}, "/mailbox")
+    other_person = fake_request({"authorization": "Bearer token-b", "cf-connecting-ip": "1.2.3.4"}, "/mailbox")
+    over = lambda request: is_over_limit(limited_caller(request).who, start, limited_caller(request).limit)
+    for _ in range(MAX_MAILBOX_REQUESTS_PER_WINDOW):
+        over(same_person)
+
+    assert over(same_person) is True
+    assert over(other_person) is False
+
+
+def test_a_flood_of_made_up_callers_is_forgotten_once_idle(monkeypatch) -> None:
+    monkeypatch.setattr(middleware, "_seen", middleware.defaultdict(middleware.deque))
+    monkeypatch.setattr(middleware, "MAX_TRACKED_CALLERS", 100)
+    start = time.monotonic()
+    for n in range(150):
+        is_over_limit(f"forged-{n}", start)
+
+    is_over_limit("later", start + middleware.WINDOW_SECONDS + 1)
+
+    assert len(middleware._seen) <= 101
 
 
 @pytest.mark.parametrize("path,model", [

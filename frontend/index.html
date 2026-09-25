@@ -217,6 +217,10 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .scanbox{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card)}
 .scanbox h3{margin:0 0 4px;font-size:0.9375rem}
 .scanbox .cap{margin:0 0 10px}
+.scanpages{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.scanpage{display:block;text-decoration:none;color:inherit}
+.scanpage img{display:block;width:100%;max-height:320px;object-fit:cover;object-position:top;border:1px solid var(--line);border-radius:8px;background:#fff}
+.scanpage .cap{margin:4px 0 0}
 .docs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .doc{min-width:0}
 .doch{font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin-bottom:4px}
@@ -1013,6 +1017,9 @@ const folder = k=>FOLDERS.find(x=>x.k===k);
 /* The emails of the mailbox on show: the demo data, My mailbox, or the files uploaded here. */
 const mailList = ()=>S.mailbox==="live" ? S.liveEmails : S.mailbox==="upload" ? S.uploads : RESULTS;
 const getEmail = id => (S.mailbox !== "demo" ? mailList().find(e=>e.id===id) : null) || byId[id];
+/* The open email, or null. A live email can leave the list between polls (newer mail pushed it out,
+   it was archived in Gmail, the backend restarted), so a selection that no longer resolves is dropped. */
+const selectedEmail = ()=>{ const e = S.sel ? getEmail(S.sel) : null; if(!e) S.sel = null; return e || null; };
 const count = k => mailList().filter(folder(k).f).length;
 /* My mailbox before its first answer, or before its first email is checked: show that it
    is loading, not a row of zeros and "All done". Right after sign-in the backend answers
@@ -1134,7 +1141,20 @@ function scanHTML(e){
   return `<div class="scanbox"><h3>${t("What the scan says")}</h3>` +
     `<p class="cap">${t("Read from the page image, because these files carry no text. Nothing here decides a verdict: {n} value(s) do not appear anywhere else in these documents, so the email still goes to a person.",{n:doubted})}</p>` +
     `<div class="tblwrap"><table class="tbl mini"><thead><tr><th>${t("Field")}</th><th>${t("Shipping Instruction")}</th><th>${t("Draft Bill of Lading")}</th></tr></thead>` +
-    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div></div>`;
+    `<tbody>${SCAN_FIELDS.map(f=>scanRow(f, scan.SI, scan.BL)).join("")}</tbody></table></div>` +
+    scanPagesHTML(scan) + `</div>`;
+}
+
+/* The scanned pages themselves (cli/make_scans.py), so a value marked "not verified" can be
+   checked against the page rather than trusted or reopened from the attachment. */
+const SCAN_PAGES = [{role:"SI", name:T("Shipping Instruction"), alt:T("The scanned Shipping Instruction page")},
+                    {role:"BL", name:T("Draft Bill of Lading"), alt:T("The scanned draft Bill of Lading page")}];
+function scanPagesHTML(scan){
+  const pages = SCAN_PAGES.filter(p=>scan[p.role]?.page);
+  if(!pages.length) return "";
+  return `<p class="cap">${t("The pages themselves. Tap one to open it full size.")}</p><div class="scanpages">` +
+    pages.map(p=>`<a class="scanpage" href="${esc(scan[p.role].page)}" target="_blank" rel="noopener"><img src="${esc(scan[p.role].page)}" loading="lazy" alt="${t(p.alt)}"><span class="cap">${t(p.name)}</span></a>`).join("") +
+    `</div>`;
 }
 
 function docsHTML(e, rows){
@@ -1247,7 +1267,16 @@ function actionsHTML(e){
   return `<div class="actions"><button class="btn" data-a="draft" data-id="${e.id}">${step?t(step):t("Reply to sender")}</button><button class="btn alt" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
 }
 
+/* An email the backend gave up on (backend/app.py check_message): nothing was sorted or compared,
+   so none of the result sections apply. The person opens it in Gmail instead. */
+function failedHTML(e){
+  return `<div class="detail"><h2>${esc(e.subject)}</h2>` +
+    `<div class="banner NEEDS_REVIEW">${ICON.NEEDS_REVIEW}${t("Could not be checked")}<span>${t("This email could not be read or checked. Open it in Gmail.")}</span></div>` +
+    `<div class="actions"><a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a></div></div>`;
+}
+
 function detail(e){
+  if(e.check_failed) return failedHTML(e);
   const view = e;
   let h = `<div class="detail"><h2>${esc(title(e))}</h2>${e.intent&&!(e.about||[]).includes(e.subject)?`<div class="mute small subj">${esc(e.subject)}</div>`:""}<div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
   let banner, tbl = "";
@@ -1350,7 +1379,8 @@ function render(){
     const m = S.marks[e.id];
     return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(title(e,true))}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
-  const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
+  const open = selectedEmail();
+  const pane = open ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(open)}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";
   const dlgTop = (q(".dlg")||{}).scrollTop;
   const ae = document.activeElement, focusQ = ae && ae.id==="q" ? [ae.selectionStart, ae.selectionEnd] : null;

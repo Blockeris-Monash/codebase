@@ -4,7 +4,9 @@ cleans fields, and runs deterministic comparison.
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 import json
+from contextvars import ContextVar
 import logging
 import os
 import re
@@ -12,7 +14,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Query, Response
+from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 # Import Milk's Extractor and Model
@@ -28,8 +32,8 @@ from backend.intent import about, email_intent
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, compare
 from backend import gmail, reports
-from backend.compare.normalise import NAME_SPLIT  # one rule for where a name ends, shared with the reference
-from backend.contracts import DocumentRoleType, ParseStatusType, StatusType
+from backend.compare.normalise import NAME_SPLIT, SENTINEL  # one rule each for where a name ends and what counts as blank, shared with the reference
+from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
@@ -71,6 +75,14 @@ def say_what_is_switched_on() -> None:
 
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(_request: Request, error: RequestValidationError) -> JSONResponse:
+    """Where and why a request is invalid, without echoing the input back: the default
+    handler returned the whole body, so a 50 MB post came back as a 50 MB 422 (#147)."""
+    return JSONResponse(status_code=422, content={"detail": [
+        {key: problem[key] for key in ("loc", "msg", "type")} for problem in error.errors()]})
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -120,7 +132,6 @@ FIELD_NAMES = [
     "gross_weight_kg",
 ]
 
-SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
 
 # =====================================================================
 # 1. Input/Output Request Models
@@ -154,6 +165,11 @@ extractor = AiExtractor(with_fallback(qwen_breaker.wrap(qwen_model, skip_allowed
                                       gemini_model, first_timeout=15, enabled=lambda: bool(gemini_key())),
                         tries=2, deadline=45)
 
+# An email id becomes part of a file name below. A caller of /process-email can send any
+# string, and "../../x" used to reach any *_SI.json on the disk.
+SAFE_EMAIL_ID = re.compile(r"[A-Za-z0-9_-]{1,100}")
+
+
 def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     """The whole cached DocumentExtract, metadata included.
 
@@ -161,6 +177,8 @@ def load_saved_extract(email_id: str, role: str) -> Optional[Dict[str, Any]]:
     comparator escalates any document missing them - which was every document,
     so every email came back NEEDS_REVIEW/unreadable.
     """
+    if SAFE_EMAIL_ID.fullmatch(email_id) is None:
+        return None
     extract_file = EXTRACTS_DIR / f"{email_id}_{role}.json"
     if not extract_file.exists():
         return None
@@ -192,6 +210,23 @@ def report_empty_extraction(email_id: str, role: str, raw_fields: Optional[Dict[
                   "detail": outcome, "context": {"step": step, "tries": 1, "outcome": outcome}})
 
 
+async def model_fields(email_id: str, role: str, pairs: List[tuple[str, str]]) -> Optional[Dict[str, Any]]:
+    """The model's reading of one document's pairs, or None when there is nothing to read
+    or the model failed."""
+    if not pairs:
+        # Nothing came out of the file (a scan, a zip bomb, a broken PDF), so a model has
+        # nothing to map and any answer would be invented. Anyone can upload such a file
+        # without signing in, so the call would also be free to trigger and paid for by us.
+        return None
+    try:
+        with reports.watching(f"Extraction ({role})", email_id,
+                              "Every field was treated as missing, so the email went to a person."):
+            return await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
+    except Exception as error:  # third-party model client, any failure is one
+        log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
+        return None
+
+
 async def extract_live(
     email_id: str,
     role: str,
@@ -203,14 +238,7 @@ async def extract_live(
 
     Run in a threadpool so the SI and the BL extract concurrently.
     """
-    try:
-        with reports.watching(f"Extraction ({role})", email_id,
-                              "Every field was treated as missing, so the email went to a person."):
-            raw_fields = await asyncio.to_thread(extractor.extract_fields, email_id, pairs)
-    except Exception as error:  # third-party model client, any failure is one
-        log.error("Live extraction failed for %s (%s): %s", email_id, role, error)
-        raw_fields = None
-
+    raw_fields = await model_fields(email_id, role, pairs)
     report_empty_extraction(email_id, role, raw_fields, parse_status)
     if not raw_fields:
         # A model that returned nothing is not evidence that the fields are
@@ -339,19 +367,58 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
+# Never starting inside another number ("326,000" is not a weight in "40.326,000"), and
+# thousands grouped by commas or by spaces: "21 577 KG" is 21,577.
+WEIGHT_NUMBER = r"(?<![\d.,])(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?"
+WEIGHT_UNIT = r"(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?|MTS?|M/T|TONNES?|METRIC TONS?|LBS?|POUNDS?)"
+# A net weight written beside the gross one, before or after its number:
+# "NET 38,000 KG GROSS 40,326 KG", "21,577 KGS GROSS / 20,000 KGS NET". It is removed
+# before the gross weight is read.
+NET_WEIGHT = re.compile(rf"\bNET(?:\s+WEIGHT)?\W*{WEIGHT_NUMBER}\s*{WEIGHT_UNIT}?\b"
+                        rf"|{WEIGHT_NUMBER}\s*{WEIGHT_UNIT}[ \t/,;-]*NET\b(?!\W*[\d_])")
+POUNDS_TO_KG = 0.45359237
+# The number a unit is written against, in the order a document states its gross weight:
+# kilograms first, so "12,500 KGS (12.5 MT)" is the kilograms and "40,326 KG (NET: ___ MTS)"
+# is not multiplied by the tonnes decoy beside it.
+WEIGHT_UNITS = (
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?)\b"), 1.0),
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:MTS?|M/T|TONNES?|METRIC TONS?)\b"), 1000.0),
+    (re.compile(rf"({WEIGHT_NUMBER})\s*(?:LBS?|POUNDS?)\b"), POUNDS_TO_KG),
+)
+# "Gross Weight (LBS)": the unit is in the label and the value is a bare number.
+LABEL_UNIT = re.compile(r"\((KGS?|MTS?|M/T|TONNES?|LBS?)\)", re.I)
+
+
+def as_number(text: str) -> float:
+    return float(text.replace(",", "").replace(" ", ""))
+
+
 def clean_weight(text: str) -> str:
-    text_upper = text.upper()
-    is_mt = "MT" in text_upper or "M/T" in text_upper
-    numeric_str = re.sub(r"[^\d.]", "", text.replace(",", ""))
-    if not numeric_str:
-        return ""
-    try:
-        weight_val = float(numeric_str)
-        if is_mt:
-            weight_val *= 1000.0
-        return str(weight_val)
-    except ValueError:
-        return text.strip()
+    """Kilograms, from the number written against a unit; with no unit, the largest number,
+    since a weight dwarfs the container count written beside it ("2 x 20GP 40326").
+
+    This used to join every digit in the value, so "2 x 20GP 40,326 KG" became 22040326,
+    and any "MT" anywhere multiplied the lot by 1000 (#147 A3)."""
+    upper = NET_WEIGHT.sub(" ", text.upper())
+    for pattern, kilograms_per_unit in WEIGHT_UNITS:
+        found = pattern.search(upper)
+        if found:
+            return str(round(as_number(found.group(1)) * kilograms_per_unit, 3))
+    numbers = [as_number(n) for n in re.findall(WEIGHT_NUMBER, upper)]
+
+    return str(max(numbers)) if numbers else ""
+
+
+def with_label_unit(value: str, label: Optional[str]) -> str:
+    """The value with the unit its label states, when the value itself states none, so
+    40,326 under "Gross Weight (LBS)" is read as pounds rather than kilograms."""
+    has_unit = any(pattern.search(value.upper()) for pattern, _ in WEIGHT_UNITS)
+    unit = LABEL_UNIT.search(label or "")
+    if has_unit or unit is None:
+        return value
+
+    return f"{value} {unit.group(1)}"
+
 
 def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
     cleaned: Dict[str, Any] = {}
@@ -371,7 +438,7 @@ def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
             elif key == "container_count":
                 field_data["norm"] = clean_containers(raw_str)
             elif key == "gross_weight_kg":
-                field_data["norm"] = clean_weight(raw_str)
+                field_data["norm"] = clean_weight(with_label_unit(raw_str, field_data.get("label_seen")))
             else:
                 field_data["norm"] = raw_str
 
@@ -460,18 +527,27 @@ async def classify(email: EmailInput) -> ClassificationResult:
 # 5. Routing Helpers: Attachment Resolution
 # =====================================================================
 
+# Files this server wrote itself for the work in hand: an upload, or a Gmail attachment.
+# Only these may be named by an absolute path. A caller of /process-email can name any
+# string, and an absolute path used to read anything on the disk - other people's
+# mailbox attachments included - and send its fields back (#147 A2).
+OWN_FILES: ContextVar[frozenset[str]] = ContextVar("own_files", default=frozenset())
+
+
 def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
-    """Finds the attachment file in data/attachments/ or local paths."""
+    """The attachment inside data/, or one of this request's own files; never anywhere else."""
     p = Path(att_path_str)
-    if p.is_absolute() and p.exists():
-        return p
-    # Look inside data/attachments/<filename>
+    if att_path_str in OWN_FILES.get():
+        return p if p.exists() else None
+    # Look inside data/attachments/<filename>: the name only, so this never leaves that folder
     direct = DATA_DIR / "attachments" / p.name
     if direct.exists():
         return direct
-    # Look inside data/<relative_path>
-    relative = DATA_DIR / att_path_str
-    if relative.exists():
+    if p.is_absolute():
+        return None
+    # Look inside data/<relative_path>, without climbing out of it
+    relative = (DATA_DIR / att_path_str).resolve()
+    if relative.is_relative_to(DATA_DIR.resolve()) and relative.exists():
         return relative
     return None
 
@@ -592,6 +668,23 @@ SI_AND_BL_ATTACHED = "An SI and a draft BL are attached, so it was sorted withou
 AI_DID_NOT_ANSWER = "The AI did not answer, so a simple keyword rule sorted it."
 
 
+async def si_request_reply(email: EmailInput) -> Optional[str]:
+    """The drafted reply to an SI request, or None when drafting failed.
+
+    None rather than a 500: the draft is extra, and a failure here - a character the
+    PDF font cannot draw, a model that did not answer - used to fail the whole email, and
+    in My mailbox that marks it "could not be checked". The PDF's server path is not added
+    to the reply either: the reply is what the reviewer sends to the customer (#147)."""
+    from backend.si_request import process_si_request
+    try:
+        draft_reply, _pdf_path, _fields = await asyncio.to_thread(process_si_request, email)
+    except Exception as error:  # a model client, fpdf2 or the disk: the email still gets its category
+        log.error("SI request draft failed for %s: %s", email.email_id, type(error).__name__)
+        return None
+
+    return draft_reply
+
+
 async def sort_email(email: EmailInput) -> ClassificationResult:
     """The category for /process-email, asking the AI only when it is needed.
 
@@ -656,11 +749,7 @@ async def process_email(
             # call here would stop every other request (#96).
             draft_reply = await asyncio.to_thread(generate_rag_reply, email, classification.category)
         elif classification.category == "SI_REQUEST":
-            from backend.si_request import process_si_request
-            draft_reply, pdf_path, extracted_fields = await asyncio.to_thread(process_si_request, email)
-            # if pdf_path is generated, we can append a note or somehow tell the frontend
-            if pdf_path:
-                draft_reply += f"\n\n[SYSTEM NOTE: {pdf_path} was generated successfully.]"
+            draft_reply = await si_request_reply(email)
 
         return {
             "email_id": email.email_id,
@@ -713,7 +802,8 @@ WORKING: Dict[tuple[str, str], asyncio.Task] = {}       # (address, gmail id) be
 FAILURES: Dict[tuple[str, str], int] = {}
 GIVE_UP_AFTER = 2
 # Two at a time: the model proxy slows to a crawl under more, and the page polls every 10 s.
-CHECKS = asyncio.Semaphore(2)
+# Per mailbox: one busy account used to queue every other account's checks behind its own.
+CHECKS: Dict[str, asyncio.Semaphore] = defaultdict(lambda: asyncio.Semaphore(2))
 
 
 def bearer(authorization: Optional[str]) -> str:
@@ -749,6 +839,7 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     # is never in the saved results, so the normal path is saved result, rules, then model.
     # No draft: it is paid for, and most mail is never answered, so /draft-reply writes it
     # when the person asks (#149).
+    OWN_FILES.set(frozenset(paths))  # this task's own context: the files just saved from Gmail
     checked = await process_email(email, live=False, draft=False)
     found = checked["ClassificationResult"]
 
@@ -788,7 +879,7 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
     keep the result. Runs behind the request, so the page never waits on a model."""
     key = (address, gmail_id)
     try:
-        async with CHECKS:
+        async with CHECKS[address]:
             async with gmail.Gmail(token) as box:
                 message = await box.message(gmail_id)
                 files = await box.attachment_files(message)
@@ -814,7 +905,8 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
             MAILBOXES.setdefault(address, {})[gmail_id] = {
                 "id": gmail.mailbox_id(gmail_id), "from": "", "subject": "(could not be checked)",
                 "body": "This email could not be read or checked. Open it in Gmail.",
-                "n_attachments": 0, "check_failed": True}
+                # A category like every other entry, so nothing on the page meets an email without one.
+                "category": CategoryType.General, "n_attachments": 0, "check_failed": True}
     finally:
         WORKING.pop(key, None)
 
@@ -879,7 +971,7 @@ async def draft_reply(request: DraftRequest, authorization: Optional[str] = Head
 class ReplyRequest(BaseModel):
     email_id: str = Field(..., max_length=100)
     to: str = Field(..., max_length=320)
-    subject: str = Field(..., max_length=1000, pattern=r"^[^\r\n]*$")  # a line break would start a new header
+    subject: str = Field(..., max_length=1000, pattern=r"^[^\r\n\x0b\x0c\x85\u2028\u2029]*$")  # any line break would start a new header
     body: str = Field(..., min_length=1, max_length=20_000)
 
 
@@ -971,6 +1063,7 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
         paths = {role: folder / f"{email_id}_{role}{suffix}" for role, (suffix, _) in files.items()}
         for role, (_, data) in files.items():
             paths[role].write_bytes(data)
+        OWN_FILES.set(frozenset(str(path) for path in paths.values()))
         pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
         result = (await run_pipeline(pair, live=False)).model_dump()
         docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}

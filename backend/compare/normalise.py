@@ -11,7 +11,17 @@ import re
 from backend.contracts import ComparisonRow, VerdictType
 
 LOCODE = re.compile(r"\s*\(([A-Z]{5})\)\s*$")
-SENTINEL = re.compile(r"^\s*$|^(n/?a|tba|tbc|-+)$|^_+\s*\w*$", re.I)
+# A value that stands for "not known yet". Dotted and spelled-out forms too: "T.B.A",
+# "N.A.", and "TO BE ADVISED" used to compare as real values, so a blank came out
+# a mismatch rather than the missing value that outranks it (#147 A3). "TBA x 40HC" is
+# as unknown as "TBA"; "TBC LOGISTICS" is a company. NONE and NIL stay values: "Notify party: NONE" on both
+# documents is an agreement, not a blank. The one copy: backend/app.py imports it from here.
+SENTINEL = re.compile(
+    r"^\s*$"
+    r"|^(?:n\.?\s*/?\s*a\.?|-+|to be (?:advised|confirmed))$"
+    r"|^t\.?\s*b\.?\s*[ac]\.?(?:\s*[x×]\s*\S+)?$"
+    r"|^_+\s*\w*$",
+    re.I)
 NAME_FIELDS = frozenset({"shipper", "consignee", "notify_party"})
 PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
 # Where a name or port ends: a pipe or a line break, never a run of spaces, which cut

@@ -8,11 +8,13 @@ ever sees text, never a binary file.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from backend.contracts import ExtractedField
+from backend.read.labels import canonical_field
 from backend.security.pii import get_pii_masker
 
 log = logging.getLogger(__name__)
@@ -27,16 +29,52 @@ def squash(text: str) -> str:
     return " ".join(text.split())
 
 
-def keep_only_values_in_text(email_id: str, fields: dict[str, ExtractedField],
-                             text: str) -> dict[str, ExtractedField]:
-    """A raw value that is not in the document was invented or altered by the
-    model, so that field is reported as absent."""
-    haystack = squash(text)
+def is_under_its_label(raw: str, label_seen: str | None, pairs: LabelledPairs) -> bool:
+    """The value appears whole under the label the model says it read.
+
+    A substring of the whole document let the shipper's name through as the consignee,
+    "100" out of "12,100" and "1" out of "1 lot" (#147 A3). Whole tokens only, and only
+    from pairs whose label starts with the one the model named - any pair when it
+    named none."""
+    # Not glued to a letter, digit or number separator: "100" is not in "12,100".
+    value = re.compile(rf"(?<![\w.,]){re.escape(squash(raw))}(?![\w]|[.,]\d)")
+    wanted = plain_label(label_seen or "")
+    labelled = [text for label, text in pairs if is_same_label(plain_label(label), wanted)]
+    # No pair carries that label: the document is one block of text, as an SI request's
+    # email body is, and the label sits inside it. Whole tokens still apply there.
+    searched = labelled or [text for _, text in pairs]
+
+    return any(value.search(squash(text)) for text in searched)
+
+
+def plain_label(label: str) -> str:
+    """A label as words only: "Consignee (Name):" and "CONSIGNEE" are the same label."""
+    return " ".join(re.sub(r"\([^)]*\)|[^\w\s/]", " ", label).split()).lower()
+
+
+def is_same_label(in_document: str, named: str) -> bool:
+    """Either one starts with the other, so a model that shortens or completes a label
+    still finds it; an empty name matches every pair."""
+    return in_document.startswith(named) or named.startswith(in_document)
+
+
+def is_misplaced(name: str, value: ExtractedField, pairs: LabelledPairs) -> bool:
+    """Read from a label the rules know belongs to another field, or not found under its own."""
+    claimed = canonical_field(value["label_seen"] or "")
+    if claimed is not None and claimed != name:
+        return True
+
+    return not is_under_its_label(value["raw"] or "", value["label_seen"], pairs)
+
+
+def keep_only_values_under_their_label(email_id: str, fields: dict[str, ExtractedField],
+                                       pairs: LabelledPairs) -> dict[str, ExtractedField]:
+    """A value not found whole under its own label was invented, altered or taken from
+    another field, so that field is reported as absent."""
     checked: dict[str, ExtractedField] = {}
     for name, value in fields.items():
-        if value["present"] and squash(value["raw"] or "") not in haystack:
-            log.warning("%s %s: %r not found in document, rejected",
-                        email_id, name, value["raw"])
+        if value["present"] and is_misplaced(name, value, pairs):
+            log.warning("%s %s: value not found under label %r, rejected", email_id, name, value["label_seen"])
             value = {"present": False, "label_seen": None, "raw": None}
         checked[name] = value
 
@@ -99,5 +137,4 @@ class AiExtractor:
         if fields is None:
             return None
 
-        orig_text = pairs_as_text(pairs)
-        return keep_only_values_in_text(email_id, fields, orig_text)
+        return keep_only_values_under_their_label(email_id, fields, pairs)

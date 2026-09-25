@@ -16,7 +16,7 @@ This document records the security audit, checklist, and mitigations implemented
 | **LLM06** | **Excessive Agency** |  **Passed** | • LLMs are strictly advisory (classification and field extraction).<br>• Deterministic comparator (`compare()`) makes all discrepancy judgments; ambiguities escalate to human review (`NEEDS_REVIEW`). |
 | **LLM07** | **System Prompt Leakage** |  **Passed** | • Structured JSON-only output mode (`response_schema` / `response_mime_type="application/json"`).<br>• Output parser extracts only predefined schema keys. |
 | **LLM08** | **Vector and Embedding Weaknesses** |  **N/A** | • No vector databases or dynamic RAG embeddings used in pipeline. |
-| **LLM09** | **Misinformation / Hallucination** |  **Passed** | • `keep_only_values_in_text()` in [`backend/extract/ai.py`](file:///c:/Users/Rusdy%20Husein/Desktop/MONASH/Hackathon%20Averis/codebase/backend/extract/ai.py) drops any extracted field whose raw text is not in the original document. |
+| **LLM09** | **Misinformation / Hallucination** |  **Passed** | • `keep_only_values_under_their_label()` in [`backend/extract/ai.py`](../backend/extract/ai.py) drops any extracted field whose raw text does not appear whole, under the label the model says it read. |
 | **LLM10** | **Unbounded Consumption (DoS)** |  **Passed** | • Maximum character boundaries: `body[:1500]` for triage, `MAX_CHARS = 30000` for translation.<br>• Pydantic validation: `Field(..., max_length=100_000)` on incoming email bodies.<br>• Rate limiting and concurrency semaphores on batch execution. |
 
 ---

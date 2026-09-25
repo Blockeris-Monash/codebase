@@ -33,6 +33,26 @@ LabelledPairs = list[tuple[str, str]]
 UNREADABLE_ERRORS = (zipfile.BadZipFile, OSError, ValueError, KeyError,
                      StopIteration, IndexError)
 
+# A .docx or .xlsx is a ZIP, and a 5 MB upload can inflate to gigabytes (a zip bomb).
+# The largest member in the dataset is 438 KB; nothing a shipper writes comes near this.
+MAX_MEMBER_BYTES = 8 * 1024 * 1024
+# Every SI and BL in the dataset is one page. Reading stops here, so a PDF of
+# thousands of pages cannot hold the service up.
+MAX_PDF_PAGES = 20
+
+
+def _read_member(archive: zipfile.ZipFile, name: str) -> str:
+    """One XML part of the archive, refused past MAX_MEMBER_BYTES. The declared size
+    is checked first, then the read itself is capped, since the header can lie."""
+    if archive.getinfo(name).file_size > MAX_MEMBER_BYTES:
+        raise ValueError(f"{name} inflates past {MAX_MEMBER_BYTES} bytes")
+    with archive.open(name) as member:
+        data = member.read(MAX_MEMBER_BYTES + 1)
+    if len(data) > MAX_MEMBER_BYTES:
+        raise ValueError(f"{name} inflates past {MAX_MEMBER_BYTES} bytes")
+
+    return data.decode("utf8")
+
 
 def read_txt(path: Path) -> LabelledPairs:
     """One `label: value` per line; an indented line continues the value above."""
@@ -59,7 +79,7 @@ def _cell_paragraphs(cell: str) -> str:
 
 def _docx_rows(path: Path) -> list[list[str]]:
     with zipfile.ZipFile(path) as archive:
-        document = archive.read("word/document.xml").decode("utf8")
+        document = _read_member(archive, "word/document.xml")
     rows = []
     for row in re.findall(r"<w:tr[ >].*?</w:tr>", document, re.S):
         cells = [_cell_paragraphs(c) for c in re.findall(r"<w:tc[ >].*?</w:tc>", row, re.S)]
@@ -70,7 +90,7 @@ def _docx_rows(path: Path) -> list[list[str]]:
 
 def _docx_paragraphs(path: Path) -> list[str]:
     with zipfile.ZipFile(path) as archive:
-        document = archive.read("word/document.xml").decode("utf8")
+        document = _read_member(archive, "word/document.xml")
     texts = ["".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", p))
              for p in re.findall(r"<w:p[ >].*?</w:p>", document, re.S)]
 
@@ -96,7 +116,7 @@ def read_docx(path: Path) -> LabelledPairs:
 def _shared_strings(archive: zipfile.ZipFile) -> list[str]:
     if "xl/sharedStrings.xml" not in archive.namelist():
         return []
-    xml = archive.read("xl/sharedStrings.xml").decode("utf8")
+    xml = _read_member(archive, "xl/sharedStrings.xml")
 
     return [html.unescape(XML_TAG.sub("", item))
             for item in re.findall(r"<si>(.*?)</si>", xml, re.S)]
@@ -122,7 +142,7 @@ def read_xlsx(path: Path) -> LabelledPairs:
         shared = _shared_strings(archive)
         sheet = next(n for n in archive.namelist()
                      if n.startswith("xl/worksheets/sheet"))
-        xml = archive.read(sheet).decode("utf8")
+        xml = _read_member(archive, sheet)
 
     pairs: LabelledPairs = []
     for row in re.findall(r"<row[ >].*?</row>", xml, re.S):
@@ -142,7 +162,7 @@ def _pdf_text(path: Path) -> str:
     from pypdf.errors import PyPdfError
 
     try:
-        return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages)
+        return "\n".join(page.extract_text() or "" for page in PdfReader(path).pages[:MAX_PDF_PAGES])
     except PyPdfError as error:
         raise ValueError(f"pypdf could not read {path.name}") from error
 

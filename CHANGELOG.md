@@ -7,6 +7,31 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Entries marked *(audit)* are from #147. None of them changes a result on the
+provided dataset: rules-first agrees 124 of 124, the mutation check catches 630
+of 630, and `results.js` rebuilds byte-identical. Each fix has tests that fail
+without it.
+
+### Added
+
+- **A live email's reply is drafted only when the person asks** (#152). Checking
+  My mailbox used to draft a paid reply for every general and invoice email,
+  newsletters and bank notices included, and again after every restart. Those
+  emails now show **Draft a reply**, which calls `POST /draft-reply` once per
+  email and keeps the result. `/process-email` still drafts for API callers.
+- **A colour-blind friendly switch in Settings** (#154). Action required turns
+  magenta and Verified blue instead of red and green; Needs review keeps its
+  amber. Works in light and dark mode, is saved on the device, and is applied
+  before the first paint.
+- **The demo's invoice and general emails carry a sample reply** (#151), written
+  in advance and filled in from each email, labelled everywhere as a sample
+  rather than the product's own draft. The demo still calls no model.
+- *(audit)* **The scanned page, beside what the model read from it.** "What the scan says"
+  marked doubtful values *not verified* with nothing to check them against. The
+  SI and BL pages of #512–514 now sit under the reading: greyscale, cropped to
+  the printed part, about 20 KB each, loaded only when the email is opened.
+  `cli/make_scans.py` writes them.
+
 ### Changed
 
 - **Replies are drafted by Gemini first, with Qwen as the backup.** Qwen takes
@@ -14,7 +39,62 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   never finished, and every draft waited 15 s before Gemini wrote it anyway.
   Gemini now gets 20 s, then Qwen gets 60 s behind its circuit breaker. Without a
   Gemini key, Qwen drafts alone, as before. Classification and extraction still
-  ask Qwen first.
+  ask Qwen first. (#150, on top of #148, which put reply drafting behind a
+  circuit breaker so a dead Qwen no longer held every draft for 60 s.)
+- **An email with an SI and a BL attached is compared without asking the AI**
+  (#146), and when the AI does not answer, the keyword rule files the rest
+  instead of the email coming back "could not be checked". My mailbox reads the
+  documents by rule first, as the saved results do.
+
+### Fixed
+
+- *(audit)* **A mailbox email that could not be checked can be opened.** It was stored
+  with no category and the detail pane threw on it, again on every 10-second
+  poll. It now shows *Could not be checked* with **Open in Gmail**. An email
+  that leaves the list between polls no longer freezes the pane either.
+- *(audit)* **Two different ports no longer match.** The port rule deleted every
+  five-letter word as if it were a UN/LOCODE: PORT KLANG matched PORT DICKSON,
+  and BUSAN against BUSAN, SOUTH KOREA was a mismatch. Only a bracketed code is
+  stripped now.
+- *(audit)* **The gross weight is the number written against its unit.** The live
+  cleaner joined every digit, so `2 x 20GP 40,326 KG` read as 22,040,326 kg, and
+  any "MT" nearby multiplied the lot by 1000. A unit in the label counts now
+  too, so a bare 40,326 under *Gross Weight (LBS)* is pounds.
+- *(audit)* **`TBA.`, `T.B.A`, `TO BE ADVISED`, `N.A.` and `NIL` are missing values,** not
+  mismatches, so they reach a person as the blank field they are.
+- *(audit)* **A model's value must appear whole, under its own label.** The check was a
+  substring of the whole document, so the shipper's name passed as the
+  consignee and "100" passed out of "12,100".
+- *(audit)* **Render builds with the Python CI tests.** It ignored `runtime.txt` and ran
+  3.14; `.python-version` pins 3.12.3.
+
+### Security
+
+- *(audit)* **A Word or Excel file that inflates past 8 MB is refused** instead of being
+  read into memory (a zip bomb, reachable with no sign-in through Upload files
+  or by email), and a PDF is read to 20 pages. An upload that yields nothing no
+  longer calls the model.
+- *(audit)* **The rate limit keys on an address the caller cannot write.** It trusted
+  the leftmost `X-Forwarded-For`, so a new value per request skipped it. It now
+  uses Cloudflare's `cf-connecting-ip`. `/mailbox` gets its own budget per
+  signed-in person, and made-up callers are forgotten once idle.
+- *(audit)* **`/process-email` reads only dataset files, or files this server saved for
+  the request.** Any absolute path, or `../`, used to be read and its fields
+  sent back: another person's Gmail attachments included.
+- *(audit)* **Limits on what any caller can send.** A body past 2 MB (17 MB for
+  an upload of two files) is refused before it is read; a 50 MB post used to be
+  parsed whole and echoed back in the 422, which now describes the problem
+  without the input. A caller's `X-Request-ID` is used only if it looks like
+  one. Each mailbox's checks queue on their own, so one busy account cannot
+  hold up the demo mailbox. Classification masks only the part of the body the
+  prompt uses, off the event loop: masking a 100k body stalled every request
+  for 6 s.
+- *(audit)* **An SI request's draft never fails the email** (#145 follow-up). A
+  curly quote or a dash raised out of the PDF font as a 500; the reply carried
+  the PDF's server path and said it was attached; the email id could write the
+  PDF outside its folder. All four are fixed.
+- *(audit)* **A profile's email must be the sign-in email** (migration `0007`). Setting
+  it to someone else's address made that person's first sign-in fail.
 
 ## [1.1.0] — 2026-09-25
 

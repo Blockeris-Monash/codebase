@@ -215,3 +215,14 @@ def test_the_guard_steps_aside_when_the_live_tests_are_asked_for() -> None:
     guard = source[source.index("def no_model_calls_from_the_application"):]
     assert "LIVE_OPT_IN" in guard.split("for name in MODEL_KEYS")[0]
     assert "return" in guard.split("for name in MODEL_KEYS")[0]
+
+
+def test_render_is_pinned_to_the_python_ci_tests() -> None:
+    """Render reads .python-version, not runtime.txt, so it ran 3.14 while CI tested
+    3.11 and 3.12 (#147 A4). Both files name the same version."""
+    root = Path(__file__).resolve().parents[1]
+    pinned = (root / ".python-version").read_text(encoding="utf-8").strip()
+    heroku_style = (root / "runtime.txt").read_text(encoding="utf-8").strip()
+
+    assert heroku_style == f"python-{pinned}"
+    assert pinned.rsplit(".", 1)[0] in {"3.11", "3.12"}
