@@ -213,12 +213,13 @@ def compare(
     # difference between chasing a value and rejecting a form, so it is kept.
     blanks: List[tuple] = []
 
-    si_fields = si_doc.get("fields", {})
-    bl_fields = bl_doc.get("fields", {})
+    # `or {}`, not a default: a key present as null is None, and treated as absent.
+    si_fields = si_doc.get("fields") or {}
+    bl_fields = bl_doc.get("fields") or {}
 
     for field_name in CANONICAL_FIELDS:
-        si_item = si_fields.get(field_name, {})
-        bl_item = bl_fields.get(field_name, {})
+        si_item = si_fields.get(field_name) or {}
+        bl_item = bl_fields.get(field_name) or {}
 
         si_raw = si_item.get("raw")
         bl_raw = bl_item.get("raw")

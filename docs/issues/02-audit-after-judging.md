@@ -117,8 +117,9 @@ first. Replies are the one gap, and the one the OWASP document says is closed.
   def anonymize_many(self, texts: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]
   ```
 
-  It works by masking the texts joined with a separator and splitting them
-  again.
+  Each text is analysed on its own, but all of them share one counter and one
+  mapping, so a token means one value everywhere and a repeated value keeps
+  its token.
 - The embedding query is the masked body, so nothing personal reaches the
   embedding API either.
 - Masking runs where the drafting already runs, off the event loop.

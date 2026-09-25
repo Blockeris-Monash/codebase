@@ -420,10 +420,11 @@ def with_label_unit(value: str, label: Optional[str]) -> str:
     return f"{value} {unit.group(1)}"
 
 
-def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
+def apply_cleaner(fields: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cleaned: Dict[str, Any] = {}
     for key in FIELD_NAMES:
-        field_data = fields.get(key, {"present": False, "raw": None})
+        # A field, or all of them, sent as null is absent: missing, never a crash (#147 B3).
+        field_data = (fields or {}).get(key) or {"present": False, "raw": None}
         raw_text = field_data.get("raw")
         present = field_data.get("present", False)
 
