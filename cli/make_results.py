@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 import backend.app as pipeline
 from backend.compare.comparator import compare
 from backend.intent import about, email_intent
+from cli.demo_replies import sample_reply
 from backend.read.documents import document_title, read_document
 
 # Loaded here rather than relied on second-hand: this worked only because
@@ -150,6 +151,13 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
     if intent:  # absent rather than null, as with ref: the page shows the subject instead
         entry["intent"] = intent
         entry["about"] = about(intent, record["subject"], record["body"])
+
+    # Live mail drafts these two with the AI (backend/reply.py); the demo calls no model, so it
+    # carries a sample written in advance, which the page labels as a sample.
+    if entry["category"] in ("INVOICE_QUERY", "GENERAL"):
+        draft = sample_reply(intent, entry.get("about", []), record["body"])
+        if draft:
+            entry.update(draft_reply=draft, draft_by="sample")
     return entry
 
 
