@@ -619,6 +619,14 @@ const REASON = {
   missing_attachment:T("The SI or the BL is not attached to this email.")};
 const LABEL = {MISMATCH:T("Action required"), NEEDS_REVIEW:T("Needs review"), OK:T("Verified")};
 const OTHER = {SI_REQUEST:T("SI request"), INVOICE_QUERY:T("Invoice"), GENERAL:T("General"), SPAM:T("Spam"), BL_COMPARISON:T("SI vs BL")};
+/* What the sender wants (backend/intent.py). The title is this label and the few words in e.about,
+   so it reads the same in every language; mail with no intent (live, uploaded) keeps its subject. */
+const INTENT = {check_draft_bl:T("Check draft BL against SI"), chase_draft_bl:T("Draft BL requested"),
+  resend_documents:T("Attachments missing"), submit_si:T("New Shipping Instruction"),
+  cancel_invoice:T("Cancel invoice"), missing_gr:T("GR missing for invoice"), dd_charges:T("Confirm D&D charges"),
+  charge_query:T("Question on invoice charges"), system_notice:T("System notice, no action needed"),
+  schedule_update:T("Vessel update"), outstanding_reminder:T("Outstanding items reminder"), office_notice:T("Office notice")};
+const title = e=>INTENT[e.intent] ? t(INTENT[e.intent]) + (e.about&&e.about.length ? ": "+e.about.join(" \u00b7 ") : "") : e.subject;
 const FOLDERS = [
   {k:"MISMATCH", n:T("Action required"), f:e=>e.status==="MISMATCH" && !S.marks[e.id]},
   {k:"NEEDS_REVIEW", n:T("Needs review"), f:e=>e.status==="NEEDS_REVIEW" && !e.awaiting && !S.marks[e.id]},
@@ -1011,7 +1019,7 @@ const items = ()=>{
   const stays = e=>e.id===S.sel && S.marks[e.id] && e.status===S.f;
   // a search looks through all mail, so nothing is hidden behind the folder you happen to be in
   const inView = term ? ()=>true : e=>folder(S.f).f(e) || stays(e);
-  const found = baseList.filter(inView).filter(e=>!term || (e.subject+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
+  const found = baseList.filter(inView).filter(e=>!term || (e.subject+" "+title(e)+" "+e.from+" "+e.id.replace("email_","")+" "+(e.ref||"")).toLowerCase().includes(term));
   // Most issues puts the most fields to fix on top; sort is stable, so ties keep the saved order.
   // Most recent is the saved inbox order (the demo data has no dates; a live mailbox brings them).
   if(term || !RANKED.includes(S.f)) return found;
@@ -1223,7 +1231,7 @@ function actionsHTML(e){
 
 function detail(e){
   const view = e;
-  let h = `<div class="detail"><h2>${esc(e.subject)}</h2><div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
+  let h = `<div class="detail"><h2>${esc(title(e))}</h2>${e.intent?`<div class="mute small subj">${esc(e.subject)}</div>`:""}<div class="mute small">${e.uploaded?t("Manual uploads"):`${who(e)} · ${e.id.replace("email_","#")}`}</div>${routeHTML(e)}${how(e)}`;
   let banner, tbl = "";
   if(e.awaiting){
     banner = `<div class="banner plain">${t("Draft BL requested")}<span>${t("The sender asked for the draft BL and nothing is attached, so there is nothing to compare yet.")}</span></div>`;
@@ -1322,7 +1330,7 @@ function render(){
   const kp = (k,label)=>`<button class="kpi k-${k} ${S.f===k||(k==="OTHER"&&OTHER_KINDS.includes(S.f))?"on":""}" data-a="folder" data-k="${k}"><b class="num">${loadingBox()?"\u2026":count(k)}</b>${ICON[k]||""}${t(label)}</button>`;
   const rows = list.slice(S.page*PAGE, to).map(e=>{
     const m = S.marks[e.id];
-    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(e.subject)}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
+    return `<button class="item ${S.sel===e.id?"on":""} ${m?"checked":""}" data-a="open" data-id="${e.id}"><span class="t"><b>${hl(e.from.replace(/<.*>/,"").trim()||e.from)}</b><span class="tr">${numChip(e)}${m?`<span class="badge b-done">${ICON.CHECKED}${m==="ok"?t("Done"):t("Replied")}</span>`:badge(e)}</span></span><span class="sub">${hl(title(e))}</span>${e.ref?`<span class="ref">${hl(e.ref)}</span>`:""}</button>`;
   }).join("");
   const pane = S.sel ? `<button class="ghost" data-a="back" style="margin-bottom:10px">← ${t("List")}</button>${detail(getEmail(S.sel))}` : loadingBox() ? sceneCard(loadingHTML()) : !total&&RANKED.includes(S.f)&&!S.q.trim() ? allDoneHTML() : sceneCard(`<b>${t("Pick an email to see it here")}</b><span>${t("Click one in the list. Once it is open, the left and right arrow keys move between emails.")}</span>${total?`<button class="btn" data-a="first">${t("Open the first email")}</button>`:""}`);
   const help = S.help ? helpHTML() : "";

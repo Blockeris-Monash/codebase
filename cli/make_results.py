@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 import backend.app as pipeline
 from backend.compare.comparator import compare
+from backend.intent import about, email_intent
 from backend.read.documents import document_title, read_document
 
 # Loaded here rather than relied on second-hand: this worked only because
@@ -144,6 +145,11 @@ def build_email(inbox_file: Path, data_dir: Path, classifications: Path) -> dict
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
         if not attachments and DRAFT_REQUEST.search(record["body"]):
             entry["awaiting"] = True
+
+    intent = email_intent(entry["category"], record["subject"], record["body"], awaiting=bool(entry.get("awaiting")))
+    if intent:  # absent rather than null, as with ref: the page shows the subject instead
+        entry["intent"] = intent
+        entry["about"] = about(intent, record["subject"], record["body"])
     return entry
 
 
