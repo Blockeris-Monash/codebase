@@ -7,7 +7,7 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-From the audit in #147. Nothing below changes a result on the provided dataset:
+The Added, Fixed and Security entries are from the audit in #147. None of them changes a result on the provided dataset:
 rules-first agrees 124 of 124, the mutation check catches 630 of 630, and
 `results.js` rebuilds byte-identical. Each fix has tests that fail without it.
 
