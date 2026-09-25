@@ -1049,7 +1049,7 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:null}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), corr:loadCorr(), rev:null, draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:null}, hl:null, help:false, langDlg:false, reportDlg:false, busy:null, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), corr:loadCorr(), rev:null, draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], uploads:[], uploadDlg:false, uploading:false, uploadErr:null, upFiles:{}, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1567,6 +1567,7 @@ function render(){
   if(S.keyNav){ S.keyNav=false; const on=q(".item.on"); if(on) on.scrollIntoView({block:"nearest"}); }
   if(S.scrollTo){ const el=q(S.scrollTo); if(el) el.scrollIntoView({block:"start"}); S.scrollTo=null; }
   if(S.scrollNear){ const el=q(S.scrollNear); if(el) el.scrollIntoView({block:"nearest"}); S.scrollNear=null; }   // just into view: the table above stays in sight
+  syncPolling();
 }
 
 /* The top bar stays one row, whatever the language or name: when it would wrap (and a menu
@@ -1622,7 +1623,7 @@ document.addEventListener("click", ev=>{
   else if(a==="nextback"){ location.hash = fromHomeHash() ? "#/" : "#/inbox"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
   else if(a==="inbox"){ location.hash="#/inbox"; window.scrollTo(0,0); }
   else if(a==="demoacct"){ S.userMenu=false; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="demo"){ S.mailbox="demo"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } }
-  else if(a==="mymailbox"){ if(!S.user) return; S.userMenu=false; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="live"){ S.mailbox="live"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } if(!S.polling) startPolling(); }
+  else if(a==="mymailbox"){ if(!S.user) return; S.userMenu=false; location.hash="#/inbox"; window.scrollTo(0,0); if(S.mailbox!=="live"){ S.mailbox="live"; S.sel=null; S.page=0; S.q=""; S.f="MISMATCH"; } }
   else if(a==="tab"){ S.tab=k; S.tabChanged=true; }
   else if(a==="settings") S.langMenu=!S.langMenu;
   else if(a==="signin"){ startSignIn(); return; }
@@ -1793,21 +1794,49 @@ window.Store?.pull(S.marks)?.then(function (merged) {
   S.marks = merged; saveMarks(); render();
 });
 
-let pollTimer = null;
-async function fetchLiveMailbox() {
+/* My mailbox is polled only while it is on screen (My mailbox chosen, the inbox showing, the tab
+   visible), one request at a time, the next only after this one settles. An answer that lands
+   after sign-out or after leaving is dropped: it belongs to an older generation (#147 B2). */
+const POLL_MS = 10000;
+const poll = {timer:null, inflight:null, generation:0};
+const mailboxOnScreen = ()=>S.mailbox==="live" && !!S.user && !isHome() && location.hash!=="#/next" && document.visibilityState==="visible";
+function stopPolling(){
+  poll.generation++; clearTimeout(poll.timer); poll.timer = null;
+  if(poll.inflight){ poll.inflight.abort(); poll.inflight = null; }
+}
+function schedulePoll(delay){ clearTimeout(poll.timer); poll.timer = setTimeout(pollOnce, delay); }
+/* Called after every render and whenever the tab is shown or hidden: polling follows the screen. */
+function syncPolling(){
+  if(!mailboxOnScreen()){ if(poll.timer || poll.inflight) stopPolling(); return; }
+  if(!poll.timer && !poll.inflight) schedulePoll(0);
+}
+async function pollOnce(){
+  poll.timer = null;
+  if(!mailboxOnScreen() || poll.inflight) return;
+  const generation = poll.generation, controller = new AbortController();
+  poll.inflight = controller;
+  try{ await fetchLiveMailbox(controller.signal, generation); }
+  finally{ if(poll.inflight===controller) poll.inflight = null; }
+  if(generation===poll.generation && mailboxOnScreen()) schedulePoll(POLL_MS);
+}
+document.addEventListener("visibilitychange", syncPolling);
+async function fetchLiveMailbox(signal, generation) {
   if (S.mailbox !== "live" || !S.user) return;
   // Google's token says whose mailbox it is; the backend never takes a user id.
   const token = window.Store?.googleToken?.();
   if (!token) { S.mailboxErr = T("Gmail access lasts an hour. Reconnect Gmail to see your mailbox."); S.liveLoaded = true; render(); return; }
   try {
-    const res = await fetch(API_BASE + "/mailbox", {headers: {"Authorization": "Bearer " + token}});
+    const res = await fetch(API_BASE + "/mailbox", {headers: {"Authorization": "Bearer " + token}, signal});
+    if (generation !== poll.generation) return;   // signed out or moved away while this was in flight
     if (res.status === 401) { S.mailboxErr = T("Gmail access lasts an hour. Reconnect Gmail to see your mailbox."); S.liveLoaded = true; render(); return; }
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
+    if (generation !== poll.generation) return;
     S.liveEmails = data; S.mailboxErr = null; S.liveLoaded = true;
     S.pending = +(res.headers.get("X-Mailbox-Pending") || 0);
     if (S.mailbox === "live") render();
   } catch (err) {
+    if (err.name === "AbortError" || generation !== poll.generation) return;
     console.warn("Could not fetch live mailbox:", err);
     if (!S.liveLoaded) { S.liveLoaded = true; if (S.mailbox === "live") render(); }  // say "nothing here", not load for ever
   }
@@ -1869,12 +1898,6 @@ function mailboxBarHTML(){
   if(S.mailboxErr) return `<div class="authbar" role="alert"><span>${esc(t(S.mailboxErr))}</span><button class="ghost" data-a="signin">${t("Reconnect Gmail")}</button></div>`;
   return "";
 }
-function startPolling() {
-  if (S.polling) return;
-  S.polling = true;
-  fetchLiveMailbox();
-  pollTimer = setInterval(fetchLiveMailbox, 10000);
-}
 
 /* The Supabase library is a module script, and module scripts run after this one
    but before DOMContentLoaded. So sign-in is wired here, not above. The callback
@@ -1886,10 +1909,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     S.user = user; S.userMenu = false; S.busy = null;
     if (!user) { S.liveEmails = []; S.liveLoaded = false; }
     if (!user) signInReturn = false;
-    if (!user && S.mailbox === "live") { S.mailbox = "demo"; S.polling = false; clearInterval(pollTimer); pollTimer = null; }
+    if (!user) stopPolling();
+    if (!user && S.mailbox === "live") S.mailbox = "demo";
     // A fresh sign-in lands on its own mail. Not on a token refresh: the demo is one click away and stays put.
-    if (user && !wasSignedIn && S.mailbox !== "live") { S.mailbox = "live"; S.sel = null; S.page = 0; S.q = ""; S.f = "MISMATCH"; startPolling(); }
-    if (user && !S.polling) startPolling();
+    if (user && !wasSignedIn && S.mailbox !== "live") { S.mailbox = "live"; S.sel = null; S.page = 0; S.q = ""; S.f = "MISMATCH"; }
     // Supabase has cleared the token from the address by now; point it at the inbox, not the landing page.
     if (user && signInReturn) {
       signInReturn = false; history.replaceState(null, "", location.pathname + "#/inbox");
