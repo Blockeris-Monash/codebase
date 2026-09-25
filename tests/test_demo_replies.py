@@ -102,3 +102,28 @@ def test_the_reply_box_says_who_wrote_a_demo_draft() -> None:
     assert f'e.draft_by==="claude"?`<div class="small mute sample">${{t("{LABEL}")}}</div>`:""' in INDEX
     assert I18N.count(f'"{LABEL}":') == 2
     assert "Sample reply written for the demo" not in INDEX + I18N
+
+
+# ---- Open in your email app, on a demo email ---------------------------------------------
+#
+# The demo's emails carry real companies' addresses, and on a computer with no mail app set up
+# the mailto: link did nothing at all, so the button looked dead. On a demo email it now opens
+# a popup saying nothing is opened or sent, with the reply ready to copy. Live mail keeps its
+# real Open in Gmail link.
+
+
+def test_open_in_your_email_app_shows_a_demo_popup_instead_of_a_mailto_link() -> None:
+    assert '"mailto:"+encodeURIComponent(S.draft.to)' not in INDEX   # the Help page's feedback link keeps its own
+    assert re.search(r'a==="mailto"\)\{ S\.mailDlg=true;', INDEX)
+    popup = function("mailDlgHTML")
+    assert 'role="dialog"' in popup and 'data-a="mailclose"' in popup and 'data-a="copy"' in popup
+    assert "S.mailDlg?mailDlgHTML()" in INDEX
+
+
+def test_the_popup_closes_like_the_others() -> None:
+    assert "S.help||S.langDlg||S.reportDlg||S.uploadDlg||S.mailDlg" in INDEX       # page stays put under it
+    assert re.search(r'ev\.key==="Escape"&&\([^)]*S\.mailDlg', INDEX)
+
+
+def test_the_demo_note_never_suggests_sending_demo_mail_for_real() -> None:
+    assert "send it for real" not in INDEX + I18N

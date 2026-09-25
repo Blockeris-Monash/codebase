@@ -30,12 +30,23 @@ def branch(action: str) -> str:
     return lines[0]
 
 
-def test_the_main_button_names_the_next_step_for_each_case() -> None:
-    steps = block("const NEXT_STEP = {", "\n};\n")
-    for reason in ("missing_value", "unreadable", "missing_attachment", "wrong_doc_type"):
-        assert reason in steps
-    assert 'T("Ask to fix the BL")' in steps
-    assert "NEXT_STEP" in block("function actionsHTML(e){")
+def test_every_email_that_can_be_answered_says_draft_a_reply() -> None:
+    """One action, one name: the button opens a draft to check and send, so it says so, on
+    every kind of email and in live mail alike. "Ask to fix the BL" named neither what the
+    click does nor who asks whom, and used the abbreviation BL on the main button."""
+    actions = block("function actionsHTML(e){")
+    assert 'data-a="draft" data-id="${e.id}">${t("Draft a reply")}</button>' in actions
+    for old in ("Ask to fix the BL", "Ask for the missing values", "Ask for a clearer file",
+                "Ask for the SI and BL", "Ask for the right documents", "Reply to sender"):
+        assert f'"{old}"' not in INDEX, old
+
+
+def test_the_reply_box_heading_says_what_the_reply_asks_for() -> None:
+    asks = block("const REPLY_ASKS = {", "\n};\n")
+    for reason in ("MISMATCH", "missing_value", "unreadable", "missing_attachment", "wrong_doc_type"):
+        assert reason in asks
+    assert 'T("Reply: ask the sender to correct the Bill of Lading")' in asks
+    assert "REPLY_ASKS[" in block("function actionsHTML(e){")
 
 
 def test_a_problem_field_tints_its_whole_row() -> None:

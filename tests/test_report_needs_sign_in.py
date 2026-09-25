@@ -43,7 +43,7 @@ def test_the_popup_is_drawn_and_can_be_closed() -> None:
     assert '${S.reportDlg?reportSignInHTML():""}' in INDEX
     assert 'else if(a==="reportclose"){ S.reportDlg=false; }' in INDEX
     assert 'else if(a==="reportsignin"){ S.reportDlg=false; startSignIn(); return; }' in INDEX
-    assert "S.reportDlg=false; S.langMenu=false; render(); return; }" in INDEX
+    assert "S.reportDlg=false; S.mailDlg=false; S.langMenu=false; render(); return; }" in INDEX
 
 
 def test_the_general_support_form_is_unchanged() -> None:
