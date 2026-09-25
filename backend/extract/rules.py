@@ -119,7 +119,7 @@ def comparison_result(email_id: str, si: DocumentExtract,
 
     return {"email_id": email_id, "status": StatusType.Ok, "review_reason": None,
             "rows": rows, "defect_fields": [],
-            "evidence": f"all {len(FIELD_NAMES)} fields match after normalisation"}
+            "evidence": f"No mismatch detected. All {len(FIELD_NAMES)} fields match after normalisation."}
 
 
 def submission_entry(comparison: ComparisonResult, category: str) -> SubmissionEntry:

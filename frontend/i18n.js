@@ -129,8 +129,6 @@ window.I18N = {
   "Cover email": "E-mel pengiring",
   "Fix the Bill of Lading before it is released.": "Betulkan Bil Muatan sebelum ia dikeluarkan.",
   "Needs a person to look": "Seseorang perlu melihatnya",
-  "All 7 fields match": "Semua 7 medan sepadan",
-  "Nothing to do.": "Tiada apa-apa perlu dibuat.",
   "Not an SI vs BL check": "Bukan semakan SI lwn BL",
   "Marked as done": "Ditandakan selesai",
   "Reply sent (demo)": "Balasan dihantar (demo)",
@@ -400,7 +398,8 @@ window.I18N = {
   "now matches": "kini sepadan",
   "still blank": "masih kosong",
   "still differs": "masih berbeza",
-  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "Diperhalusi dengan AI Ship Happens daripada balasan yang ditulis lebih awal oleh Claude untuk demo."
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "Diperhalusi dengan AI Ship Happens daripada balasan yang ditulis lebih awal oleh Claude untuk demo.",
+  "No mismatch detected.": "Tiada ketidakpadanan dikesan."
  },
  "zh": {
   "The pages themselves. Tap one to open it full size.": "页面原件。点按即可全尺寸打开。",
@@ -530,8 +529,6 @@ window.I18N = {
   "Cover email": "邮件正文",
   "Fix the Bill of Lading before it is released.": "请在提单发出之前修改。",
   "Needs a person to look": "需要人工查看",
-  "All 7 fields match": "7 个字段全部一致",
-  "Nothing to do.": "无需处理。",
   "Not an SI vs BL check": "不是 SI 与 BL 的核对",
   "Marked as done": "已标记为已完成",
   "Reply sent (demo)": "回复已发送（演示）",
@@ -801,6 +798,7 @@ window.I18N = {
   "now matches": "现在一致",
   "still blank": "仍为空",
   "still differs": "仍有差异",
-  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "由 Ship Happens 的 AI 在 Claude 为演示预先撰写的回复基础上润色。"
+  "Refined with Ship Happens' AI from a reply written in advance by Claude for the demo.": "由 Ship Happens 的 AI 在 Claude 为演示预先撰写的回复基础上润色。",
+  "No mismatch detected.": "未发现不一致。"
  }
 };
