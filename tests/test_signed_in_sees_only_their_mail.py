@@ -1,6 +1,8 @@
-"""Signed in, the inbox still opened on the demo data and offered a Demo data / My mailbox
-switch, so it was unclear whose mail was on screen. A signed-in account now sees only its
-own mailbox; the demo stays for visitors who are not signed in.
+"""Signed in, the inbox still opened on the demo data, so it was unclear whose mail was on
+screen. Signing in now lands on My mailbox. The Demo data / My mailbox switch shows only
+when signed in (#120): the demo is where the evidence lives, so it stays one click away,
+and each tab says whose mail it is. Signed out there is no switch, so no greyed-out
+My mailbox button that does nothing.
 
 "Check again with AI" is gone too: My mailbox already runs every new email through the
 live pipeline, so re-running a saved demo result added nothing."""
@@ -22,12 +24,31 @@ def home() -> str:
 
 def test_signing_in_opens_my_mailbox_and_starts_fetching_it() -> None:
     wiring = auth_wiring()
-    assert 'if (user && S.mailbox !== "live")' in wiring
+    assert 'S.mailbox !== "live")' in wiring
     assert "startPolling()" in wiring
 
 
-def test_the_demo_switch_only_shows_when_signed_out() -> None:
-    assert '${S.user||signInReturn?"":`<div class="seg mbox">' in INDEX
+def switch() -> str:
+    bar = INDEX[INDEX.index('<div class="bar">'):]
+    return bar[:bar.index('<span class="sbox">')]
+
+
+def test_the_switch_shows_only_when_signed_in() -> None:
+    assert switch().startswith('<div class="bar">${S.user?`<div class="seg mbox">')
+    assert "disabled" not in switch()
+    assert "Sign in to see your mailbox" not in INDEX
+
+
+def test_each_tab_says_whose_mail_it_is() -> None:
+    assert "RESULTS.length" in switch()
+    assert "esc(S.user.email" in switch()
+
+
+def test_a_token_refresh_does_not_pull_you_off_the_demo() -> None:
+    """Supabase calls back on every token refresh too; only a fresh sign-in opens My mailbox."""
+    wiring = auth_wiring()
+    assert "const wasSignedIn = !!S.user;" in wiring
+    assert 'if (user && !wasSignedIn && S.mailbox !== "live")' in wiring
 
 
 def test_signed_in_the_landing_page_offers_no_demo_inbox() -> None:
@@ -63,7 +84,7 @@ def test_the_screen_while_a_sign_in_arrives_shows_no_nan_and_no_demo_switch() ->
     count_up = INDEX[INDEX.index("function countUp(){"):]
     count_up = count_up[:count_up.index("\n}")]
     assert '.filter(t=>/^\\d+$/.test(t.textContent))' in count_up
-    assert '${S.user||signInReturn?"":`<div class="seg mbox">' in INDEX
+    assert '${S.user?`<div class="seg mbox">' in INDEX  # S.user is still null while it arrives
     wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
     assert "if (!user) signInReturn = false;" in wiring[:wiring.index("\n  });")]
     assert 'if(!S.authReady || (!S.user && signInReturn)) return "";' in INDEX  # no Sign in button either
