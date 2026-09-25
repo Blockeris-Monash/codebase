@@ -319,7 +319,8 @@ async def classify(email: EmailInput) -> ClassificationResult:
     try:
         return await classify_email(email)
     except ClassificationFailed as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
+        status = error.status_code if error.status_code in range(400, 600) else 502
+        raise HTTPException(status_code=status, detail=str(error)) from error
 
 # =====================================================================
 # 5. Routing Helpers: Attachment Resolution

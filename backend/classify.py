@@ -39,11 +39,24 @@ DEFAULT_OUT_DIR = ROOT_DIR / "results" / "classifications"
 
 # Cloudflare 52x errors and rate limits are usually temporary on a shared gateway.
 RETRY_HTTP = {408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 527}
-TRIES = 4
+
+# One budget across every attempt, not a per-attempt timeout: with 15s per Qwen call
+# (backend/extract/qwen.py's http_post), 4 tries plus 1+2+4s backoff could otherwise
+# run to ~67s. A judge waiting on one click should never wait more than this.
+CLASSIFY_DEADLINE_SECONDS = 25.0
 
 
 class ClassificationFailed(RuntimeError):
-    """The model never returned a usable classification."""
+    """The model never returned a usable classification.
+
+    status_code is the upstream HTTP status when one is known (e.g. 429, 503),
+    so a caller such as /classify can return that instead of a bare 502 for
+    every kind of failure.
+    """
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 # ==========================================
@@ -168,22 +181,38 @@ def attachment_line(attachments: list[str]) -> str:
 # ==========================================
 # 4. Qwen Transport and Execution
 # ==========================================
-def post_with_retry(url: str, headers: dict, body: dict) -> dict:
-    """Call the gateway, retrying temporary errors with 1s, 2s, 4s backoff."""
-    for attempt in range(1, TRIES + 1):
+def post_with_retry(
+    url: str, headers: dict, body: dict, deadline: float = CLASSIFY_DEADLINE_SECONDS
+) -> dict:
+    """Call the gateway, retrying temporary errors with 1s, 2s, 4s... backoff,
+    but never past `deadline` seconds of total wall-clock time.
+    """
+    start = time.monotonic()
+    attempt = 0
+    while True:
+        attempt += 1
         try:
             return http_post(url, headers, body)
         except urllib.error.HTTPError as err:
-            if err.code not in RETRY_HTTP or attempt == TRIES:
+            elapsed = time.monotonic() - start
+            if err.code not in RETRY_HTTP or elapsed >= deadline:
                 raise
             why = f"HTTP {err.code}"
         except (urllib.error.URLError, TimeoutError) as err:
-            if attempt == TRIES:
+            elapsed = time.monotonic() - start
+            if elapsed >= deadline:
                 raise
             why = str(err) or type(err).__name__
-        log.warning("Qwen call failed (%s), retry %d/%d", why, attempt, TRIES - 1)
-        time.sleep(2 ** (attempt - 1))
-    raise RuntimeError("unreachable")
+
+        remaining = deadline - elapsed
+        backoff = min(2 ** (attempt - 1), max(remaining, 0))
+        log.warning(
+            "Qwen call failed (%s), retrying in %.1fs (elapsed %.1fs/%.1fs)",
+            why, backoff, elapsed, deadline,
+        )
+        if backoff <= 0:
+            raise TimeoutError(f"classification deadline of {deadline:.0f}s exceeded")
+        time.sleep(backoff)
 
 
 def qwen_classification_model(
@@ -262,7 +291,10 @@ async def classify_email(email: EmailInput) -> ClassificationResult:
         )
     except Exception as error:
         log.exception("classification failed for %s", email.email_id)
-        raise ClassificationFailed(str(error)) from error
+        # Carry the upstream status through, so a caller like /classify can return
+        # e.g. 429 or 503 instead of collapsing every failure into a bare 502.
+        status_code = getattr(error, "code", None)  # urllib.error.HTTPError.code
+        raise ClassificationFailed(str(error), status_code=status_code) from error
 
 
 def is_saved(path: Path) -> bool:
