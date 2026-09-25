@@ -360,7 +360,10 @@ window.I18N = {
   "Drafting...": "Sedang mendraf...",
   "Sign in with Google again to draft a reply.": "Log masuk dengan Google sekali lagi untuk mendraf balasan.",
   "No draft: {reason}": "Tiada draf: {reason}",
-  "Colour-blind friendly": "Mesra buta warna"
+  "Colour-blind friendly": "Mesra buta warna",
+  "Colours": "Warna",
+  "Standard colours": "Warna biasa",
+  "Monotone": "Monoton"
  },
  "zh": {
   "What the scan says": "扫描件上的内容",
@@ -721,6 +724,9 @@ window.I18N = {
   "Drafting...": "正在起草...",
   "Sign in with Google again to draft a reply.": "请重新使用 Google 登录以起草回复。",
   "No draft: {reason}": "未能起草：{reason}",
-  "Colour-blind friendly": "色盲友好"
+  "Colour-blind friendly": "色盲友好",
+  "Colours": "颜色",
+  "Standard colours": "标准颜色",
+  "Monotone": "单色"
  }
 };

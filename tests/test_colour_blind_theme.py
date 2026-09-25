@@ -1,10 +1,11 @@
-"""A colour-blind friendly option (Meeting 7, job 9).
+"""Colour-blind friendly and Monotone colours (Meeting 7, job 9).
 
 Action required, Needs review and Verified were red, brown and green. For someone with red-green
 colour blindness (about 1 man in 12), the red and brown of Action required and Needs review look
 almost the same in light mode, and the red and green are close too. The Settings menu now has a
-Colour-blind friendly switch that works with Light and Dark mode: Action required turns magenta,
-Verified turns blue, and Needs review keeps its amber. The choice is remembered on this device.
+choice of Colours that works with Light and Dark mode: Standard colours; Colour-blind friendly
+(Action required magenta, Verified blue, Needs review keeps its amber); or Monotone (the whole
+page in greys, for people who see no colour at all). The choice is remembered on this device.
 
 The palette is checked here, not only named: each pair of status colours must stay clearly apart
 under simulated protanopia, deuteranopia and tritanopia (Machado et al. 2009, full severity), and
@@ -78,8 +79,14 @@ DARK = tokens(':root[data-theme="dark"]')
 def colour_blind(mode: str) -> dict[str, str]:
     """The page's colours with the switch on: the mode's own, then the switch's overrides."""
     if mode == "light":
-        return {**LIGHT, **tokens(':root[data-cb="on"]')}
-    return {**DARK, **tokens(':root[data-cb="on"][data-theme="dark"]')}
+        return {**LIGHT, **tokens(':root[data-palette="cb"]')}
+    return {**DARK, **tokens(':root[data-palette="cb"][data-theme="dark"]')}
+
+
+def monotone(mode: str) -> dict[str, str]:
+    if mode == "light":
+        return {**LIGHT, **tokens(':root[data-palette="mono"]')}
+    return {**DARK, **tokens(':root[data-palette="mono"][data-theme="dark"]')}
 
 # ---------------------------------------------------------------- the palette
 
@@ -99,17 +106,40 @@ def test_the_old_palette_is_why_this_exists() -> None:
 
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
-def test_status_text_stays_readable(mode: str) -> None:
-    ours = colour_blind(mode)
+@pytest.mark.parametrize("palette", [colour_blind, monotone])
+def test_status_text_stays_readable(palette, mode: str) -> None:
+    ours = palette(mode)
     for name in ("--bad", "--rev", "--ok"):
         assert contrast(ours[name], ours["--panel"]) >= READABLE, f"{mode} {name} on the panel"
         assert contrast(ours[name], ours[name + "-soft"]) >= READABLE, f"{mode} {name} on its own soft tint"
 
 
-def test_dark_mode_from_the_system_gets_the_same_colours() -> None:
-    system = STYLE[STYLE.index('@media (prefers-color-scheme:dark){:root[data-cb="on"]:not([data-theme="light"]){'):]
+@pytest.mark.parametrize("palette", ["cb", "mono"])
+def test_dark_mode_from_the_system_gets_the_same_colours(palette: str) -> None:
+    system = STYLE[STYLE.index(f'@media (prefers-color-scheme:dark){{:root[data-palette="{palette}"]:not([data-theme="light"]){{'):]
     body = system[:system.index("}")]
-    assert dict(re.findall(r"(--[\w-]+):(#[0-9a-fA-F]{6})", body)) == tokens(':root[data-cb="on"][data-theme="dark"]')
+    assert dict(re.findall(r"(--[\w-]+):(#[0-9a-fA-F]{6})", body)) == tokens(f':root[data-palette="{palette}"][data-theme="dark"]')
+
+
+# ---------------------------------------------------------------- monotone
+
+def lightness(hex_colour: str) -> float:
+    return lab(linear(hex_colour))[0]
+
+
+def test_monotone_turns_the_whole_page_grey() -> None:
+    assert re.search(r':root\[data-palette="mono"\]\{filter:grayscale\(1\)', STYLE)
+
+
+@pytest.mark.parametrize("mode", ["light", "dark"])
+def test_monotone_statuses_are_greys_told_apart_by_lightness(mode: str) -> None:
+    """With no colour at all, the three statuses differ by how light they are (and by their icons)."""
+    ours = monotone(mode)
+    for name in ("--bad", "--rev", "--ok", "--bad-soft", "--rev-soft", "--ok-soft"):
+        r, g, b = (ours[name][i:i + 2] for i in (1, 3, 5))
+        assert r == g == b, f"{mode} {name} {ours[name]} is not a grey"
+    text = sorted(lightness(ours[n]) for n in ("--bad", "--rev", "--ok"))
+    assert min(b - a for a, b in zip(text, text[1:])) >= 12, f"{mode}: status greys too close {text}"
 
 # ---------------------------------------------------------------- the switch
 
@@ -119,23 +149,26 @@ def function(name: str) -> str:
     return body[:body.index("\n}")]
 
 
-def test_the_settings_menu_has_a_colour_blind_switch_beside_colour_mode() -> None:
+def test_the_settings_menu_offers_one_choice_of_three_colours_under_colour_mode() -> None:
     menu = function("settingsHTML")
 
-    assert 'data-a="cb"' in menu and 'role="menuitemcheckbox"' in menu
-    assert 'aria-checked="${cb}"' in menu
-    assert 't("Colour-blind friendly")' in menu
-    assert '${t("Colour mode")}</div>${mode}${blind}' in menu  # right under Light and Dark mode
+    assert '[["",T("Standard colours")],["cb",T("Colour-blind friendly")],["mono",T("Monotone")]]' in menu
+    assert 'role="menuitemradio"' in menu and 'data-a="palette"' in menu
+    assert '${t("Colour mode")}</div>${mode}' in menu
+    assert menu.index("${mode}") < menu.index('t("Colours")') < menu.index("${palettes}")
 
 
-def test_the_switch_changes_the_page_and_is_remembered() -> None:
-    assert re.search(r'a==="cb"\)\{[^\n]*setColourBlind\(', INDEX)
-    save = function("setColourBlind")
-    assert 'document.documentElement.dataset.cb' in save
-    assert 'localStorage.setItem("blockeris.cb"' in save
+def test_the_choice_changes_the_page_and_is_remembered() -> None:
+    assert re.search(r'a==="palette"\)\{[^\n]*setPalette\(k\)', INDEX)
+    save = function("setPalette")
+    assert 'document.documentElement.dataset.palette' in save
+    assert 'localStorage.setItem("blockeris.palette"' in save
     # applied before the first paint, so the page never flashes red and green first
     head = INDEX[:INDEX.index("</head>")]
-    assert 'localStorage.getItem("blockeris.cb")' in head
+    assert 'localStorage.getItem("blockeris.palette")' in head
+    # whoever turned on Colour-blind friendly before Monotone existed keeps it
+    assert 'localStorage.getItem("blockeris.cb")==="on"' in head
+    assert "data-cb" not in INDEX
 
 
 def test_it_is_built_so_it_is_no_longer_on_the_roadmap() -> None:

@@ -49,11 +49,16 @@
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.4);
   --card:0 1px 2px rgba(0,0,0,.30),0 8px 24px rgba(0,0,0,.38);
   --bg-grad:radial-gradient(900px 520px at 6% 0%,#5a3216 0%,transparent 62%),radial-gradient(800px 520px at 100% 18%,#4d2532 0%,transparent 60%),radial-gradient(900px 600px at 45% 100%,#43391a 0%,transparent 62%),#1e1a17;}
-/* Colour-blind friendly (Settings): Action required magenta and Verified blue instead of red and green,
-   so the statuses stay apart for red-green colour blindness; Needs review keeps its amber. */
-:root[data-cb="on"]{--bad:#b0145f; --bad-soft:#fbe4ef; --ok:#1f5fd6; --ok-soft:#e3edfc;}
-@media (prefers-color-scheme:dark){:root[data-cb="on"]:not([data-theme="light"]){--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}}
-:root[data-cb="on"][data-theme="dark"]{--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}
+/* Colours (Settings). Colour-blind friendly: Action required magenta and Verified blue instead of red and
+   green, so the statuses stay apart for red-green colour blindness; Needs review keeps its amber. */
+:root[data-palette="cb"]{--bad:#b0145f; --bad-soft:#fbe4ef; --ok:#1f5fd6; --ok-soft:#e3edfc;}
+@media (prefers-color-scheme:dark){:root[data-palette="cb"]:not([data-theme="light"]){--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}}
+:root[data-palette="cb"][data-theme="dark"]{--bad:#ff6fae; --bad-soft:#3d1a2c; --ok:#7fa6ff; --ok-soft:#172a45;}
+/* Monotone: the whole page in greys, for people who see no colour. The statuses become three greys, darkest
+   for Action required, told apart by lightness and by their icons (cross, eye, tick). */
+:root[data-palette="mono"]{filter:grayscale(1); --bad:#1c1c1c; --bad-soft:#d4d4d4; --rev:#4d4d4d; --rev-soft:#e8e8e8; --ok:#6e6e6e; --ok-soft:#f7f7f7;}
+@media (prefers-color-scheme:dark){:root[data-palette="mono"]:not([data-theme="light"]){--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;}}
+:root[data-palette="mono"][data-theme="dark"]{--bad:#f2f2f2; --bad-soft:#555555; --rev:#c4c4c4; --rev-soft:#3d3d3d; --ok:#999999; --ok-soft:#2e2e2e;}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg-grad,var(--bg));background-attachment:fixed;min-height:100vh;color:var(--ink);font:0.9375rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -571,7 +576,11 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 /* the hero's sea fades into the page instead of stopping at a hard edge */
 .lp-hero .lp-sky{-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)}
 </style>
-<script>try{ if(localStorage.getItem("blockeris.cb")==="on") document.documentElement.dataset.cb = "on"; }catch(_){}</script>
+<script>try{
+  // "blockeris.cb" is the Colour-blind friendly switch from before Monotone existed
+  const palette = localStorage.getItem("blockeris.palette") ?? (localStorage.getItem("blockeris.cb")==="on" ? "cb" : "");
+  if(palette==="cb" || palette==="mono") document.documentElement.dataset.palette = palette;
+}catch(_){}</script>
 </head>
 <body>
 <div id="app"></div>
@@ -1423,7 +1432,7 @@ document.addEventListener("click", ev=>{
   const a = el.dataset.a, k = el.dataset.k, id = el.dataset.id;
   if(a==="stay"||a==="sortsel"||a==="kindsel") return;   // a redraw here would close the dropdown as it opens
   if(a==="theme"){ document.documentElement.dataset.theme = k; S.langMenu=false; }
-  if(a==="cb"){ setColourBlind(document.documentElement.dataset.cb!=="on"); S.langMenu=false; }
+  if(a==="palette"){ setPalette(k); S.langMenu=false; }
   if(a==="help"){ S.help=true; S.tab="guide"; S.tabChanged=true; } else if(a==="next"){ S.help=false; S.nextFrom=location.hash; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="home"){ location.hash="#/"; window.scrollTo(0,0); }
   else if(a==="nextback"){ location.hash = fromHomeHash() ? "#/" : "#/inbox"; window.scrollTo(0,0); } else if(a==="helpclose") S.help=false;
@@ -1519,17 +1528,17 @@ function advance(id){
   S.sel=next.id; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===next.id)/PAGE));
 }
 const toastHTML = ()=>S.toast ? `<div class="toast" role="status"><span>${S.toast.kind==="ok"?t("Marked as done"):S.toast.real?t("Reply sent from your Gmail"):t("Reply sent (demo)")}</span>${S.toast.real?"":`<button class="ghost" data-a="undo" data-id="${S.toast.id}">${t("Undo")}</button>`}</div>` : "";
-function setColourBlind(on){
-  if(on) document.documentElement.dataset.cb = "on"; else delete document.documentElement.dataset.cb;
-  try{ localStorage.setItem("blockeris.cb", on?"on":"off"); }catch(_){}
+function setPalette(k){
+  if(k) document.documentElement.dataset.palette = k; else delete document.documentElement.dataset.palette;
+  try{ localStorage.setItem("blockeris.palette", k); }catch(_){}
 }
 /* Language and colour mode share one menu, so the top bar keeps only Help, What's next and the account. */
 function settingsHTML(isDark){
   const lang = allLangs().map(l=>`<button class="mi ${l.code===LANG?"on":""}" role="menuitemradio" aria-checked="${l.code===LANG}" data-a="langpick" data-k="${l.code}"><span class="mtick">${l.code===LANG?ICON.CHECKED:""}</span>${esc(l.name)}</button>`).join("");
   const mode = [["light",T("Light Mode"),ICON.SUN,!isDark],["dark",T("Dark Mode"),ICON.MOON,isDark]].map(([k,n,ico,on])=>`<button class="mi ${on?"on":""}" role="menuitemradio" aria-checked="${on}" data-a="theme" data-k="${k}"><span class="mtick">${on?ICON.CHECKED:""}</span>${ico}${t(n)}</button>`).join("");
-  const cb = document.documentElement.dataset.cb==="on";
-  const blind = `<button class="mi ${cb?"on":""}" role="menuitemcheckbox" aria-checked="${cb}" data-a="cb"><span class="mtick">${cb?ICON.CHECKED:""}</span>${ICON.NEEDS_REVIEW}${t("Colour-blind friendly")}</button>`;
-  return `<div class="menu" role="menu" aria-label="${t("Settings")}"><div class="mh">${ICON.GLOBE}${t("Language")}</div>${lang}<button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button><div class="msep"></div><div class="mh">${ICON.SUN}${t("Colour mode")}</div>${mode}${blind}</div>`;
+  const now = document.documentElement.dataset.palette || "";
+  const palettes = [["",T("Standard colours")],["cb",T("Colour-blind friendly")],["mono",T("Monotone")]].map(([k,n])=>`<button class="mi ${k===now?"on":""}" role="menuitemradio" aria-checked="${k===now}" data-a="palette" data-k="${k}"><span class="mtick">${k===now?ICON.CHECKED:""}</span>${t(n)}</button>`).join("");
+  return `<div class="menu" role="menu" aria-label="${t("Settings")}"><div class="mh">${ICON.GLOBE}${t("Language")}</div>${lang}<button class="mi" data-a="langmore"><span class="mtick"></span>${t("Get more languages...")}</button><div class="msep"></div><div class="mh">${ICON.SUN}${t("Colour mode")}</div>${mode}<div class="msep"></div><div class="mh">${ICON.NEEDS_REVIEW}${t("Colours")}</div>${palettes}</div>`;
 }
 /* Labelled dropdowns, the usual pattern for sorting and filtering a list. */
 const pick = (a,label,opts,cur)=>`<label class="pick mute small">${label}<select data-a="${a}">${opts.map(([v,n])=>`<option value="${v}" ${v===cur?"selected":""}>${n}</option>`).join("")}</select></label>`;
