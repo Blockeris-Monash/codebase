@@ -1034,8 +1034,9 @@ test_embed.py` would spend quota, and `sample.py` runs on import.
 
 # D1–D3 — built from the specs in #147 section D
 
-On 25 Sep the plan changed to "D1, D2 and D3 now". B4.2–B4.8, B5, D4, D5 and
-EDIFACT wait. The specs in #147 stand as written. What follows is only what
+On 25 Sep the plan changed: D1 and D2 are built on this branch, and D3, B4.2–B4.8,
+B5, D4, D5 and an EDIFACT IFTMIN reader are future steps. The D3 decisions below
+stand for when it is built. The specs in #147 stand as written. What follows is only what
 those specs leave open, decided here.
 
 ## D1 — Revision compare

@@ -56,6 +56,15 @@ fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md
   `/process-email` returns `draft_grounded` and `/draft-reply` returns
   `grounded`; the page shows "No company policy matched this email. Check the
   facts before sending." under such a draft.
+- **A revised draft BL is labelled against the draft before it** (#147 D1). Each
+  field is *fixed*, *still wrong*, a *new mistake* or *unchanged*, shown under the
+  table as "Since the last draft". The verdict is still the latest draft against
+  the SI. `ComparisonResult` gains an optional `revision` block, absent unless an
+  email carries two BLs.
+- **A chase list for draft BLs that never arrived** (#147 D2), in the Draft BL
+  requests folder: one row per sender and shipment reference, oldest first,
+  closed when a readable BL with that reference arrives from that sender, with
+  *Draft a reminder*. Live mail now carries the same `awaiting` flag as the demo.
 
 ### Changed
 

@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 1163 passed, 80 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,10 +108,10 @@ python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 932 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 1163 passed, 80 skipped (skips need a model key)
 ```
 
-If the tests print 932 passed, you are done — that is the whole system checked
+If the tests print 1163 passed, you are done — that is the whole system checked
 offline, with no key and no network. The 80 skips are the tests that reach a
 model over the network; they stay skipped unless you ask for them by name.
 
@@ -311,7 +311,11 @@ serves. Anything you run by hand is under `cli/`.
 backend/
 ├── contracts.py      the five contract types, one source of truth
 ├── app.py            FastAPI service: /health, /classify, /extract-clean-compare,
-│                    /process-email, /translate
+│                    /process-email, /translate, the live mailbox, uploads
+├── mail_view.py      what the page draws for one email, live or demo
+├── embeddings.py     the one way policies are embedded, ingest and retrieval
+├── reply.py          reply drafting over the company policy
+├── state.py          bounded in-memory stores for the live mailbox
 ├── translate.py      the /translate endpoint's model call
 ├── classify.py       stage 1 - email to category
 ├── read/             stage 2 - file bytes to (label, value) pairs
@@ -321,14 +325,14 @@ backend/
 ├── extract/          stage 3 - pairs to the seven fields
 │   ├── rules.py        deterministic, no API calls
 │   ├── ai.py           model-backed extractor
-│   ├── gemini.py  qwen.py  batch.py  sample.py
+│   ├── gemini.py  qwen.py  batch.py  vision.py
 │   └── fallback.py     Gemini behind Qwen when Qwen fails or stalls
 └── compare/          stage 4 - SI against BL
     ├── normalise.py    per-field normalisation
     └── comparator.py   the verdict
 
 cli/      demo_read  demo_pipeline  smoke_test  validate_contracts
-          make_fixtures  make_results  evidence  mutation_check  latency
+          make_fixtures  make_results  evidence  mutation_check  latency  csp
 frontend/ index.html  results.js  config.js   the review UI, static
           i18n.js                             English, Malay, Chinese
           manifest.json  sw.js  vercel.json   home screen icon on a phone
@@ -396,23 +400,15 @@ Inbox ──1── Classify ──2── Extract ──3── Compare ──4
 
 What we would build next, in order. None of it is in this version.
 
-**1. Act on the 91 we cannot compare.** Of the 220 emails routed to comparison,
-129 arrive with both documents and **91 are waiting on a draft Bill of Lading
-that has not been sent yet**. We already file those on their own rather than as
-review cases; the next step is to do something with them. A chase list: who owes
-which draft BL, against which shipment reference — 80 of the 91 already carry
-that reference, across 20 senders — ordered by how long it
-has been outstanding.
-
-That is a larger share of the work than the comparison itself, and it is not
-just a backlog. UCP 600 article 14(c) requires a presentation including an
-original transport document to be made no later than 21 calendar days after the
-date of shipment, and never after the credit expires. A draft BL that has not
-arrived is a clock running towards a refusal that no field comparison can catch,
-because there is no document to compare. To count that clock we need the date of
-shipment, which this dataset does not carry — a connected mailbox would supply
-it. Until then the list can be ordered by age in the inbox, which is the useful
-half.
+**1. Put a date on the chase list.** The 91 emails waiting on a draft Bill of
+Lading now have a **chase list** (#147 D2): who owes which draft BL, against which
+shipment reference, oldest first, closed when the BL arrives, with a reminder
+one click away. UCP 600 article 14(c) requires a presentation including an
+original transport document within 21 calendar days of the date of shipment, and
+never after the credit expires, so a missing draft BL is a clock running towards
+a refusal. Counting that clock needs the date of shipment, which this dataset
+does not carry and a connected mailbox would supply. Until then the list is
+ordered by how long the request has waited.
 
 **2. Read scanned documents live.** The three scanned pairs in the demo (#512–514)
 show what a vision model read, beside the page itself, and still go to a person:
@@ -428,12 +424,14 @@ shipment that makes the item 1 deadline countable.
 *Finding a shipment by its reference was item 3 here and is now built; see
 **How it works** above.*
 
-**Hardening before real customer mail.** Listed with owners in #147, section B:
-masking and a timeout on the drafted reply, a content security policy, clearing
-a person's data from the browser on sign-out, a service worker that never caches
-an error, state that survives a restart, a migration runner, and the pipeline
-gaps the edge cases found (a name wrapped onto a second line, a revised BL in the
-same email, decimal-comma weights).
+**Hardening before real customer mail.** #147 section B, specified in
+[`docs/issues/02-audit-after-judging.md`](docs/issues/02-audit-after-judging.md).
+Built: the drafted reply is masked, fenced and timed out, and says when no policy
+stood behind it; a content security policy; a person's data cleared on
+sign-out; a service worker that never caches an error; bounded memory; and the
+pipeline gaps the edge cases found. Still to do: deleting mailbox files after a
+check, a migration runner, a readiness check, splitting `app.py`, CI lint and
+audit, a hashed lockfile, and the documents (B4.2–B4.8, B5).
 
 **Later — reliability and intake.** A confidence score on the extraction, retried
 before escalating. More intake channels: the X12 304 reader already exists, and
