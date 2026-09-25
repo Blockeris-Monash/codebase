@@ -17,7 +17,7 @@ from backend.contracts import (
     ParseStatusType, ReviewReasonType, Scenario, StatusType, SubmissionEntry,
     VerdictType,
 )
-from backend.compare.normalise import compare_row
+from backend.compare.normalise import compare_row, notify_as_meant
 from backend.read.documents import document_title, read_document
 from backend.read.labels import canonical_field, detect_doc_type
 
@@ -93,6 +93,14 @@ def review_result(email_id: str, reason: str, evidence: str) -> ComparisonResult
             "evidence": evidence}
 
 
+def meant(extract: DocumentExtract, field: str) -> str | None:
+    """The value to compare: a SAME AS CONSIGNEE notify party is the document's consignee."""
+    fields = extract["fields"]
+    if field == "notify_party":
+        return notify_as_meant(fields[field]["raw"], fields["consignee"]["raw"])
+    return fields[field]["raw"]
+
+
 def comparison_result(email_id: str, si: DocumentExtract,
                       bl: DocumentExtract) -> ComparisonResult:
     """Contract 4: the seven-row table plus the verdict for one email.
@@ -100,8 +108,9 @@ def comparison_result(email_id: str, si: DocumentExtract,
     An absent value outranks a defect: a partial comparison cannot support a
     complete verdict, so the whole email escalates.
     """
-    rows = [compare_row(f, si["fields"][f]["raw"], bl["fields"][f]["raw"])
-            for f in FIELD_NAMES]
+    rows = [compare_row(f, meant(si, f), meant(bl, f)) for f in FIELD_NAMES]
+    for row in rows:  # compared as meant, shown as written
+        row["si_raw"], row["bl_raw"] = si["fields"][row["field"]]["raw"], bl["fields"][row["field"]]["raw"]
     absent = [r["field"] for r in rows if r["verdict"] == VerdictType.Missing]
     defects = [r["field"] for r in rows if r["verdict"] == VerdictType.Mismatch]
 

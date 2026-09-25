@@ -55,10 +55,23 @@ def _read_member(archive: zipfile.ZipFile, name: str) -> str:
 
 
 def read_txt(path: Path) -> LabelledPairs:
-    """One `label: value` per line; an indented line continues the value above."""
+    """One `label: value` per line. An indented line continues the value above, and a
+    label with nothing after its colon takes the colon-free lines beneath it, so a blank
+    label never swallows the next one; a blank line ends a value. An unindented line under a filled value is not taken: under Gross Weight it
+    would reach the weight parser (#147 B3)."""
     pairs: LabelledPairs = []
+    is_open = False
     for line in path.read_text(encoding="utf-8", errors="replace").split("\n"):
+        text = line.strip()
+        if not text:
+            is_open = False
+            continue
+        if is_open and (line[0].isspace() or (not pairs[-1][1] and ":" not in line)):
+            label, value = pairs[-1]
+            pairs[-1] = (label, f"{value}\n{text}" if value else text)
+            continue
         label, separator, value = line.partition(":")
+        is_open = bool(separator)
         if separator:
             pairs.append((label.strip(), value.strip()))
 
@@ -97,12 +110,26 @@ def _docx_paragraphs(path: Path) -> list[str]:
     return [html.unescape(t).strip() for t in texts if t.strip()]
 
 
+def row_pairs(cells: list[str]) -> LabelledPairs:
+    """The pairs in one table row, from its filled cells. "Shipper | X | Consignee | Y" is
+    two; the whole row after the first cell used to be the shipper (#147 B3). A row that
+    does not start with a known label keeps the first-cell-is-the-label reading."""
+    if len(cells) < 2:
+        return []
+    starts = [0]
+    if _is_label(cells[0]):
+        starts += [i for i in range(1, len(cells) - 1) if _is_label(cells[i])]
+    ends = starts[1:] + [len(cells)]
+
+    return [(cells[start], CELL_SEPARATOR.join(cells[start + 1:end])) for start, end in zip(starts, ends)]
+
+
 def read_docx(path: Path) -> LabelledPairs:
     """Word stores the document as a table; fall back to `label: value`
     paragraphs when it does not."""
     rows = _docx_rows(path)
     if rows:
-        return [(r[0], CELL_SEPARATOR.join(r[1:])) for r in rows if len(r) > 1]
+        return [pair for row in rows for pair in row_pairs(row)]
 
     pairs: LabelledPairs = []
     for text in _docx_paragraphs(path):
@@ -148,9 +175,7 @@ def read_xlsx(path: Path) -> LabelledPairs:
     for row in re.findall(r"<row[ >].*?</row>", xml, re.S):
         cells = [_cell_text(c, shared)
                  for c in re.findall(r"<c[ >][^>]*?(?:/>|>.*?</c>)", row, re.S)]
-        filled = [c for c in cells if c]
-        if len(filled) > 1:
-            pairs.append((filled[0], CELL_SEPARATOR.join(filled[1:])))
+        pairs.extend(row_pairs([c for c in cells if c]))
 
     return pairs
 
@@ -202,10 +227,12 @@ def _pdf_pairs(lines: list[str]) -> LabelledPairs:
         if is_pair:
             in_table = False
 
-        if is_pair or (not in_table and _is_label(line)):
+        # "Consignee:" alone on its line is a label too, with its value beneath (#147 B3).
+        bare = line.rstrip(":").strip()
+        if is_pair or (not in_table and _is_label(bare)):
             if label is not None:
                 pairs.append((label, CELL_SEPARATOR.join(collected)))
-            label, collected = (None, []) if is_pair else (line, [])
+            label, collected = (None, []) if is_pair else (bare, [])
             if is_pair:
                 pairs.append((before.strip(), after.strip()))
             continue

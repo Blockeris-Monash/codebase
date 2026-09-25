@@ -34,6 +34,26 @@ ships no `submission.json`, because it is a self-check rather than a
 deliverable — `cli.make_fixtures` writes a `SubmissionSample.json` showing the
 shape.
 
+## Before you commit
+
+Turn on the repository's hook once per clone. It refuses a commit whose page
+scripts do not parse, which is how a merge broke every translation on #159:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+## After editing an inline script
+
+The page's content security policy allows each inline `<script>` in
+`frontend/index.html` and `frontend/admin.html` by the hash of its exact text,
+so an edited script is refused by the browser until the policy is regenerated:
+
+```bash
+python -m cli.csp            # rewrites frontend/vercel.json
+python -m cli.csp --check    # what the tests run
+```
+
 ## Check your output before handing it on
 
 Write one record to a JSON file and name the contract it should satisfy:

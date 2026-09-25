@@ -24,7 +24,7 @@ import uuid
 from collections import defaultdict, deque
 from typing import NamedTuple
 
-from fastapi import Request
+from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 
 from backend import reports
@@ -72,6 +72,12 @@ CONNECTING_IP_HEADER = "cf-connecting-ip"
 # a stream of made-up callers cannot grow the table without end.
 MAX_TRACKED_CALLERS = 10_000
 FLOOD_FACTOR = 5
+
+# On every answer, refusals included (#147 B2); FastAPI's docs pages need their CDN, so no CSP there.
+API_SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
+                        "Referrer-Policy": "no-referrer"}
+API_CSP = "default-src 'none'; frame-ancestors 'none'"
+DOCS_PATHS = frozenset({"/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json"})
 
 _seen: dict[str, deque[float]] = defaultdict(deque)
 
@@ -168,6 +174,13 @@ def limited_caller(request: Request) -> Budget | None:
     return None
 
 
+def secured(response: Response, path: str) -> Response:
+    response.headers.update(API_SECURITY_HEADERS)
+    if path not in DOCS_PATHS:
+        response.headers["Content-Security-Policy"] = API_CSP
+    return response
+
+
 async def tag_and_limit(request: Request, call_next):
     # A caller's own id only when it looks like one: it is written into every log line.
     offered = request.headers.get(REQUEST_ID_HEADER, "")
@@ -178,8 +191,8 @@ async def tag_and_limit(request: Request, call_next):
     started = time.monotonic()
 
     if is_too_large(request):
-        return JSONResponse(status_code=PAYLOAD_TOO_LARGE, content={"detail": "Request too large."},
-                            headers={REQUEST_ID_HEADER: request_id})
+        return secured(JSONResponse(status_code=PAYLOAD_TOO_LARGE, content={"detail": "Request too large."},
+                                    headers={REQUEST_ID_HEADER: request_id}), request.url.path)
 
     budget = limited_caller(request)
     if budget is not None and is_over_limit(budget.who, time.monotonic(), budget.limit):
@@ -191,13 +204,13 @@ async def tag_and_limit(request: Request, call_next):
                                 f"{request.url.path} and was refused. Request {request_id} is in the log.",
                       "context": {"step": "Rate limit", "path": request.url.path,
                                   "caller": caller_shape(caller(request)), "request_id": request_id}})
-        return JSONResponse(
+        return secured(JSONResponse(
             status_code=TOO_MANY_REQUESTS,
             content={"detail": f"More than {budget.limit} requests in "
                                f"{WINDOW_SECONDS:g}s. Wait a moment and try again."},
-            headers={REQUEST_ID_HEADER: request_id})
+            headers={REQUEST_ID_HEADER: request_id}), request.url.path)
 
-    response = await call_next(request)
+    response = secured(await call_next(request), request.url.path)
     response.headers[REQUEST_ID_HEADER] = request_id
 
     # One line per request, with how long it took. /health is left out: the

@@ -46,14 +46,14 @@ def models(monkeypatch):
 
 
 def test_gemini_drafts_first_and_qwen_is_not_asked(models) -> None:
-    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY") == "Hi, from Gemini."
+    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY").text == "Hi, from Gemini."
     assert models["calls"] == ["gemini"]
 
 
 def test_qwen_drafts_when_gemini_fails(models) -> None:
     models["gemini"] = RuntimeError("429 RESOURCE_EXHAUSTED")
 
-    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY") == "Hi, from Qwen."
+    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY").text == "Hi, from Qwen."
     assert models["calls"] == ["gemini", "qwen"]
 
 
@@ -61,13 +61,13 @@ def test_qwen_drafts_when_gemini_stalls(models, monkeypatch) -> None:
     monkeypatch.setattr(reply, "GEMINI_REPLY_SECONDS", 0.2)
     models["gemini_delay"] = 1.0
 
-    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY") == "Hi, from Qwen."
+    assert reply.generate_rag_reply(EMAIL, "INVOICE_QUERY").text == "Hi, from Qwen."
 
 
 def test_without_a_gemini_key_qwen_drafts_alone(models, monkeypatch) -> None:
     monkeypatch.setattr(reply, "GEMINI_API_KEY", None)
 
-    assert reply.generate_rag_reply(EMAIL, "GENERAL") == "Hi, from Qwen."
+    assert reply.generate_rag_reply(EMAIL, "GENERAL").text == "Hi, from Qwen."
     assert models["calls"] == ["qwen"]
 
 

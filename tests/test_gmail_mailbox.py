@@ -332,3 +332,36 @@ def test_a_mailbox_email_is_read_by_rule_before_the_model(google, monkeypatch) -
 
     checked = emails["gmail_18c2f4e9a1b3d5f7"]
     assert checked["status"] == "MISMATCH" and checked["defect_fields"] == ["gross_weight_kg"]
+
+
+def test_the_bl_shown_is_the_revision_that_was_compared(google) -> None:
+    """A second BL is saved as _BL_2 and compared as the latest revision (#147 B3), so the
+    review screen must show that one: v1's text beside v2's verdict points the reviewer at
+    the wrong document."""
+    corrected = (EDGE / "email_901_BL.txt").read_bytes()
+    google.files["18c2f4e9a1b3d5f7"].append(("draft v2.txt", corrected))
+    google.boxes["token-a"]["18c2f4e9a1b3d5f7"] = gmail_message(
+        "18c2f4e9a1b3d5f7", "RE: 5ALT-01226 draft BL", "Pls check the corrected draft BL.",
+        google.files["18c2f4e9a1b3d5f7"])
+
+    checked = {e["id"]: e for e in poll(google.client, "token-a", 2)}["gmail_18c2f4e9a1b3d5f7"]
+
+    assert checked["status"] == "OK"
+    assert checked["docs"]["BL"]["name"] == "gmail_18c2f4e9a1b3d5f7_BL_2.txt"
+    assert "21,577" in checked["docs"]["BL"]["text"]
+    assert {r["field"]: r["label"] for r in checked["revision"]["rows"]}["gross_weight_kg"] == "fixed"
+
+
+def test_with_two_shipments_the_documents_shown_are_the_shipment_shown(google) -> None:
+    """The verdict shows the worst shipment; the documents beside it must be that shipment's,
+    not the first one's."""
+    good_bl = (EDGE / "email_901_BL.txt").read_bytes()
+    google.files["18c2f4e9a1b3d5f7"] = [("si 1.txt", SI), ("bl 1.txt", good_bl),
+                                        ("si 2.txt", SI), ("bl 2.txt", BL_WRONG_WEIGHT)]
+    google.boxes["token-a"]["18c2f4e9a1b3d5f7"] = gmail_message(
+        "18c2f4e9a1b3d5f7", "RE: 5ALT-01226 draft BL", "Two shipments.", google.files["18c2f4e9a1b3d5f7"])
+
+    checked = {e["id"]: e for e in poll(google.client, "token-a", 2)}["gmail_18c2f4e9a1b3d5f7"]
+
+    assert checked["status"] == "MISMATCH"
+    assert checked["docs"]["BL"]["name"] == "gmail_18c2f4e9a1b3d5f7_BL_2.txt"

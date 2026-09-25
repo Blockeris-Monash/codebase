@@ -45,12 +45,12 @@
         "shipper": {
           "present": true,
           "label_seen": "Shipper/Exporter",
-          "raw": "APRIL FAR EAST (M) SDN BHD"
+          "raw": "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5, LEVEL 6; BANGSAR SOUTH CITY, NO. 8 JALAN KERINCHI; 59200 KUALA LUMPUR, MALAYSIA"
         },
         "consignee": {
           "present": true,
           "label_seen": "Consignee",
-          "raw": "CERIEX"
+          "raw": "CERIEX\nZONE INDUSTRIELLE; CONAKRY, GUINEA"
         },
         "notify_party": {
           "present": true,
@@ -90,12 +90,12 @@
         "shipper": {
           "present": true,
           "label_seen": "Shipper",
-          "raw": "APRIL FAR EAST (M) SDN BHD"
+          "raw": "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5, LEVEL 6; BANGSAR SOUTH CITY, NO. 8 JALAN KERINCHI; 59200 KUALA LUMPUR, MALAYSIA"
         },
         "consignee": {
           "present": true,
           "label_seen": "Consignee (Non-Negotiable)",
-          "raw": "CERIEX"
+          "raw": "CERIEX\nZONE INDUSTRIELLE; CONAKRY, GUINEA"
         },
         "notify_party": {
           "present": true,
@@ -132,16 +132,16 @@
     "rows": [
       {
         "field": "shipper",
-        "si_raw": "APRIL FAR EAST (M) SDN BHD",
-        "bl_raw": "APRIL FAR EAST (M) SDN BHD",
+        "si_raw": "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5, LEVEL 6; BANGSAR SOUTH CITY, NO. 8 JALAN KERINCHI; 59200 KUALA LUMPUR, MALAYSIA",
+        "bl_raw": "APRIL FAR EAST (M) SDN BHD\nTOWER 2, AVENUE 5, LEVEL 6; BANGSAR SOUTH CITY, NO. 8 JALAN KERINCHI; 59200 KUALA LUMPUR, MALAYSIA",
         "si_norm": "APRIL FAR EAST (M) SDN BHD",
         "bl_norm": "APRIL FAR EAST (M) SDN BHD",
         "verdict": "match"
       },
       {
         "field": "consignee",
-        "si_raw": "CERIEX",
-        "bl_raw": "CERIEX",
+        "si_raw": "CERIEX\nZONE INDUSTRIELLE; CONAKRY, GUINEA",
+        "bl_raw": "CERIEX\nZONE INDUSTRIELLE; CONAKRY, GUINEA",
         "si_norm": "CERIEX",
         "bl_norm": "CERIEX",
         "verdict": "match"

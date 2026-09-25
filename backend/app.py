@@ -11,7 +11,8 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from collections.abc import MutableMapping
+from typing import Any, Dict, List, Literal, NamedTuple, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
@@ -30,14 +31,18 @@ from backend.extract.circuit_breaker import CircuitBreaker
 from backend.intent import about, email_intent
 
 # Import JJ's Deterministic Comparator
-from backend.compare.comparator import ComparisonResult, FieldType, Row, compare, compare_single_field
+from backend.compare.comparator import (ComparisonResult, FieldType, Row, compare, compare_single_field,
+                                         revision_between)
 from backend import gmail, reports
-from backend.compare.normalise import NAME_SPLIT, SENTINEL  # one rule each for where a name ends and what counts as blank, shared with the reference
+from backend.compare.normalise import (NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, order_form,  # one rule each,
+                                       parse_number, party_name)  # shared with the reference
 from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend.state import BoundedStore
+from backend.mail_view import DRAFT_REQUEST, clean_body, document, fallback_category, shipment_ref
 from backend import settings
 from backend.extract.rules import fields_from_pairs
 
@@ -64,14 +69,21 @@ def say_what_is_switched_on() -> None:
     # Retrieval needs a database AND a model. Reporting only the database said
     # "on" while replies were being drafted with no model behind them at all.
     log.info(
-        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s rules-first=%s",
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s rules-first=%s",
         state(settings.supabase_configured()),
         state(settings.supabase_configured() and settings.gemini_key()),
         state(settings.gemini_key()),
         state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
-        state(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
         state(rules_first_enabled()),
     )
+    # Mailboxes, the rate limit and the breakers live in this process's memory (#139).
+    if int(os.environ.get("WEB_CONCURRENCY") or 1) > 1:
+        log.warning("WEB_CONCURRENCY is above 1, but mailboxes, the rate limit and the circuit breakers "
+                    "are kept per process and not shared; run one worker until #139 lands")
+    # It printed vision=on, but no request reads a scan: vision is an offline pass (#147 B3).
+    if os.environ.get("SHIP_HAPPENS_VISION"):
+        log.warning("SHIP_HAPPENS_VISION is set, but the live service does not read scanned attachments; "
+                    "the demo's scan readings come from results/vision via cli.make_scans")
 
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
@@ -353,9 +365,8 @@ async def extract_document(
 # =====================================================================
 
 def clean_entity(text: str) -> str:
-    """Takes only the entity name before any address pipe ' | '."""
-    first_segment = re.split(NAME_SPLIT, text)[0]
-    return re.sub(r"\s+", " ", first_segment).upper().strip(" ,.;:")
+    """The entity name before its address, with a name wrapped onto a legal-form line kept whole."""
+    return order_form(re.sub(r"\s+", " ", party_name(text)).upper().strip(" ,.;:"))
 
 def clean_port(text: str) -> str:
     first_segment = re.split(NAME_SPLIT, text)[0]
@@ -367,9 +378,6 @@ def clean_containers(text: str) -> str:
     text = text.upper().strip()
     return re.sub(r"\s*X\s*", " x ", text)
 
-# Never starting inside another number ("326,000" is not a weight in "40.326,000"), and
-# thousands grouped by commas or by spaces: "21 577 KG" is 21,577.
-WEIGHT_NUMBER = r"(?<![\d.,])(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?"
 WEIGHT_UNIT = r"(?:KGS?|K\.G\.?|KILOS?|KILOGRAMS?|MTS?|M/T|TONNES?|METRIC TONS?|LBS?|POUNDS?)"
 # A net weight written beside the gross one, before or after its number:
 # "NET 38,000 KG GROSS 40,326 KG", "21,577 KGS GROSS / 20,000 KGS NET". It is removed
@@ -390,7 +398,7 @@ LABEL_UNIT = re.compile(r"\((KGS?|MTS?|M/T|TONNES?|LBS?)\)", re.I)
 
 
 def as_number(text: str) -> float:
-    return float(text.replace(",", "").replace(" ", ""))
+    return parse_number(text)
 
 
 def clean_weight(text: str) -> str:
@@ -420,10 +428,11 @@ def with_label_unit(value: str, label: Optional[str]) -> str:
     return f"{value} {unit.group(1)}"
 
 
-def apply_cleaner(fields: Dict[str, Any]) -> Dict[str, Any]:
+def apply_cleaner(fields: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     cleaned: Dict[str, Any] = {}
     for key in FIELD_NAMES:
-        field_data = fields.get(key, {"present": False, "raw": None})
+        # A field, or all of them, sent as null is absent: missing, never a crash (#147 B3).
+        field_data = (fields or {}).get(key) or {"present": False, "raw": None}
         raw_text = field_data.get("raw")
         present = field_data.get("present", False)
 
@@ -573,18 +582,55 @@ def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
     return None
 
 
-def read_paired_attachments(email: EmailInput) -> PairedInput:
-    """Locates SI and BL attachments, reads label/value pairs, and records parse status."""
-    si_path_str = next(
-        (a for a in email.attachments if f"_{DocumentRoleType.Si}." in a or a.upper().endswith("SI")),
-        None,
-    )
-    bl_path_str = next(
-        (a for a in email.attachments if f"_{DocumentRoleType.Bl}." in a or a.upper().endswith("BL")),
-        None,
-    )
+class ChosenDocuments(NamedTuple):
+    """The SI and the BL to compare (either may be absent), the BL draft before that one when
+    there is one (#147 D1), and a note naming any file set aside."""
+    si: Optional[str]
+    bl: Optional[str]
+    note: str
+    previous_bl: Optional[str] = None
 
-    return read_pair(email.email_id, si_path_str, bl_path_str)
+
+# A revision's mark, as one word of a file name or title: REVISED, AMENDED, REV 2, V3, "(2)".
+REVISION_WORD = re.compile(r"REVISED|AMENDED|AMENDMENT|REV|(?:REV|V)(\d+)|\((\d+)\)")
+
+
+def revision_rank(path_str: str) -> tuple[bool, int]:
+    """(marked as a revision, its number), from the file name and the document's own title:
+    e_BL_V3.txt is (True, 3), e_BL_REVISED.txt (True, 0), e_BL.txt (False, 0)."""
+    resolved = resolve_attachment_path(path_str)
+    title_line = ((document_title(resolved) or "") if resolved else "").split("\n", 1)[0]
+    words = re.split(r"[_\s.,:-]+", f"{Path(path_str).stem} {title_line}".upper())
+    marks = [found for found in map(REVISION_WORD.fullmatch, words) if found]
+
+    return bool(marks), max((int(m.group(1) or m.group(2) or 0) for m in marks), default=0)
+
+
+def pick_revision(paths: List[str]) -> tuple[str, List[str]]:
+    """The file to compare among several for one role, and the rest: the one marked as the
+    latest revision, else the last attached (#147 B3). The first draft used to win."""
+    latest = max(range(len(paths)), key=lambda i: (*revision_rank(paths[i]), i))
+    return paths[latest], [path for i, path in enumerate(paths) if i != latest]
+
+
+def files_for(role: str, attachments: List[str]) -> List[str]:
+    return [a for a in attachments
+            if any(found.group(1) == role for found in ROLE_IN_NAME.finditer(Path(a).name)) or a.upper().endswith(role)]
+
+
+def chosen_documents(attachments: List[str]) -> ChosenDocuments:
+    """One SI and one BL from an email's attachments, the latest revision of each."""
+    chosen, notes, previous = {}, [], {}
+    for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
+        candidates = files_for(role, attachments)
+        chosen[role], aside = pick_revision(candidates) if candidates else (None, [])
+        if aside:
+            notes.append(f"Revised {role} {Path(chosen[role]).name} used; "
+                         f"{', '.join(Path(a).name for a in aside)} set aside.")
+            previous[role] = pick_revision(aside)[0]   # v3 is compared with v2, not v1
+
+    return ChosenDocuments(chosen[DocumentRoleType.Si], chosen[DocumentRoleType.Bl], " ".join(notes),
+                           previous.get(DocumentRoleType.Bl))
 
 
 def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[str]) -> PairedInput:
@@ -620,7 +666,7 @@ def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[s
 # One email can carry more than one shipment: email_SI.txt with email_BL.txt, and
 # email_SI_2.txt with email_BL_2.txt. Reading only the first pair let a defect in the
 # second pass as OK (tests/edge_cases, a8).
-ROLE_IN_NAME = re.compile(rf"_({DocumentRoleType.Si}|{DocumentRoleType.Bl})(?=[._])")
+ROLE_IN_NAME = re.compile(rf"_({DocumentRoleType.Si}|{DocumentRoleType.Bl})(?=[._\s(-])")
 # A gap outranks a mismatch, so the person sees it first; OK only when every shipment is.
 SEVERITY = {StatusType.Ok: 0, StatusType.Mismatch: 1, StatusType.NeedsReview: 2}
 
@@ -638,16 +684,29 @@ def shipments(attachments: List[str]) -> List[tuple[str, str]]:
             for g in groups.values() if len(g) == 2]
 
 
+# The SI and BL files the last comparison in this task compared, so the review screen shows
+# those, the latest revision or the worst shipment, and never another file's text.
+COMPARED_FILES: ContextVar[tuple[Optional[str], Optional[str]]] = ContextVar("compared_files", default=(None, None))
+
+
 async def compare_email(email: EmailInput, live: bool = False):
     """The comparison for one email. With two or more complete SI and BL pairs, each is
     compared and the most severe result is returned, its evidence naming every shipment.
-    Anything else goes through read_paired_attachments exactly as before."""
+    Anything else is one SI against one BL, each the latest revision attached."""
     pairs = shipments(email.attachments)
     if len(pairs) < 2:
-        return await run_pipeline(read_paired_attachments(email), live=live)
+        chosen = chosen_documents(email.attachments)
+        COMPARED_FILES.set((chosen.si, chosen.bl))
+        result = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.bl), live=live)
+        update = {"evidence": f"{chosen.note} {result.evidence}"} if chosen.note else {}
+        if chosen.previous_bl:
+            previous = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.previous_bl), live=live)
+            update["revision"] = revision_between(previous, result, Path(chosen.previous_bl).name, Path(chosen.bl).name)
+        return result.model_copy(update=update) if update else result
 
     results = [await run_pipeline(read_pair(email.email_id, si, bl), live=live) for si, bl in pairs]
     worst = max(range(len(results)), key=lambda i: SEVERITY[results[i].status])
+    COMPARED_FILES.set(pairs[worst])
     summary = ", ".join(f"shipment {i + 1} {r.status}" for i, r in enumerate(results))
     evidence = f"{len(results)} shipments in this email ({summary}); showing shipment {worst + 1}."
     detail = results[worst].evidence
@@ -680,6 +739,8 @@ class ProcessedEmail(BaseModel):
     # A reply drafted from company policy for INVOICE_QUERY and GENERAL mail (#93), or None.
     # Kept out of SubmissionEntry so the scorer's line keeps exactly its five keys.
     draft_reply: Optional[str] = None
+    # Whether any company policy stood behind an AI draft; None when the AI wrote none.
+    draft_grounded: Optional[bool] = None
 
 
 
@@ -698,7 +759,7 @@ async def si_request_reply(email: EmailInput) -> Optional[str]:
     to the reply either: the reply is what the reviewer sends to the customer (#147)."""
     from backend.si_request import process_si_request
     try:
-        draft_reply, _pdf_path, _fields = await asyncio.to_thread(process_si_request, email)
+        draft_reply, _pdf, _fields = await asyncio.to_thread(process_si_request, email)
     except Exception as error:  # a model client, fpdf2 or the disk: the email still gets its category
         log.error("SI request draft failed for %s: %s", email.email_id, type(error).__name__)
         return None
@@ -721,7 +782,6 @@ async def sort_email(email: EmailInput) -> ClassificationResult:
     try:
         return await classify(email)
     except HTTPException as error:
-        from cli.make_results import fallback_category  # cli imports this module
         log.warning("classification failed for %s (%s), filed by the keyword rule", email.email_id, error.detail)
         return ClassificationResult(
             email_id=email.email_id, decided_by="rule", confidence=0.5, evidence=AI_DID_NOT_ANSWER,
@@ -763,13 +823,15 @@ async def process_email(
 
     # 3. Non-comparison branch (SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM)
     if classification.category != "BL_COMPARISON":
-        draft_reply = None
+        draft_reply, draft_grounded = None, None
         if classification.category in DRAFTED and draft:
             from backend.reply import generate_rag_reply
             # A thread, not a direct call: it waits on the AI for up to 120 s, and a blocking
             # call here would stop every other request (#96).
-            draft_reply = await asyncio.to_thread(generate_rag_reply, email, classification.category)
-        elif classification.category == "SI_REQUEST":
+            drafted = await asyncio.to_thread(generate_rag_reply, email, classification.category)
+            if drafted:
+                draft_reply, draft_grounded = drafted
+        elif classification.category == CategoryType.SiRequest:
             draft_reply = await si_request_reply(email)
 
         return {
@@ -785,6 +847,7 @@ async def process_email(
                 "defect_fields": [],
             },
             "draft_reply": draft_reply,
+            "draft_grounded": draft_grounded,
         }
 
     # 4. BL_COMPARISON branch: resolve attachments & run comparison pipeline
@@ -817,10 +880,23 @@ async def process_email(
 # user id the caller supplies: a caller cannot ask for anyone else's mail.
 
 MAILBOX_DIR = Path(os.environ.get("MAILBOX_DIR", "/tmp/shiphappens-mailbox"))
-MAILBOXES: Dict[str, Dict[str, Dict[str, Any]]] = {}   # address -> gmail id -> inbox entry
-ORIGINALS: Dict[str, Dict[str, gmail.Message]] = {}    # address -> gmail id -> what a reply threads under
+# Bounded, so a long-running service does not keep every message it ever saw (#147 B4).
+DAY_SECONDS = 24 * 60 * 60
+MAILBOX_TTL = float(os.environ.get("MAILBOX_TTL_HOURS", "24")) * 60 * 60
+MAILBOX_MAX_MESSAGES = int(os.environ.get("MAILBOX_MAX_MESSAGES", "500"))
+MAILBOX_MAX_ACCOUNTS = int(os.environ.get("MAILBOX_MAX_ACCOUNTS", "1000"))
+MAILBOXES: BoundedStore[str, BoundedStore[str, Dict[str, Any]]] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_ACCOUNTS)
+ORIGINALS: BoundedStore[str, BoundedStore[str, gmail.Message]] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_ACCOUNTS)
 WORKING: Dict[tuple[str, str], asyncio.Task] = {}       # (address, gmail id) being checked now
-FAILURES: Dict[tuple[str, str], int] = {}
+FAILURES: BoundedStore[tuple[str, str], int] = BoundedStore(DAY_SECONDS, MAILBOX_MAX_ACCOUNTS * MAILBOX_MAX_MESSAGES)
+
+
+def mailbox_of(store: MutableMapping, address: str) -> BoundedStore:
+    """One account's messages in `store`, created bounded the first time it is asked for."""
+    box = store.get(address)
+    if box is None:
+        box = store[address] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_MESSAGES)
+    return box
 GIVE_UP_AFTER = 2
 # Two at a time: the model proxy slows to a crawl under more, and the page polls every 10 s.
 # Per mailbox: one busy account used to queue every other account's checks behind its own.
@@ -851,7 +927,6 @@ def folder_for(address: str, gmail_id: str) -> Path:
 async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, Any]:
     """One live email as the page draws it: the same fields cli/make_results.py
     writes for a demo email, from the same /process-email the demo button calls."""
-    from cli.make_results import DRAFT_REQUEST, clean_body, document, shipment_ref  # cli imports this module
 
     email_id = gmail.mailbox_id(message.gmail_id)
     email = EmailInput(email_id=email_id, from_email=message.sender[:255], subject=message.subject[:1000],
@@ -878,6 +953,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
     # The same rules as the demo (backend/intent.py). A real subject rarely has the dataset's
     # shape, so when no customer or port is found the subject itself follows the label.
     awaiting = not paths and bool(DRAFT_REQUEST.search(message.body))
+    if awaiting and found["category"] == CategoryType.BlComparison:
+        entry["awaiting"] = True   # as the demo marks it, so it files under Draft BL requests and the chase list (#147 D2)
     intent = email_intent(found["category"], message.subject, message.body, awaiting=awaiting)
     if intent:
         entry["intent"] = intent
@@ -885,13 +962,12 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
 
     result = checked["ComparisonResult"]
     if result:
-        docs = {}
-        for path in map(Path, paths):
-            for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
-                if path.stem == f"{email_id}_{role}":
-                    docs[role] = document(path, email_id, role)
+        compared = zip((DocumentRoleType.Si, DocumentRoleType.Bl), COMPARED_FILES.get())
+        docs = {role: document(Path(path)) for role, path in compared if path}
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
+        if result.get("revision"):
+            entry["revision"] = result["revision"]
     return entry
 
 
@@ -908,8 +984,8 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
             paths = gmail.save_attachments(email_id, files, folder_for(address, gmail_id))
             entry = await mailbox_entry(message, paths)
         message.attachments = []  # a reply needs the headers, not the files
-        ORIGINALS.setdefault(address, {})[gmail_id] = message
-        MAILBOXES.setdefault(address, {})[gmail_id] = entry
+        mailbox_of(ORIGINALS, address)[gmail_id] = message
+        mailbox_of(MAILBOXES, address)[gmail_id] = entry
     except Exception as error:  # a model, Gmail or a file: any of them, and the next poll retries
         FAILURES[key] = FAILURES.get(key, 0) + 1
         log.warning("Mailbox message %s not checked (try %d): %s", gmail_id, FAILURES[key], error)
@@ -923,7 +999,7 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
                                       "error": type(error).__name__}})
         if FAILURES[key] >= GIVE_UP_AFTER:
             # Shown under Other mail rather than retried forever, one model bill per poll.
-            MAILBOXES.setdefault(address, {})[gmail_id] = {
+            mailbox_of(MAILBOXES, address)[gmail_id] = {
                 "id": gmail.mailbox_id(gmail_id), "from": "", "subject": "(could not be checked)",
                 "body": "This email could not be read or checked. Open it in Gmail.",
                 # A category like every other entry, so nothing on the page meets an email without one.
@@ -946,7 +1022,7 @@ async def mailbox(response: Response, authorization: Optional[str] = Header(None
     except gmail.GmailError as error:
         raise gmail_failure(error) from error
 
-    done = MAILBOXES.setdefault(address, {})
+    done = mailbox_of(MAILBOXES, address)
     for gmail_id in ids:
         key = (address, gmail_id)
         if gmail_id not in done and key not in WORKING:
@@ -985,8 +1061,8 @@ async def draft_reply(request: DraftRequest, authorization: Optional[str] = Head
         written = await asyncio.to_thread(generate_rag_reply, email, entry["category"])
         if not written:
             raise HTTPException(status_code=502, detail="The AI could not draft a reply just now. Try again, or write one yourself.")
-        entry["draft_reply"] = written
-    return {"email_id": entry["id"], "draft_reply": entry["draft_reply"]}
+        entry["draft_reply"], entry["draft_grounded"] = written
+    return {"email_id": entry["id"], "draft_reply": entry["draft_reply"], "grounded": entry.get("draft_grounded")}
 
 
 class RefineRequest(BaseModel):
@@ -1090,7 +1166,6 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
     so the page shows it on the same review screen."""
     import shutil
     import uuid
-    from cli.make_results import document  # cli imports this module
 
     files = {DocumentRoleType.Si: uploaded_bytes(upload.si), DocumentRoleType.Bl: uploaded_bytes(upload.bl)}
     email_id = f"upload_{uuid.uuid4().hex[:12]}"
@@ -1104,7 +1179,7 @@ async def check_files(upload: UploadRequest) -> Dict[str, Any]:
         OWN_FILES.set(frozenset(str(path) for path in paths.values()))
         pair = read_pair(email_id, str(paths[DocumentRoleType.Si]), str(paths[DocumentRoleType.Bl]))
         result = (await run_pipeline(pair, live=False)).model_dump()
-        docs = {role: {**document(path, email_id, role), "name": Path(getattr(upload, role.lower()).name).name[:255]}
+        docs = {role: {**document(path), "name": Path(getattr(upload, role.lower()).name).name[:255]}
                 for role, path in paths.items()}
     finally:
         shutil.rmtree(folder, ignore_errors=True)

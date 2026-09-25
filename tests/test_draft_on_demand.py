@@ -30,7 +30,7 @@ def drafts(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
     def draft(email, category):
         asked.append(email.email_id)
-        return f"Hi, about {email.subject}: thanks for your email."
+        return reply.Draft(f"Hi, about {email.subject}: thanks for your email.", grounded=False)
 
     monkeypatch.setattr(reply, "generate_rag_reply", draft)
     return asked
@@ -53,6 +53,7 @@ def test_asking_drafts_once_and_the_mailbox_keeps_it(google, drafts) -> None:
 
     assert first.status_code == 200, first.text
     assert first.json()["draft_reply"] == "Hi, about Lunch: thanks for your email."
+    assert first.json()["grounded"] is False
     assert again.json() == first.json()
     assert drafts == [LUNCH]  # the second ask was free
     kept = {e["id"]: e for e in poll(google.client, "token-a", 2)}[LUNCH]
@@ -115,6 +116,7 @@ def test_process_email_still_drafts_for_a_caller_who_asks_for_one_email(drafts) 
         mp.undo()
 
     assert got.json()["draft_reply"] == "Hi, about Hello: thanks for your email."
+    assert got.json()["draft_grounded"] is False
 
 
 # ---------------------------------------------------------------- the page

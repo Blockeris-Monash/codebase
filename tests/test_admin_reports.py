@@ -148,23 +148,24 @@ def test_the_page_asks_to_be_left_out_of_search_results() -> None:
 def test_the_supabase_client_is_pinned_here_too() -> None:
     """Same reason index.html pins it: `@2` floats, and a release during judging
     would change this page with nothing in the repository changing."""
-    assert "@supabase/supabase-js@2.117.1/+esm" in ADMIN
-    assert "supabase-js@2/+esm" not in ADMIN
+    assert "@supabase/supabase-js@2.117.1/dist/umd/supabase.js" in ADMIN
+    assert "supabase-js@2/" not in ADMIN
 
 
-def test_the_page_script_runs_after_the_supabase_import() -> None:
-    """`type="module"` is deferred; a classic script runs during parsing. As a
-    classic script the page ran before `window.supabase` existed, so `sb()`
-    returned null, `currentUser()` reported nobody signed in, and a reviewer who
-    was already signed in on the inbox was asked to sign in again here."""
-    import_at = ADMIN.index('<script type="module">')
+def test_the_page_script_runs_after_the_supabase_library() -> None:
+    """The library is deferred, and deferred scripts (modules included) run in
+    document order after parsing. As a classic script the page ran before
+    `window.supabase` existed, so `sb()` returned null, `currentUser()` reported
+    nobody signed in, and a reviewer who was already signed in on the inbox was
+    asked to sign in again here."""
+    library_at = ADMIN.index('<script defer src="https://cdn.jsdelivr.net/npm/@supabase/')
     store_at = ADMIN.index('<script src="store.js">')
     page_at = ADMIN.index("(function(){", store_at)
     opener = ADMIN.rindex("<script", store_at, page_at)
 
-    assert import_at < store_at, "the supabase import must be declared first"
+    assert library_at < store_at, "the supabase library must be declared first"
     assert ADMIN[opener:page_at].startswith('<script type="module">'), (
-        "the page script must be a module, or it runs before window.supabase exists")
+        "the page script must be deferred, or it runs before window.supabase exists")
 
 
 def test_store_reads_the_client_lazily() -> None:

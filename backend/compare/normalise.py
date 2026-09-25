@@ -6,7 +6,9 @@ see the comparison-rules decision log.
 """
 from __future__ import annotations
 
+import itertools
 import re
+from collections import Counter
 
 from backend.contracts import ComparisonRow, VerdictType
 
@@ -29,14 +31,53 @@ PORT_FIELDS = frozenset({"port_of_loading", "port_of_discharge"})
 # The one copy: backend/app.py and cli/mutation_check.py import it from here.
 NAME_SPLIT = r"\s*\|\s*|\s*[\r\n]+\s*"
 LEADING_INTEGER = r"(\d+)"
-# Must start with a digit: "([\d,]+...)" also matches a bare "," and then
-# float("") raises out of the comparator.
-DECIMAL_WITH_SEPARATORS = r"(\d[\d,]*(?:\.\d+)?)"
+# A number as a weight is written, never starting inside another one: the European
+# "21.577,00", "1.234.567" and "21 577,5", then "40,326", "21 577" and "40,326.5".
+# The one copy: backend/app.py imports it from here.
+WEIGHT_NUMBER = (r"(?<![\d.,])(?:\d{1,3}(?:\.\d{3})+,\d+|\d{1,3}(?:\.\d{3}){2,}|\d{1,3}(?: \d{3})+,\d+"
+                 r"|\d{1,3}(?:[ ,]\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)")
+THOUSANDS_GROUP_DIGITS = 3
+
+
+# "TO THE ORDER OF X", "TO ORDER OF X" and "ORDER OF X" are one instruction, and "TO THE ORDER"
+# is "TO ORDER"; "TO ORDER" and "TO ORDER OF <bank>" stay different instructions (#147 B3).
+ORDER_WORDING = re.compile(r"^(?:TO\s+)?(?:THE\s+)?ORDER\b(\s+OF\b)?", re.I)
+# A notify party that points at the consignee rather than naming one.
+SAME_AS_CONSIGNEE = re.compile(r"^\s*SAME\s+AS\s+(?:THE\s+)?(?:CONSIGNEE|CNEE)\s*\.?\s*$", re.I)
+
+
+def order_form(name: str) -> str:
+    """`name` (upper case) with its order wording in the one form."""
+    return ORDER_WORDING.sub(lambda m: "TO ORDER OF" if m.group(1) else "TO ORDER", name, count=1)
+
+
+def notify_as_meant(notify_raw: str | None, consignee_raw: str | None) -> str | None:
+    """The notify party a document means: its own consignee when it says SAME AS CONSIGNEE."""
+    return consignee_raw if notify_raw and SAME_AS_CONSIGNEE.match(notify_raw) else notify_raw
+
+
+# The words a company's legal form is written in. A line of nothing else is the name wrapping,
+# "MOORIM SP" then "CO., LTD", never the first line of an address (#147 B3).
+LEGAL_FORMS = frozenset("CO COMPANY LTD LIMITED INC CORP CORPORATION PTE PVT PTY SDN BHD GMBH AG SA SRL "
+                        "BV NV LLC PLC KK".split())
+
+
+def is_legal_form(segment: str) -> bool:
+    words = [word.replace(".", "") for word in re.split(r"[\s,&]+", segment.upper())]
+    return any(words) and all(word in LEGAL_FORMS for word in words if word)
+
+
+def party_name(value: str) -> str:
+    """The name at the head of a party block: its first line, plus any lines after it that
+    hold only a legal form. Excel and Word keep name and address in one cell."""
+    segments = re.split(NAME_SPLIT, value)
+    wrapped = list(itertools.takewhile(is_legal_form, segments[1:]))
+    return " ".join([segments[0], *wrapped])
 
 
 def normalise_name(value: str) -> str:
     """Name only: Excel stores name and address in one cell."""
-    return re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,")
+    return order_form(re.sub(r"\s+", " ", party_name(value)).upper().strip(" ,"))
 
 
 def normalise_port(value: str) -> str:
@@ -59,17 +100,62 @@ def normalise_count(value: str) -> str | None:
     return match.group(1) if match else None
 
 
-def normalise_weight(value: str) -> str | None:
-    match = re.search(DECIMAL_WITH_SEPARATORS, value)
+def parse_number(written: str) -> float:
+    """A WEIGHT_NUMBER as a float. A comma is the decimal point when it comes last and
+    either a dot comes before it or it is not followed by exactly three digits, so
+    "21.577,00" and "21 577,5" read the European way and "40,326" as 40326. A lone
+    "21.577" stays 21.577: it is ambiguous, and that is how it has always been read."""
+    compact = written.replace(" ", "")
+    head, comma, tail = compact.rpartition(",")
+    if comma and "." not in tail and ("." in head or len(tail) != THOUSANDS_GROUP_DIGITS):
+        return float(f"{head.replace('.', '').replace(',', '')}.{tail}")
+    if compact.count(".") > 1:
+        return float(compact.replace(".", "").replace(",", ""))
 
-    return str(float(match.group(1).replace(",", ""))) if match else None
+    return float(compact.replace(",", ""))
+
+
+# "1 x 20GP", "2×40'HC", "5X40HC": a count, then a container size.
+CONTAINER_GROUP = re.compile(r"(\d+)\s*[x×*]\s*(\d{2})(?=\s*['’]?\s*[a-z]|\b)", re.I)
+
+
+def container_sizes(value: str) -> Counter[str]:
+    """How many containers of each size: "1 x 20GP + 2 x 40HC" is {"20": 1, "40": 2}."""
+    sizes: Counter[str] = Counter()
+    for count, size in CONTAINER_GROUP.findall(value):
+        sizes[size] += int(count)
+    return sizes
+
+
+def container_total(value: str, sizes: Counter[str]) -> str:
+    if sizes:
+        return str(sum(sizes.values()))
+    match = re.search(r"\d+", value)
+    return match.group(0) if match else value.strip().upper()
+
+
+def same_container_count(si: str, bl: str) -> bool:
+    """Per size when both state sizes and either states two or more, since "2 x 40HC"
+    is not "1 x 20GP + 1 x 40HC"; otherwise the total, as a single number was always read.
+    Sizes, not type letters: 40HC and 40HQ are the same box (#147 B3)."""
+    si_sizes, bl_sizes = container_sizes(si), container_sizes(bl)
+    if si_sizes and bl_sizes and max(len(si_sizes), len(bl_sizes)) > 1:
+        return si_sizes == bl_sizes
+    return container_total(si, si_sizes) == container_total(bl, bl_sizes)
+
+
+def normalise_weight(value: str) -> str | None:
+    match = re.search(WEIGHT_NUMBER, value)
+
+    return str(parse_number(match.group(0))) if match else None
 
 
 def normalise(field: str, raw: str | None) -> str | None:
     """Return the comparable form, or None when the value is absent."""
     if raw is None:
         return None
-    value = re.sub(r"\s+", " ", raw).strip()
+    # Spaces and tabs only: a line break is where a name ends and its address starts.
+    value = re.sub(r"[^\S\r\n]+", " ", raw).strip()
     if SENTINEL.match(value):
         return None
     if field in NAME_FIELDS:
@@ -95,9 +181,12 @@ def verdict_for(si_norm: str | None, bl_norm: str | None) -> str:
 
 def compare_row(field: str, si_raw: str | None, bl_raw: str | None) -> ComparisonRow:
     si_norm, bl_norm = normalise(field, si_raw), normalise(field, bl_raw)
+    verdict = verdict_for(si_norm, bl_norm)
+    # The norm shows the total; the verdict needs the per-size breakdown the raw values hold.
+    if field == "container_count" and verdict != VerdictType.Missing:
+        verdict = VerdictType.Match if same_container_count(si_raw, bl_raw) else VerdictType.Mismatch
 
     return {"field": field, "si_raw": si_raw, "bl_raw": bl_raw,
-            "si_norm": si_norm, "bl_norm": bl_norm,
-            "verdict": verdict_for(si_norm, bl_norm)}
+            "si_norm": si_norm, "bl_norm": bl_norm, "verdict": verdict}
 
 

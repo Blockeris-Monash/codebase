@@ -9,8 +9,10 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Entries marked *(audit)* are from #147. None of them changes a result on the
 provided dataset: rules-first agrees 124 of 124, the mutation check catches 630
-of 630, and `results.js` rebuilds byte-identical. Each fix has tests that fail
-without it.
+of 630, and `results.js` rebuilds with every category, status, reason, defect
+field and row verdict unchanged (the section B reader fixes add continuation
+lines to the raw `pairs` it displays, and nothing else). Each fix has tests that
+fail without it. Section B's specs are in `docs/issues/02-audit-after-judging.md`.
 
 ### Added
 
@@ -50,6 +52,19 @@ without it.
   `backend/db/migrations/0007_correction_kind.sql` in Supabase** to add the
   `kind` and `side` columns. Until then the report still arrives, but the page
   says the correction was not sent.
+- *(audit)* **A drafted reply says when no company policy stood behind it.**
+  `/process-email` returns `draft_grounded` and `/draft-reply` returns
+  `grounded`; the page shows "No company policy matched this email. Check the
+  facts before sending." under such a draft.
+- **A revised draft BL is labelled against the draft before it** (#147 D1). Each
+  field is *fixed*, *still wrong*, a *new mistake* or *unchanged*, shown under the
+  table as "Since the last draft". The verdict is still the latest draft against
+  the SI. `ComparisonResult` gains an optional `revision` block, absent unless an
+  email carries two BLs.
+- **A chase list for draft BLs that never arrived** (#147 D2), in the Draft BL
+  requests folder: one row per sender and shipment reference, oldest first,
+  closed when a readable BL with that reference arrives from that sender, with
+  *Draft a reminder*. Live mail now carries the same `awaiting` flag as the demo.
 
 ### Changed
 
@@ -64,6 +79,33 @@ without it.
   (#146), and when the AI does not answer, the keyword rule files the rest
   instead of the email coming back "could not be checked". My mailbox reads the
   documents by rule first, as the saved results do.
+- *(audit)* **A document is recognised by its title's wording.** `SHIPPING
+  INSTRUCTIONS`, `DRAFT BILL OF LADING`, `SEA WAYBILL` and a title followed by its
+  number are an SI or a BL, not the wrong document.
+- *(audit)* **An email with a revised BL or an amended SI is compared against the
+  latest revision**, marked in its name or title (REVISED, AMENDED, V3, "(2)"),
+  else the last attached. The evidence names the file used and those set aside,
+  and the review screen shows the documents that were compared.
+- *(audit)* **`SAME AS CONSIGNEE` is compared as that document's consignee**, and
+  `TO THE ORDER OF`, `TO ORDER OF` and `ORDER OF` are one form. `TO ORDER`
+  against `TO ORDER OF` a bank is still a mismatch. Edge case b6 now expects OK
+  (decided 25 Sep).
+- *(audit)* **Containers are counted per size** when either document breaks the
+  count down (`1x20GP + 2x40HC`); otherwise the total decides, as before.
+- *(audit)* **The Draft BL PDF for an SI request is drawn in DejaVu Sans**
+  (bundled, with its licence) and returned as bytes: nothing is written to the
+  server's disk, and the committed generated PDF is gone.
+- *(audit)* **The startup line no longer prints `vision=on`**: the live service
+  never reads scans. Setting `SHIP_HAPPENS_VISION` logs a warning saying so.
+- *(audit)* **My mailbox is polled only while it is on screen**, one request at a
+  time, and an answer that arrives after sign-out is dropped. The poll redraws
+  the page only when the mailbox changed, and a redraw keeps focus, the cursor
+  and the selection where they were, so typing a reply is no longer interrupted.
+- *(audit)* **Dialogs are modal to assistive technology** and keep keyboard focus
+  inside until closed, then return it. White text on the orange accent is darker
+  underneath (`--accent-fill`, 4.7:1) to meet WCAG AA.
+- *(audit)* **Copy says "Copied" only when the browser copied**; otherwise it
+  says so and selects the text.
 
 ### Fixed
 
@@ -86,6 +128,24 @@ without it.
   consignee and "100" passed out of "12,100".
 - *(audit)* **Render builds with the Python CI tests.** It ignored `runtime.txt` and ran
   3.14; `.python-version` pins 3.12.3.
+- *(audit)* **Policy retrieval works.** `gemini-embedding-001` answered with 3072
+  numbers for a `vector(768)` column, so retrieval always returned nothing.
+  Ingest and retrieval now share `backend/embeddings.py`, which asks for 768.
+  **Run `backend/db/migrations/0008_policies_ingest_once.sql` in Supabase, then
+  `python -m tools.ingest_policies`.** Ingest is now safe to re-run: it upserts
+  on a hash of each chunk and removes chunks no longer in the manual.
+- *(audit)* **Pipeline gaps found by the edge cases**, all three former xfails:
+  a party name wrapped onto a legal-form line (`MOORIM SP` / `CO., LTD`), a
+  decimal-comma weight (`21.577,00 KG`), and the revised BL above. Also a value
+  on the line beneath its label (`.txt` and PDF), a Word or Excel row holding
+  two fields, and a null field, which crashed the comparator.
+- *(audit)* **Failures in reply drafting are logged** with their traceback, and
+  a failed policy lookup files one technical report, instead of `print()`.
+- *(audit)* **The service worker caches only good responses**, gives up on the
+  network after 5 s, and never answers a script with the page. `CACHE_VERSION`
+  is v7.
+- *(audit)* **A refused mark, reply or read is logged** instead of looking saved:
+  every Supabase call in `store.js` checks the `error` supabase-js returns.
 
 ### Security
 
@@ -114,6 +174,24 @@ without it.
   PDF outside its folder. All four are fixed.
 - *(audit)* **A profile's email must be the sign-in email** (migration `0007`). Setting
   it to someone else's address made that person's first sign-in fail.
+- *(audit)* **Reply drafting and refining mask personal data** before any
+  model or the embedding API sees it, and restore it in the draft.
+- *(audit)* **A customer's email cannot plant policy in the reply prompt.** The
+  retrieved policy sits in the system instruction and the email is fenced in
+  its own tag, which the email cannot close.
+- *(audit)* **Every Gemini call has a timeout**: reply drafting stops at 20 s and
+  the scan reader at 60 s, instead of waiting as long as Google holds the socket.
+- *(audit)* **The contracts' if-and-only-if rules are enforced**: in the JSON
+  schemas (`allOf`), by `cli.validate_contracts`, and by the service's own
+  `ComparisonResult`.
+- *(audit)* **Content security policy and security headers** on the page
+  (`frontend/vercel.json`, written by `python -m cli.csp`) and on every API
+  answer. supabase-js loads from its pinned UMD build with an integrity hash.
+  **Editing an inline script in `index.html` or `admin.html` now means running
+  `python -m cli.csp`**; the tests fail until you do.
+- *(audit)* **Signing out leaves nothing of the person on the browser.** Marks,
+  replies, feedback and corrections are kept under their owner's id and cleared
+  when someone else signs in.
 
 ## [1.1.0] — 2026-09-25
 

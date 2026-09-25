@@ -116,7 +116,7 @@
       "defect_fields": []
     },
     "why": "The revised BL fixes the consignee; the check is against the latest draft.",
-    "known_gap": "The service takes the first file with _BL. in its name, so the first draft is compared and the revised one is ignored: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {
@@ -318,7 +318,7 @@
       "defect_fields": []
     },
     "why": "21.577,00 KG is 21,577 kg written the European way.",
-    "known_gap": "The weight is read as 21.577 kg instead of 21,577 kg: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {
@@ -360,13 +360,11 @@
     "title": "Notify party SAME AS CONSIGNEE against the name",
     "category": "BL_COMPARISON",
     "expected": {
-      "status": "MISMATCH",
+      "status": "OK",
       "review_reason": null,
-      "defect_fields": [
-        "notify_party"
-      ]
+      "defect_fields": []
     },
-    "why": "Same party in meaning, different instruction on the BL; a person confirms.",
+    "why": "SAME AS CONSIGNEE on the SI and the consignee's name on the BL are the same notify party (#147 B3, decided 25 Sep).",
     "known_gap": null,
     "category_gap": null
   },
@@ -399,7 +397,7 @@
       "defect_fields": []
     },
     "why": "The name wraps onto the next line in the SI; it is the same name.",
-    "known_gap": "The reader keeps only the first line of a value, so a name wrapped onto the next line is cut to MOORIM SP: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {

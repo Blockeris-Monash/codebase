@@ -24,7 +24,9 @@ def home() -> str:
 def test_signing_in_opens_my_mailbox_and_starts_fetching_it() -> None:
     wiring = auth_wiring()
     assert 'S.mailbox !== "live")' in wiring
-    assert "startPolling()" in wiring
+    # The render at the end of the callback starts polling: render() ends with syncPolling().
+    render = INDEX[INDEX.index("function render(){"):INDEX.index("function fitTop(){")]
+    assert render.rstrip().endswith("syncPolling();\n}") or "  syncPolling();\n}" in render
 
 
 def account_menu() -> str:

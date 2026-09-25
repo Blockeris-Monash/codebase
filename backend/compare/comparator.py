@@ -9,10 +9,10 @@ import json
 import re
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.compare.evidence import describe_blanks, describe_unreadable, describe_wrong_doc
-from backend.compare.normalise import normalise
+from backend.compare.normalise import SAME_AS_CONSIGNEE, normalise, same_container_count
 
 # Distinguishes "no norm key at all" from "norm supplied as None".
 _MISSING = object()
@@ -60,6 +60,27 @@ class Row(BaseModel):
     verdict: VerdictType
 
 
+RevisionLabelType = Literal["fixed", "still_wrong", "new_mistake", "unchanged"]
+
+
+class RevisionRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field: FieldType
+    label: RevisionLabelType
+
+
+class Revision(BaseModel):
+    """A revised draft BL against the draft before it (#147 D1): each field's label comes from
+    the SI checked against each draft. Evidence beside the verdict, never the verdict."""
+    model_config = ConfigDict(extra="forbid")
+
+    previous: str
+    current: str
+    previous_readable: bool
+    rows: List[RevisionRow]
+
+
 class ComparisonResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -70,6 +91,18 @@ class ComparisonResult(BaseModel):
     rows: List[Row]
     defect_fields: List[FieldType]
     evidence: str
+    # Only when the email carries a revised draft BL; absent otherwise, so contract 04 is unchanged for the rest.
+    revision: Optional[Revision] = None
+
+    @model_validator(mode="after")
+    def keeps_the_contract_rules(self) -> "ComparisonResult":
+        """Contract 04's if-and-only-if rules, so the service cannot build a result
+        that breaks them (contracts/04-ComparisonResult.schema.json, allOf)."""
+        if (self.status == "NEEDS_REVIEW") != (self.review_reason is not None):
+            raise ValueError("status is NEEDS_REVIEW if and only if review_reason is set")
+        if (self.status == "MISMATCH") != bool(self.defect_fields):
+            raise ValueError("status is MISMATCH if and only if defect_fields is non-empty")
+        return self
 
 
 # =====================================================================
@@ -160,13 +193,9 @@ def compare_single_field(
         except (ValueError, TypeError):
             return "mismatch"
 
-    # 2. Container Count: leading integer extraction
+    # 2. Container Count: per size when broken down by size, else the total
     if field == "container_count":
-        match_si = re.search(r"\d+", s_norm)
-        match_bl = re.search(r"\d+", b_norm)
-        c_si = match_si.group(0) if match_si else s_norm
-        c_bl = match_bl.group(0) if match_bl else b_norm
-        return "match" if c_si == c_bl else "mismatch"
+        return "match" if same_container_count(s_norm, b_norm) else "mismatch"
 
     # 3. Ports: the same words in any order, or one side adding only the country
     if field in {"port_of_loading", "port_of_discharge"}:
@@ -181,6 +210,35 @@ def compare_single_field(
 # =====================================================================
 # Main Comparison Runner
 # =====================================================================
+
+# (wrong in the previous draft, wrong in this one) -> label, where right means the verdict is match.
+REVISION_LABELS: Dict[tuple[bool, bool], RevisionLabelType] = {
+    (True, False): "fixed", (True, True): "still_wrong", (False, True): "new_mistake", (False, False): "unchanged"}
+
+
+def revision_between(previous: ComparisonResult, current: ComparisonResult,
+                     previous_name: str, current_name: str) -> Revision:
+    """Each field's label, from the SI against the previous draft and against this one. A
+    previous draft that could not be compared field by field gets no labels."""
+    before = {row.field: row.verdict != "match" for row in previous.rows}
+    after = {row.field: row.verdict != "match" for row in current.rows}
+    readable = len(before) == len(CANONICAL_FIELDS)
+    rows = [RevisionRow(field=field, label=REVISION_LABELS[(before[field], after[field])])
+            for field in CANONICAL_FIELDS if readable and field in after]
+
+    return Revision(previous=previous_name, current=current_name, previous_readable=readable, rows=rows)
+
+
+def with_notify_resolved(fields: Dict[str, Any]) -> Dict[str, Any]:
+    """`fields` with a SAME AS CONSIGNEE notify party compared as that document's consignee.
+    Its raw value is kept, so the screen still shows what the document says."""
+    notify, consignee = fields.get("notify_party") or {}, fields.get("consignee") or {}
+    if not SAME_AS_CONSIGNEE.match(str(notify.get("raw") or "")):
+        return fields
+    norm = consignee["norm"] if "norm" in consignee else normalise("consignee", consignee.get("raw"))
+
+    return {**fields, "notify_party": {**notify, "norm": norm}}
+
 
 def compare(
     email_id: str,
@@ -234,12 +292,13 @@ def compare(
     # difference between chasing a value and rejecting a form, so it is kept.
     blanks: List[tuple] = []
 
-    si_fields = si_doc.get("fields", {})
-    bl_fields = bl_doc.get("fields", {})
+    # `or {}`, not a default: a key present as null is None, and treated as absent.
+    si_fields = with_notify_resolved(si_doc.get("fields") or {})
+    bl_fields = with_notify_resolved(bl_doc.get("fields") or {})
 
     for field_name in CANONICAL_FIELDS:
-        si_item = si_fields.get(field_name, {})
-        bl_item = bl_fields.get(field_name, {})
+        si_item = si_fields.get(field_name) or {}
+        bl_item = bl_fields.get(field_name) or {}
 
         si_raw = si_item.get("raw")
         bl_raw = bl_item.get("raw")
@@ -255,6 +314,9 @@ def compare(
             bl_norm = normalise(field_name, bl_raw)
 
         verdict = compare_single_field(field_name, si_norm, bl_norm)
+        # A norm can be the total alone; the per-size breakdown is in what was written.
+        if field_name == "container_count" and verdict != "missing" and si_raw and bl_raw:
+            verdict = "match" if same_container_count(str(si_raw), str(bl_raw)) else "mismatch"
 
         if verdict == "mismatch":
             defect_fields.append(field_name)  # type: ignore

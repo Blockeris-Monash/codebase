@@ -44,3 +44,4 @@ submission.json
 # The manual-timing packet: key.json holds the answers, and the documents are
 # the organisers' data. Built on demand with `python3 -m cli.timed_test build`.
 timed-test/
+results/generated_bls/

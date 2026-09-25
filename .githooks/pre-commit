@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Turn on once per clone: git config core.hooksPath .githooks
+# Refuses a commit whose page scripts do not parse, before CI has to (#147 B4).
+exec python -m cli.check_frontend

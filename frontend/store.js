@@ -45,35 +45,47 @@
     }
   }
 
+  // supabase-js resolves with `{ data, error }` when the database refuses a request; it
+  // does not throw. Every call goes through this, so a refusal reaches a `catch` and is
+  // logged instead of looking exactly like success (#147 B2).
+  function checked(result) {
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
   // One row per (person, email). `email_ref` is text rather than a foreign key:
   // the 520 demo emails have no row in this database and never will.
+  // True when the row landed, like pushReport.
   async function pushMark(emailRef, mark) {
     const c = sb(), u = await user();
-    if (!c || !u) return;
+    if (!c || !u) return false;
     try {
-      await c.from("reviews")
-             .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef), mark: mark },
-                     { onConflict: "user_id,email_ref" });
+      checked(await c.from("reviews")
+        .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef), mark: mark },
+                { onConflict: "user_id,email_ref" }));
+      return true;
     } catch (error) {
       console.warn("mark not mirrored to the database:", error);
+      return false;
     }
   }
 
   async function pushReply(emailRef, reply) {
     const c = sb(), u = await user();
-    if (!c || !u) return;
+    if (!c || !u) return false;
     try {
-      const { data } = await c.from("reviews")
+      const review = checked(await c.from("reviews")
         .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef), mark: MARK_BACK },
                 { onConflict: "user_id,email_ref" })
-        .select("id").single();
-      if (!data) return;
-      await c.from("replies").insert({
-        review_id: data.id, to_address: reply.to, subject: reply.subject, body: reply.body,
+        .select("id").single());
+      checked(await c.from("replies").insert({
+        review_id: review.id, to_address: reply.to, subject: reply.subject, body: reply.body,
         sent_at: reply.real ? new Date().toISOString() : null,   // null: the demo Send, nothing went out
-      });
+      }));
+      return true;
     } catch (error) {
       console.warn("reply not mirrored to the database:", error);
+      return false;
     }
   }
 
@@ -91,12 +103,11 @@
       // is a queue nobody can triage. Name the email it is about.
       const kind = entry.kind || "note";
       const title = entry.about ? `${kind} about ${entry.about}` : kind;
-      const { error } = await c.from("reports").insert({
+      checked(await c.from("reports").insert({
         user_id: u.id, kind: "human", email_ref: entry.about || null,
         title: title, detail: entry.msg || "",
         rating: entry.rating || null,
-      });
-      if (error) throw error;
+      }));
       return true;
     } catch (error) {
       console.warn("report not mirrored to the database:", error);
@@ -119,11 +130,10 @@
     // must not depend on the corrections table accepting its row.
     if (report) {
       try {
-        const { error } = await c.from("reports").insert({
+        checked(await c.from("reports").insert({
           user_id: u.id, kind: "human", email_ref: emailRef,
           title: report.title, detail: report.detail, context: report.context || null,
-        });
-        if (error) throw error;
+        }));
       } catch (error) {
         console.warn("correction report not filed:", error);
         landed = false;
@@ -131,16 +141,14 @@
     }
     try {
       // No `mark` here: correcting a field is not the same as finishing the email.
-      const { data, error } = await c.from("reviews")
+      const review = checked(await c.from("reviews")
         .upsert({ user_id: u.id, email_ref: emailRef, source: sourceOf(emailRef) },
                 { onConflict: "user_id,email_ref" })
-        .select("id").single();
-      if (error) throw error;
-      const saved = await c.from("corrections").insert({
-        review_id: data.id, field: correction.field, kind: correction.kind, side: correction.side || null,
+        .select("id").single());
+      checked(await c.from("corrections").insert({
+        review_id: review.id, field: correction.field, kind: correction.kind, side: correction.side || null,
         was: correction.was, corrected: correction.corrected,
-      });
-      if (saved.error) throw saved.error;
+      }));
     } catch (error) {
       console.warn("correction not mirrored to the database:", error);
       landed = false;
@@ -159,7 +167,7 @@
     try {
       // Keyed on email, not id: a `users` row only exists after a first
       // sign-in, so an id would exclude a teammate who has not signed in yet.
-      const { data } = await c.from("admins").select("email").limit(1);
+      const data = checked(await c.from("admins").select("email").limit(1));
       return Boolean(data && data.length);
     } catch (error) {
       console.warn("could not check admin membership:", error);
@@ -174,11 +182,10 @@
     const c = sb(), u = await user();
     if (!c || !u) return null;
     try {
-      const { data, error } = await c.from("reports")
+      const data = checked(await c.from("reports")
         .select("id,kind,email_ref,title,detail,rating,context,created_at,users(email,display_name)")
         .order("created_at", { ascending: false })
-        .limit(REPORT_LIMIT);
-      if (error) throw error;
+        .limit(REPORT_LIMIT));
       return data || [];
     } catch (error) {
       console.warn("could not load the reports queue:", error);
@@ -193,7 +200,7 @@
     const c = sb(), u = await user();
     if (!c || !u) return null;
     try {
-      const { data } = await c.from("reviews").select("email_ref,mark").eq("user_id", u.id);
+      const data = checked(await c.from("reviews").select("email_ref,mark").eq("user_id", u.id));
       if (!data) return null;
       const merged = Object.assign({}, localMarks);
       let added = 0;

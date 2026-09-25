@@ -57,6 +57,12 @@ def check_enum(value: JsonValue, schema: Schema, path: str, errors: Errors) -> N
     errors.append(f"{path}: {value!r} not one of {allowed}")
 
 
+def check_const(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
+    if "const" not in schema or value == schema["const"]:
+        return
+    errors.append(f"{path}: {value!r} is not {schema['const']!r}")
+
+
 def check_string(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
     pattern = schema.get("pattern")
     # JSON Schema `pattern` matches anywhere in the string; re.match would
@@ -104,20 +110,43 @@ def check_object(value: JsonValue, schema: Schema, path: str, errors: Errors) ->
 
 
 def check_array(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
-    item_schema = schema.get("items")
-    if not isinstance(value, list) or item_schema is None:
+    if not isinstance(value, list):
         return
+    fewest, most = schema.get("minItems"), schema.get("maxItems")
+    if fewest is not None and len(value) < fewest:
+        errors.append(f"{path}: {len(value)} item(s), at least {fewest} required")
+    if most is not None and len(value) > most:
+        errors.append(f"{path}: {len(value)} item(s), at most {most} allowed")
     for index, item in enumerate(value):
-        validate(item, item_schema, f"{path}[{index}]", errors)
+        if schema.get("items") is not None:
+            validate(item, schema["items"], f"{path}[{index}]", errors)
+
+
+def check_rules(value: JsonValue, schema: Schema, path: str, errors: Errors) -> None:
+    """`allOf`, where the contracts keep their cross-field rules as `if`/`then`/`else`.
+
+    A broken rule is reported by its own `description` ("status is MISMATCH if and only
+    if defect_fields is non-empty"), which says more than the subschema error beneath it.
+    """
+    for rule in schema.get("allOf", []):
+        if "if" not in rule:
+            validate(value, rule, path, errors)
+            continue
+        holds = not validate(value, rule["if"], path, [])
+        branch = rule.get("then" if holds else "else")
+        if branch is not None and validate(value, branch, path, []):
+            errors.append(f"{path}: {rule.get('description', 'a conditional rule does not hold')}")
 
 
 def validate(value: JsonValue, schema: Schema, path: str, errors: Errors) -> Errors:
     check_type(value, schema, path, errors)
     check_enum(value, schema, path, errors)
+    check_const(value, schema, path, errors)
     check_string(value, schema, path, errors)
     check_bounds(value, schema, path, errors)
     check_object(value, schema, path, errors)
     check_array(value, schema, path, errors)
+    check_rules(value, schema, path, errors)
     return errors
 
 

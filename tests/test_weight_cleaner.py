@@ -29,7 +29,7 @@ WEIGHT = "gross_weight_kg"
     ("25,000 KGS GROSS", 25000.0),
     ("25,000 KGS (GROSS)", 25000.0),
     ("21 577 KG", 21577.0),
-    ("40.326,000 KG", 40.326),  # decimal comma: still misread (xfail edge_b3c), but never as 326,000
+    ("40.326,000 KG", 40326.0),  # decimal comma, read the European way (#147 B3), never as 326,000
 ])
 def test_the_weight_is_the_number_written_against_its_unit(raw: str, kilograms: float) -> None:
     assert float(clean_weight(raw)) == kilograms
