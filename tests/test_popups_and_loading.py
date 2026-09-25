@@ -38,7 +38,7 @@ def test_a_popup_passes_no_scroll_to_the_page() -> None:
 
 def test_closing_a_popup_puts_the_email_back_where_it_was() -> None:
     render = INDEX[INDEX.index("function render(){"):INDEX.index('document.getElementById("app").innerHTML')]
-    assert "const popup = S.help||S.langDlg||S.reportDlg;" in render
+    assert "const popup = S.help||S.langDlg||S.reportDlg||S.uploadDlg;" in render
     assert "if(popup && !S.under) S.under = {...keep, at:location.hash+'|'+S.sel};" in render
     assert ("if(!popup && S.under){ if(S.under.at===location.hash+'|'+S.sel) Object.assign(keep, S.under); "
             "S.under = null; }") in render

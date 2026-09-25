@@ -53,7 +53,7 @@ def test_signed_out_the_inbox_shows_the_demo_account_with_a_way_to_sign_in() -> 
 
 def test_the_landing_page_says_sign_in_with_demo_account() -> None:
     page = home()
-    assert page.count('data-a="demoacct">${t("Sign in with demo account")}') == 3
+    assert page.count('data-a="demoacct">${t("Sign in with demo account")}') == 2  # the hero and the Get started card; the footer no longer repeats it
     assert "Open the demo inbox" not in INDEX
 
 

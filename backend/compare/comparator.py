@@ -64,7 +64,7 @@ class ComparisonResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # email_NNN is the dataset; gmail_<id> is a message from the live mailbox (backend/gmail.py).
-    email_id: str = Field(..., pattern=r"^(email_[0-9]{3}|gmail_[0-9a-f]{8,32})$")
+    email_id: str = Field(..., pattern=r"^(email_[0-9]{3}|gmail_[0-9a-f]{8,32}|upload_[0-9a-f]{12})$")
     status: StatusType
     review_reason: Optional[ReviewReasonType] = None
     rows: List[Row]
