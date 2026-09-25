@@ -650,6 +650,23 @@ SI_AND_BL_ATTACHED = "An SI and a draft BL are attached, so it was sorted withou
 AI_DID_NOT_ANSWER = "The AI did not answer, so a simple keyword rule sorted it."
 
 
+async def si_request_reply(email: EmailInput) -> Optional[str]:
+    """The drafted reply to an SI request, or None when drafting failed.
+
+    None rather than a 500: the draft is extra, and a failure here - a character the
+    PDF font cannot draw, a model that did not answer - used to fail the whole email, and
+    in My mailbox that marks it "could not be checked". The PDF's server path is not added
+    to the reply either: the reply is what the reviewer sends to the customer (#147)."""
+    from backend.si_request import process_si_request
+    try:
+        draft_reply, _pdf_path, _fields = await asyncio.to_thread(process_si_request, email)
+    except Exception as error:  # a model client, fpdf2 or the disk: the email still gets its category
+        log.error("SI request draft failed for %s: %s", email.email_id, type(error).__name__)
+        return None
+
+    return draft_reply
+
+
 async def sort_email(email: EmailInput) -> ClassificationResult:
     """The category for /process-email, asking the AI only when it is needed.
 
@@ -714,11 +731,7 @@ async def process_email(
             # call here would stop every other request (#96).
             draft_reply = await asyncio.to_thread(generate_rag_reply, email, classification.category)
         elif classification.category == "SI_REQUEST":
-            from backend.si_request import process_si_request
-            draft_reply, pdf_path, extracted_fields = await asyncio.to_thread(process_si_request, email)
-            # if pdf_path is generated, we can append a note or somehow tell the frontend
-            if pdf_path:
-                draft_reply += f"\n\n[SYSTEM NOTE: {pdf_path} was generated successfully.]"
+            draft_reply = await si_request_reply(email)
 
         return {
             "email_id": email.email_id,
