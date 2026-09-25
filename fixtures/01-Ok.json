@@ -188,7 +188,7 @@
       }
     ],
     "defect_fields": [],
-    "evidence": "all 7 fields match after normalisation"
+    "evidence": "No mismatch detected. All 7 fields match after normalisation."
   },
   "SubmissionEntry": {
     "category": "BL_COMPARISON",

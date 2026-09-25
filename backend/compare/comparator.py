@@ -304,7 +304,7 @@ def compare(
         review_reason=None,
         rows=rows,
         defect_fields=[],
-        evidence="All 7 fields match between SI and BL.",
+        evidence="No mismatch detected. All 7 fields match between SI and BL.",  # the brief's wording
     )
 
 
