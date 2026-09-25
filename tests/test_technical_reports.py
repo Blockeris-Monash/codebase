@@ -204,6 +204,55 @@ def test_an_extraction_with_no_answer_says_what_happened_to_the_email(queue, mon
     assert row["context"]["tries"] == 4
 
 
+def empty(text: str) -> dict[str, ExtractedField]:
+    return {name: {"present": False, "label_seen": None, "raw": None} for name in FIELDS}
+
+
+def test_a_model_that_answers_with_no_fields_is_reported_as_nothing_extracted(queue, monkeypatch) -> None:
+    """#114 item 5: the model answered, so no retry was filed, but not one field came back."""
+    import backend.app as app
+    monkeypatch.setattr(app, "extractor", AiExtractor(with_fallback(empty, broken), tries=1, wait=0))
+
+    document = asyncio.run(app.extract_live(EMAIL, "BL", [("Shipper", "ACME")], None, "ok"))
+
+    assert not any(field["present"] for field in document["fields"].values())
+    row = only(queue)
+    assert row["title"] == "Extraction (BL): nothing extracted"
+    assert row["email_ref"] == EMAIL and row["kind"] == reports.KIND
+    assert row["detail"].startswith("The model answered, but no field came back")
+    assert row["context"]["step"] == "Extraction (BL)"
+
+
+def test_a_document_that_did_not_parse_is_reported_once(queue, monkeypatch) -> None:
+    """A file that could not be read is one report, not also 'nothing extracted'."""
+    import backend.app as app
+    monkeypatch.setattr(app, "extractor", AiExtractor(with_fallback(empty, broken), tries=1, wait=0))
+
+    asyncio.run(app.extract_live(EMAIL, "SI", [], None, "unreadable"))
+
+    row = only(queue)
+    assert row["title"] == "Extraction (SI): file could not be read"
+
+
+def test_a_good_extraction_or_a_missing_file_files_nothing(queue, monkeypatch) -> None:
+    import backend.app as app
+    monkeypatch.setattr(app, "extractor", AiExtractor(with_fallback(answer, broken), tries=1, wait=0))
+
+    asyncio.run(app.extract_live(EMAIL, "SI", [("Shipper", "ACME")], None, "ok"))
+    asyncio.run(app.extract_live(EMAIL, "BL", [], None, "missing"))
+
+    assert filed(queue) == []
+
+
+def test_no_ai_answer_is_not_also_reported_as_nothing_extracted(queue, monkeypatch) -> None:
+    import backend.app as app
+    monkeypatch.setattr(app, "extractor", AiExtractor(with_fallback(broken, broken), tries=1, wait=0))
+
+    asyncio.run(app.extract_live(EMAIL, "SI", [("Shipper", "ACME")], None, "ok"))
+
+    assert [row["title"] for row in filed(queue)] == ["Extraction (SI): no AI answer after 2 tries"]
+
+
 def test_a_classification_that_fails_is_reported_against_its_email(queue) -> None:
     from backend.classify import ClassificationFailed, EmailInput, classify_email
     email = EmailInput(email_id=EMAIL, from_email="ops@carrier.test", subject="Draft BL",
