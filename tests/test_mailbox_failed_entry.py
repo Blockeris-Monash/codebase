@@ -89,6 +89,7 @@ def selected_after(sel: str, live_ids: list[str]) -> list[object]:
         "const RESULTS = [{id:'email_001'}];",
         f"const S = {{sel:{json.dumps(sel)}, mailbox:'live', liveEmails:{json.dumps([{'id': i} for i in live_ids])}, uploads:[]}};",
         re.search(r"const byId = .*\n", SCRIPT).group(0),
+        re.search(r"const rawList = .*\n", SCRIPT).group(0),
         re.search(r"const mailList = .*\n", SCRIPT).group(0),
         re.search(r"const getEmail = .*\n", SCRIPT).group(0),
         re.search(r"const selectedEmail = .*\n", SCRIPT).group(0),

@@ -59,7 +59,7 @@ def test_the_pull_runs_after_the_first_paint() -> None:
     assert INDEX.index("\nrender();") < INDEX.index("window.Store?.pull(")
 
 
-@pytest.mark.parametrize("fn", ["pushMark", "pushReply", "pushReport", "pull"])
+@pytest.mark.parametrize("fn", ["pushMark", "pushReply", "pushReport", "pushCorrection", "pull"])
 def test_every_store_function_gives_up_quietly_when_signed_out(fn: str) -> None:
     """Signed out, unconfigured or offline, the app must behave exactly as it
     did before - no thrown error, no blocking dialog."""
