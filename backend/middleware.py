@@ -56,7 +56,8 @@ MAX_BODY_BYTES = 2_000_000
 # route added later is not throttled by accident. /mailbox does spend it (a poll
 # starts checks on new mail) and has its own budget below.
 LIMITED_PATHS = frozenset({"/process-email", "/classify", "/translate",
-                           "/extract-clean-compare", "/check-files", "/draft-reply"})
+                           "/extract-clean-compare", "/check-files", "/draft-reply",
+                           "/refine"})
 
 # /mailbox is polled every 10 s per open tab, so it gets its own budget, and it is
 # counted per signed-in person rather than per address: a venue's wifi puts everyone

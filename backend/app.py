@@ -968,6 +968,23 @@ async def draft_reply(request: DraftRequest, authorization: Optional[str] = Head
     return {"email_id": entry["id"], "draft_reply": entry["draft_reply"]}
 
 
+class RefineRequest(BaseModel):
+    email: EmailInput
+    current_draft: str = Field(..., min_length=1, max_length=20_000)  # the same cap as a reply body
+    instruction: str = Field(..., min_length=1, max_length=500)
+
+
+@app.post("/refine")
+async def refine_draft_endpoint(request: RefineRequest) -> Dict[str, Any]:
+    """Rewrite a drafted reply the way the person asks ("shorter", "more formal")."""
+    from backend.reply import refine_rag_reply
+    # A thread: the model can take a while, and the event loop serves everyone (#96).
+    refined = await asyncio.to_thread(refine_rag_reply, request.email, request.current_draft, request.instruction)
+    if not refined:
+        raise HTTPException(status_code=502, detail="The AI could not refine the draft just now. Try again, or edit it yourself.")
+    return {"draft_reply": refined}
+
+
 class ReplyRequest(BaseModel):
     email_id: str = Field(..., max_length=100)
     to: str = Field(..., max_length=320)

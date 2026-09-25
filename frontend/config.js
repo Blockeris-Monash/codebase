@@ -1,6 +1,18 @@
-// Address of the deployed backend (backend/app.py). My mailbox reads and replies
-// through it. No trailing slash needed - index.html strips one.
-window.BLOCKERIS_API_BASE = "https://blockeris-backend.onrender.com";
+// Address of the backend (backend/app.py). My mailbox reads and replies through it.
+// No trailing slash needed - index.html strips one.
+//
+// A page opened from this machine (localhost) talks to the backend on this machine,
+// so a route that is not deployed yet can be tried: before this, a local page called
+// the deployed backend and a new route answered 404 there (#156). Start it with
+//   uvicorn backend.app:app --port 8000
+// Only localhost switches, never a query string or stored value: the page sends the
+// Google token to this address, so nothing a link can set may change it.
+(function () {
+  var DEPLOYED = "https://blockeris-backend.onrender.com";
+  var LOCAL = "http://localhost:8000";
+  var LOCAL_HOSTS = ["localhost", "127.0.0.1"];
+  window.BLOCKERIS_API_BASE = LOCAL_HOSTS.indexOf(location.hostname) === -1 ? DEPLOYED : LOCAL;
+})();
 
 // Where the Help panel sends notes for the support team. Leave empty to only save them on the visitor's device.
 // Example: window.BLOCKERIS_SUPPORT_EMAIL = "support@example.com";

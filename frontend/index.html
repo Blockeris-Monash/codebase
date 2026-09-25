@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ship Happens">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&display=swap">
@@ -1280,8 +1281,13 @@ function actionsHTML(e){
       <label class="small mute" for="r-to">${t("To")}</label><input id="r-to" data-f="to" value="${esc(d.to)}">
       <label class="small mute" for="r-sub">${t("Subject")}</label><input id="r-sub" data-f="subject" value="${esc(d.subject)}">
       <label class="small mute" for="r-body">${t("Message")}</label><textarea id="r-body" data-f="body" rows="12">${esc(d.body)}</textarea>
-      ${e.draft_by==="sample"?`<div class="small mute sample">${t("Sample reply written for the demo, not drafted by Ship Happens' AI.")}</div>`:""}
-      <div class="actions"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
+      ${d.refined?"":(e.draft_by==="sample"?`<div class="small mute sample">${t("Sample reply written for the demo, not drafted by Ship Happens' AI.")}</div>`:"")}
+      <div class="actions" style="margin-bottom:8px;"><button class="btn" data-a="send" data-id="${e.id}" ${S.sending?"disabled":""}>${S.sending?t("Sending..."):t("Send reply")}</button><button class="btn alt" data-a="copy">${S.copied===e.id?t("Copied"):t("Copy")}</button>${isLive(e.id)?`<a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a>`:`<button class="btn alt" data-a="mailto">${t("Open in your email app")}</button>`}<button class="ghost" data-a="discard">${t("Discard")}</button></div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <input type="text" id="r-refine" data-f="instruction" maxlength="500" value="${esc(d.instruction||"")}" placeholder="${t("Refine draft...")}" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 10px; background:var(--panel); color:var(--ink); font:inherit;">
+        <button class="btn alt" data-a="refine" data-id="${e.id}" ${S.refining?"disabled":""}>${S.refining?t("Refining..."):t("Refine")}</button>
+      </div>
+      ${S.refineErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.refineErr)}</div>`:""}
       ${S.sendErr?`<div class="small" role="alert" style="margin-top:8px">${esc(S.sendErr)}</div>`:""}
       <div class="small mute" style="margin-top:8px">${isLive(e.id)?t("Send reply sends this from your Gmail, in the same thread. Check it first: a sent email cannot be taken back."):t("Demo: Send reply only marks this email as replied. Nothing is emailed. Use Open in your email app to send it for real.")}</div></div>`;
   if(e.uploaded) return `<div class="actions"><button class="btn" data-a="mark" data-k="ok" data-id="${e.id}">${t("Mark as done")}</button></div>`;
@@ -1531,7 +1537,8 @@ document.addEventListener("click", ev=>{
   else if(a==="undo"){ delete S.marks[id]; delete S.sent[id]; saveMarks(); saveSent(); window.Store?.pushMark(id, null); if(S.toast&&S.toast.id===id){ S.toast=null; S.sel=id; S.draft=null; S.hl=null; S.fade=true; S.resetPane=true; S.keyNav=true; S.page=Math.max(0,Math.floor(items().findIndex(e=>e.id===id)/PAGE)); } }
   else if(a==="draft"){ S.draft = draftFor(getEmail(id)); S.copied=null; S.scrollTo=".reply"; }
   else if(a==="aidraft"){ draftLive(id); return; }
-  else if(a==="discard"){ S.draft=null; }
+  else if(a==="discard"){ S.draft=null; S.refineErr=null; }
+  else if(a==="refine"){ if(!S.refining) refineDraft(id); }
   else if(a==="send"){ if(isLive(id)){ if(!S.sending) sendLive(id); return; } S.sent[id]={to:S.draft.to, subject:S.draft.subject, body:S.draft.body}; S.marks[id]="back"; S.draft=null; saveSent(); saveMarks(); window.Store?.pushReply(id, S.sent[id]); advance(id); }
   else if(a==="copy"){ try{ navigator.clipboard.writeText(S.draft.body); S.copied=S.draft.id; }catch(_){} }
   else if(a==="mailto"){ location.href = "mailto:"+encodeURIComponent(S.draft.to)+"?subject="+encodeURIComponent(S.draft.subject)+"&body="+encodeURIComponent(S.draft.body); return; }
@@ -1665,6 +1672,22 @@ async function fetchLiveMailbox() {
 const isLive = id=>String(id).startsWith("gmail_");
 /* The email's own thread in Gmail, in the signed-in account (authuser), for a person with no mail app. */
 const gmailLink = e=>"https://mail.google.com/mail/?authuser=" + encodeURIComponent((S.user&&S.user.email)||"") + "#all/" + encodeURIComponent(String(e.id).slice(6));
+
+async function refineDraft(id) {
+  const d = S.draft, e = getEmail(id), instruction = ((d && d.instruction) || "").trim();
+  if(!d || !e || !instruction) return;
+  S.refining = true; S.refineErr = null; render();
+  try{
+    const res = await fetch(API_BASE + "/refine", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({email:{email_id:String(e.id), from_email:e.from || "", subject:e.subject || "", body:e.body || "", attachments:[]},
+                            current_draft:d.body, instruction})});
+    if(!res.ok){ const why = await res.json().catch(()=>({})); throw new Error(typeof why.detail==="string" ? why.detail : "HTTP " + res.status); }
+    const data = await res.json();
+    /* The person may have closed or switched drafts while this was waiting. */
+    if(S.draft === d){ d.body = data.draft_reply; d.instruction = ""; d.refined = true; }   // the AI wrote it now, so no "sample" label
+  }catch(err){ S.refineErr = t("Not refined: {reason}", {reason: err.message}); }
+  S.refining = false; render();
+}
 async function sendLive(id){
   const d = S.draft, token = window.Store?.googleToken?.();
   if(!d) return;
