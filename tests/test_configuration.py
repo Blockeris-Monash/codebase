@@ -187,3 +187,31 @@ def test_the_test_run_cannot_write_to_the_live_queue() -> None:
     for name in settings.SUPABASE_SECRET_NAMES:
         assert os.environ.get(name) is None, f"{name} is still set inside the test run"
     assert settings.supabase_secret() is None
+
+
+def test_the_offline_suite_cannot_reach_a_model() -> None:
+    """backend/app.py calls load_dotenv() at import, so importing the service
+    pulls a developer's .env into the environment. The live gate stops *tests*
+    calling a model; it cannot stop the *application* doing it, and the mailbox
+    check classifies each new email in the background.
+
+    Measured before this guard: 66.9s and an intermittent failure with keys
+    present, against 1.45s and green with them cleared. CI never saw it because
+    CI has no .env.
+    """
+    import os
+
+    from tests.conftest import MODEL_KEYS
+
+    for name in MODEL_KEYS:
+        assert os.environ.get(name) is None, f"{name} is visible inside the offline suite"
+
+
+def test_the_guard_steps_aside_when_the_live_tests_are_asked_for() -> None:
+    """SHIP_HAPPENS_LIVE=1 is someone asking for the live tests by name, and
+    those need the keys. The guard has to read the opt-in, not blanket-clear."""
+    source = (ROOT / "tests" / "conftest.py").read_text(encoding="utf-8")
+
+    guard = source[source.index("def no_model_calls_from_the_application"):]
+    assert "LIVE_OPT_IN" in guard.split("for name in MODEL_KEYS")[0]
+    assert "return" in guard.split("for name in MODEL_KEYS")[0]
