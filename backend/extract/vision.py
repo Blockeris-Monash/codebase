@@ -40,6 +40,9 @@ OPT_IN = "SHIP_HAPPENS_VISION"
 PDF_MIME = "application/pdf"
 CACHE_DIR = Path(__file__).resolve().parents[2] / "results" / "vision"
 
+# A page image takes longer than a text call; without a limit google-genai waits forever.
+VISION_TIMEOUT_MS = 60_000
+
 # A scan has no text layer, so a file this small holds no page at all - not a
 # picture of one, nothing. Reading it is impossible rather than merely hard.
 EMPTY_PDF_BYTES = 2048
@@ -113,7 +116,7 @@ def gemini_vision(pdf: bytes) -> dict[str, ExtractedField]:
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=api_key())
+    client = genai.Client(api_key=api_key(), http_options=types.HttpOptions(timeout=VISION_TIMEOUT_MS))
     response = client.models.generate_content(
         model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
         contents=[VISION_PROMPT, types.Part.from_bytes(data=pdf, mime_type=PDF_MIME)],

@@ -4,6 +4,7 @@ import urllib.request
 from typing import Optional, List, Dict, Any
 from supabase import create_client, Client
 from google import genai
+from google.genai import types
 from backend import reports, settings
 from backend.classify import EmailInput
 from backend.embeddings import EmbeddingTask, embed
@@ -25,8 +26,6 @@ if SUPABASE_URL and SUPABASE_SECRET:
 else:
     supabase = None
 
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-
 qwen_reply_breaker = CircuitBreaker()
 
 # Replies only: Gemini first, Qwen as the backup. Timed on 25 Sep, Qwen took 19 to 38 s to
@@ -35,6 +34,15 @@ qwen_reply_breaker = CircuitBreaker()
 # in about 4 s; #137 logged up to 14.4 s, hence 20. Qwen gets the time a reply needs.
 GEMINI_REPLY_SECONDS = 20
 QWEN_REPLY_SECONDS = 60
+
+
+def make_client(key: str) -> genai.Client:
+    """with_fallback stops waiting after GEMINI_REPLY_SECONDS; this makes the call itself
+    stop too, instead of holding a socket and a thread for as long as Google does."""
+    return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=GEMINI_REPLY_SECONDS * 1000))
+
+
+client = make_client(GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 def strip_dangerous_tags(text: str) -> str:
     """Basic programmatic sanitization to mitigate LLM05 (Improper Output Handling)"""
