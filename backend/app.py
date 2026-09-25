@@ -4,6 +4,7 @@ cleans fields, and runs deterministic comparison.
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 import json
 from contextvars import ContextVar
 import logging
@@ -13,7 +14,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Query, Response
+from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 # Import Milk's Extractor and Model
@@ -72,6 +75,14 @@ def say_what_is_switched_on() -> None:
 
 
 app = FastAPI(title="Document Discrepancy Orchestrator")
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(_request: Request, error: RequestValidationError) -> JSONResponse:
+    """Where and why a request is invalid, without echoing the input back: the default
+    handler returned the whole body, so a 50 MB post came back as a 50 MB 422 (#147)."""
+    return JSONResponse(status_code=422, content={"detail": [
+        {key: problem[key] for key in ("loc", "msg", "type")} for problem in error.errors()]})
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -791,7 +802,8 @@ WORKING: Dict[tuple[str, str], asyncio.Task] = {}       # (address, gmail id) be
 FAILURES: Dict[tuple[str, str], int] = {}
 GIVE_UP_AFTER = 2
 # Two at a time: the model proxy slows to a crawl under more, and the page polls every 10 s.
-CHECKS = asyncio.Semaphore(2)
+# Per mailbox: one busy account used to queue every other account's checks behind its own.
+CHECKS: Dict[str, asyncio.Semaphore] = defaultdict(lambda: asyncio.Semaphore(2))
 
 
 def bearer(authorization: Optional[str]) -> str:
@@ -867,7 +879,7 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
     keep the result. Runs behind the request, so the page never waits on a model."""
     key = (address, gmail_id)
     try:
-        async with CHECKS:
+        async with CHECKS[address]:
             async with gmail.Gmail(token) as box:
                 message = await box.message(gmail_id)
                 files = await box.attachment_files(message)
@@ -959,7 +971,7 @@ async def draft_reply(request: DraftRequest, authorization: Optional[str] = Head
 class ReplyRequest(BaseModel):
     email_id: str = Field(..., max_length=100)
     to: str = Field(..., max_length=320)
-    subject: str = Field(..., max_length=1000, pattern=r"^[^\r\n]*$")  # a line break would start a new header
+    subject: str = Field(..., max_length=1000, pattern=r"^[^\r\n\x0b\x0c\x85\u2028\u2029]*$")  # any line break would start a new header
     body: str = Field(..., min_length=1, max_length=20_000)
 
 

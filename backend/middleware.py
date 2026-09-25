@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import time
 import uuid
 from collections import defaultdict, deque
@@ -38,6 +39,12 @@ QUIET_PATHS = frozenset({"/health"})
 WINDOW_SECONDS = 60.0
 MAX_REQUESTS_PER_WINDOW = 30
 TOO_MANY_REQUESTS = 429
+PAYLOAD_TOO_LARGE = 413
+SAFE_REQUEST_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+# An upload is two files of up to 5 MB as base64 in JSON; everything else is an email.
+UPLOAD_PATH = "/check-files"
+MAX_UPLOAD_BYTES = 17_000_000
+MAX_BODY_BYTES = 2_000_000
 
 # An allow-list, not a deny-list. The first version listed the cheap paths and
 # limited everything else, which throttled exactly the wrong thing: the page
@@ -63,6 +70,7 @@ CONNECTING_IP_HEADER = "cf-connecting-ip"
 # Past this many tracked callers, the ones idle for a whole window are forgotten, so
 # a stream of made-up callers cannot grow the table without end.
 MAX_TRACKED_CALLERS = 10_000
+FLOOD_FACTOR = 5
 
 _seen: dict[str, deque[float]] = defaultdict(deque)
 
@@ -83,8 +91,9 @@ def caller(request: Request) -> str:
 
 
 def mailbox_caller(request: Request) -> str:
-    """One budget per Google token, hashed so no token is held in memory."""
-    token = request.headers.get("authorization", "")
+    """One budget per Google token, hashed so no token is held in memory. The token itself,
+    not the raw header, so spacing or the case of "Bearer" cannot open a second budget."""
+    token = request.headers.get("authorization", "").strip().removeprefix("Bearer").removeprefix("bearer").strip()
 
     return "mailbox:" + hashlib.sha256(token.encode()).hexdigest()[:16]
 
@@ -99,11 +108,22 @@ def caller_shape(address: str) -> str:
     return "unknown"
 
 
+_last_sweep = 0.0
+
+
 def forget_idle_callers(now: float) -> None:
-    """Drop every caller with nothing inside the window."""
+    """Drop every caller with nothing inside the window - at most once a window, so a
+    table full of active callers is not rescanned on every request. A table still past
+    the hard cap after that is a flood of made-up callers, and is emptied."""
+    global _last_sweep
+    if now - _last_sweep < WINDOW_SECONDS:
+        return
+    _last_sweep = now
     idle = [who for who, recent in _seen.items() if not recent or now - recent[-1] > WINDOW_SECONDS]
     for who in idle:
         del _seen[who]
+    if len(_seen) > MAX_TRACKED_CALLERS * FLOOD_FACTOR:
+        _seen.clear()
 
 
 def is_over_limit(who: str, now: float, limit: int = MAX_REQUESTS_PER_WINDOW) -> bool:
@@ -127,6 +147,16 @@ class Budget(NamedTuple):
     limit: int
 
 
+def is_too_large(request: Request) -> bool:
+    """Past what any real request carries. Nothing capped the body, so a 50 MB post was
+    read whole, parsed, and echoed back in the 422 (#147). Chunked bodies with no length
+    are not covered; Render's proxy caps those."""
+    cap = MAX_UPLOAD_BYTES if request.url.path == UPLOAD_PATH else MAX_BODY_BYTES
+    declared = request.headers.get("content-length", "")
+
+    return declared.isdigit() and int(declared) > cap
+
+
 def limited_caller(request: Request) -> Budget | None:
     """The budget this request counts against, or None for a route that spends nothing."""
     if request.url.path == MAILBOX_PATH:
@@ -138,11 +168,17 @@ def limited_caller(request: Request) -> Budget | None:
 
 
 async def tag_and_limit(request: Request, call_next):
-    request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
+    # A caller's own id only when it looks like one: it is written into every log line.
+    offered = request.headers.get(REQUEST_ID_HEADER, "")
+    request_id = offered if SAFE_REQUEST_ID.fullmatch(offered) else uuid.uuid4().hex[:12]
     # Set before anything else runs, so every line logged while handling this
     # request carries the same id the caller sees in the response header.
     REQUEST_ID.set(request_id)
     started = time.monotonic()
+
+    if is_too_large(request):
+        return JSONResponse(status_code=PAYLOAD_TOO_LARGE, content={"detail": "Request too large."},
+                            headers={REQUEST_ID_HEADER: request_id})
 
     budget = limited_caller(request)
     if budget is not None and is_over_limit(budget.who, time.monotonic(), budget.limit):

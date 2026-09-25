@@ -5,6 +5,7 @@ The models and Supabase are fakes, so these run offline and fast."""
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 import json
 import logging
 import re
@@ -412,7 +413,7 @@ def failing_mailbox(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(app_module.gmail, "Gmail", BrokenGmail)
     for store in ("MAILBOXES", "ORIGINALS", "WORKING", "FAILURES"):
         monkeypatch.setattr(app_module, store, {})
-    monkeypatch.setattr(app_module, "CHECKS", asyncio.Semaphore(2))
+    monkeypatch.setattr(app_module, "CHECKS", defaultdict(lambda: asyncio.Semaphore(2)))
     return app_module
 
 

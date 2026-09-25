@@ -77,6 +77,18 @@ without it.
 - *(audit)* **`/process-email` reads only dataset files, or files this server saved for
   the request.** Any absolute path, or `../`, used to be read and its fields
   sent back: another person's Gmail attachments included.
+- *(audit)* **Limits on what any caller can send.** A body past 2 MB (17 MB for
+  an upload of two files) is refused before it is read; a 50 MB post used to be
+  parsed whole and echoed back in the 422, which now describes the problem
+  without the input. A caller's `X-Request-ID` is used only if it looks like
+  one. Each mailbox's checks queue on their own, so one busy account cannot
+  hold up the demo mailbox. Classification masks only the part of the body the
+  prompt uses, off the event loop: masking a 100k body stalled every request
+  for 6 s.
+- *(audit)* **An SI request's draft never fails the email** (#145 follow-up). A
+  curly quote or a dash raised out of the PDF font as a 500; the reply carried
+  the PDF's server path and said it was attached; the email id could write the
+  PDF outside its folder. All four are fixed.
 - *(audit)* **A profile's email must be the sign-in email** (migration `0007`). Setting
   it to someone else's address made that person's first sign-in fail.
 

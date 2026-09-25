@@ -7,6 +7,7 @@ share the fake server, to prove each one sees only their own mail.
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 import base64
 import email
 import json
@@ -107,7 +108,7 @@ def google(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setattr(app_module, "MAILBOX_DIR", tmp_path)
     for store in ("MAILBOXES", "ORIGINALS", "WORKING", "FAILURES"):
         monkeypatch.setattr(app_module, store, {})
-    monkeypatch.setattr(app_module, "CHECKS", asyncio.Semaphore(2))
+    monkeypatch.setattr(app_module, "CHECKS", defaultdict(lambda: asyncio.Semaphore(2)))
     fake.classified = classified
     with TestClient(app_module.app) as client:
         fake.client = client

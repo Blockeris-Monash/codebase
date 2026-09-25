@@ -99,7 +99,7 @@ Python 3.12, plus `python3-venv` on Debian or Ubuntu. No database, no API key.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q          # 890 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 919 passed, 80 skipped (skips need a model key)
 ```
 
 **Windows (PowerShell)**
@@ -108,10 +108,10 @@ python -m pytest -q          # 890 passed, 80 skipped (skips need a model key)
 py -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m pytest -q          # 890 passed, 80 skipped (skips need a model key)
+python -m pytest -q          # 919 passed, 80 skipped (skips need a model key)
 ```
 
-If the tests print 890 passed, you are done — that is the whole system checked
+If the tests print 919 passed, you are done — that is the whole system checked
 offline, with no key and no network. The 80 skips are the tests that reach a
 model over the network; they stay skipped unless you ask for them by name.
 
