@@ -90,19 +90,13 @@ li.technical{border-left-color:var(--rev)}
 </div>
 
 <script src="config.js"></script>
-<script type="module">
-  // Pinned exactly, for the same reason index.html pins it: "@2" floats, and a
-  // release during judging would change this page with nothing here changing.
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/+esm";
-  window.supabase = { createClient };
-</script>
+<!-- The same pinned, integrity-checked build as index.html, for the same reasons. -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-K1nraABOP/zFehpLIUksXebbs7jMpB8gYMlb+uhVKZcWT/9Vkq1+qhv6ndC+1Yuz" crossorigin="anonymous"></script>
 <script src="store.js"></script>
-<!-- A module, and that is load-bearing. `type="module"` is deferred, so the
-     import above runs only after the document is parsed - while a classic
-     script runs during it. As a classic script this ran before
-     `window.supabase` existed, so `sb()` returned null, `currentUser()` said
-     nobody was signed in, and the page asked a signed-in reviewer to sign in
-     again. Modules run in document order, so this one runs after the import. -->
+<!-- A module, and that is load-bearing. `type="module"` is deferred, and deferred
+     scripts run in document order, so this runs after the deferred library
+     above. As a classic script it ran before `window.supabase` existed, so
+     `sb()` returned null and a signed-in reviewer was asked to sign in again. -->
 <script type="module">
 (function(){
   "use strict";

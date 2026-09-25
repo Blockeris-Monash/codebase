@@ -613,15 +613,11 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <script src="results.js"></script>
 <script src="scans.js"></script>
 <script src="i18n.js"></script>
-<script type="module">
-  // Loaded from a CDN because this page has no build step. Only the auth and
-  // REST helpers are used; the page still renders if this never arrives.
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/+esm";
-  // Pinned exactly. "@2" floats: a release during judging would change the code
-  // running in a judge's browser with nothing in this repository changing, and
-  // sign-in failing then looks like our bug.
-  window.supabase = { createClient };
-</script>
+<!-- supabase-js from a CDN, since this page has no build step; the page still renders if it never arrives.
+     Pinned exactly ("@2" floats), and the UMD build rather than the ESM one jsDelivr generates on demand,
+     which imports further files and so cannot carry the integrity hash that makes a changed file refuse
+     to run (#147 B2). Deferred, so it runs after parsing and before DOMContentLoaded, as the import did. -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-K1nraABOP/zFehpLIUksXebbs7jMpB8gYMlb+uhVKZcWT/9Vkq1+qhv6ndC+1Yuz" crossorigin="anonymous"></script>
 <script src="store.js"></script>
 <script>
 const API_BASE = (window.BLOCKERIS_API_BASE || "").replace(/\/$/, "");
@@ -1962,8 +1958,8 @@ function mailboxBarHTML(){
   return "";
 }
 
-/* The Supabase library is a module script, and module scripts run after this one
-   but before DOMContentLoaded. So sign-in is wired here, not above. The callback
+/* The Supabase library is deferred, so it runs after this script but before
+   DOMContentLoaded. So sign-in is wired here, not above. The callback
    fires at once with the saved session, then on every sign-in and sign-out. */
 document.addEventListener("DOMContentLoaded", ()=>{
   S.authErr = window.Store?.authError?.() || null;
