@@ -19,6 +19,10 @@ without it.
   newsletters and bank notices included, and again after every restart. Those
   emails now show **Draft a reply**, which calls `POST /draft-reply` once per
   email and keeps the result. `/process-email` still drafts for API callers.
+- **A colour-blind friendly switch in Settings** (#154). Action required turns
+  magenta and Verified blue instead of red and green; Needs review keeps its
+  amber. Works in light and dark mode, is saved on the device, and is applied
+  before the first paint.
 - **The demo's invoice and general emails carry a sample reply** (#151), written
   in advance and filled in from each email, labelled everywhere as a sample
   rather than the product's own draft. The demo still calls no model.
