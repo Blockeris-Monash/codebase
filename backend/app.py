@@ -11,6 +11,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from collections.abc import MutableMapping
 from typing import Any, Dict, List, Literal, NamedTuple, Optional
 
 from dotenv import load_dotenv
@@ -39,6 +40,7 @@ from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
 from backend.read.documents import document_title, read_document
 from backend.logging_setup import configure as configure_logging
+from backend.state import BoundedStore
 from backend.mail_view import DRAFT_REQUEST, clean_body, document, fallback_category, shipment_ref
 from backend import settings
 from backend.extract.rules import fields_from_pairs
@@ -73,6 +75,10 @@ def say_what_is_switched_on() -> None:
         state(os.environ.get("GEMINI_CRITIC_API_KEY") or settings.gemini_key()),
         state(rules_first_enabled()),
     )
+    # Mailboxes, the rate limit and the breakers live in this process's memory (#139).
+    if int(os.environ.get("WEB_CONCURRENCY") or 1) > 1:
+        log.warning("WEB_CONCURRENCY is above 1, but mailboxes, the rate limit and the circuit breakers "
+                    "are kept per process and not shared; run one worker until #139 lands")
     # It printed vision=on, but no request reads a scan: vision is an offline pass (#147 B3).
     if os.environ.get("SHIP_HAPPENS_VISION"):
         log.warning("SHIP_HAPPENS_VISION is set, but the live service does not read scanned attachments; "
@@ -865,10 +871,23 @@ async def process_email(
 # user id the caller supplies: a caller cannot ask for anyone else's mail.
 
 MAILBOX_DIR = Path(os.environ.get("MAILBOX_DIR", "/tmp/shiphappens-mailbox"))
-MAILBOXES: Dict[str, Dict[str, Dict[str, Any]]] = {}   # address -> gmail id -> inbox entry
-ORIGINALS: Dict[str, Dict[str, gmail.Message]] = {}    # address -> gmail id -> what a reply threads under
+# Bounded, so a long-running service does not keep every message it ever saw (#147 B4).
+DAY_SECONDS = 24 * 60 * 60
+MAILBOX_TTL = float(os.environ.get("MAILBOX_TTL_HOURS", "24")) * 60 * 60
+MAILBOX_MAX_MESSAGES = int(os.environ.get("MAILBOX_MAX_MESSAGES", "500"))
+MAILBOX_MAX_ACCOUNTS = int(os.environ.get("MAILBOX_MAX_ACCOUNTS", "1000"))
+MAILBOXES: BoundedStore[str, BoundedStore[str, Dict[str, Any]]] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_ACCOUNTS)
+ORIGINALS: BoundedStore[str, BoundedStore[str, gmail.Message]] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_ACCOUNTS)
 WORKING: Dict[tuple[str, str], asyncio.Task] = {}       # (address, gmail id) being checked now
-FAILURES: Dict[tuple[str, str], int] = {}
+FAILURES: BoundedStore[tuple[str, str], int] = BoundedStore(DAY_SECONDS, MAILBOX_MAX_ACCOUNTS * MAILBOX_MAX_MESSAGES)
+
+
+def mailbox_of(store: MutableMapping, address: str) -> BoundedStore:
+    """One account's messages in `store`, created bounded the first time it is asked for."""
+    box = store.get(address)
+    if box is None:
+        box = store[address] = BoundedStore(MAILBOX_TTL, MAILBOX_MAX_MESSAGES)
+    return box
 GIVE_UP_AFTER = 2
 # Two at a time: the model proxy slows to a crawl under more, and the page polls every 10 s.
 # Per mailbox: one busy account used to queue every other account's checks behind its own.
@@ -952,8 +971,8 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
             paths = gmail.save_attachments(email_id, files, folder_for(address, gmail_id))
             entry = await mailbox_entry(message, paths)
         message.attachments = []  # a reply needs the headers, not the files
-        ORIGINALS.setdefault(address, {})[gmail_id] = message
-        MAILBOXES.setdefault(address, {})[gmail_id] = entry
+        mailbox_of(ORIGINALS, address)[gmail_id] = message
+        mailbox_of(MAILBOXES, address)[gmail_id] = entry
     except Exception as error:  # a model, Gmail or a file: any of them, and the next poll retries
         FAILURES[key] = FAILURES.get(key, 0) + 1
         log.warning("Mailbox message %s not checked (try %d): %s", gmail_id, FAILURES[key], error)
@@ -967,7 +986,7 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
                                       "error": type(error).__name__}})
         if FAILURES[key] >= GIVE_UP_AFTER:
             # Shown under Other mail rather than retried forever, one model bill per poll.
-            MAILBOXES.setdefault(address, {})[gmail_id] = {
+            mailbox_of(MAILBOXES, address)[gmail_id] = {
                 "id": gmail.mailbox_id(gmail_id), "from": "", "subject": "(could not be checked)",
                 "body": "This email could not be read or checked. Open it in Gmail.",
                 # A category like every other entry, so nothing on the page meets an email without one.
@@ -990,7 +1009,7 @@ async def mailbox(response: Response, authorization: Optional[str] = Header(None
     except gmail.GmailError as error:
         raise gmail_failure(error) from error
 
-    done = MAILBOXES.setdefault(address, {})
+    done = mailbox_of(MAILBOXES, address)
     for gmail_id in ids:
         key = (address, gmail_id)
         if gmail_id not in done and key not in WORKING:
