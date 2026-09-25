@@ -94,6 +94,21 @@ SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ
 TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW
 """.split())
 NEVER_A_CODE = frozenset({"NORTH", "SOUTH"})
+# Words that name a country (or part of one), not a place in it: the only words one side of a
+# port may add or drop, as in "BUSAN" against "BUSAN, SOUTH KOREA". A country missing here is
+# flagged for review rather than matched, which is the safe side to fail on.
+COUNTRY_WORDS = frozenset("""
+AFGHANISTAN ALBANIA ALGERIA ANGOLA ARGENTINA AUSTRALIA AUSTRIA BAHRAIN BANGLADESH BELGIUM BRAZIL
+BRUNEI BULGARIA BURMA CAMBODIA CAMEROON CANADA CHILE CHINA COLOMBIA CROATIA CYPRUS CZECH DENMARK
+DJIBOUTI ECUADOR EGYPT ESTONIA ETHIOPIA FINLAND FRANCE GERMANY GHANA GREECE GUINEA HONG KONG INDIA
+INDONESIA IRAN IRAQ IRELAND ISRAEL ITALY IVORY COAST JAMAICA JAPAN JORDAN KENYA KOREA KUWAIT LATVIA
+LEBANON LIBYA LITHUANIA MADAGASCAR MALAYSIA MALTA MAURITIUS MEXICO MOROCCO MOZAMBIQUE MYANMAR
+NETHERLANDS NEW ZEALAND NIGERIA NORWAY OMAN PAKISTAN PANAMA PERU PHILIPPINES POLAND PORTUGAL QATAR
+ROMANIA RUSSIA SAUDI ARABIA SENEGAL SINGAPORE SLOVENIA SPAIN SRI LANKA SUDAN SWEDEN SWITZERLAND
+TAIWAN TANZANIA THAILAND TOGO TUNISIA TURKEY TURKIYE UKRAINE UNITED ARAB EMIRATES KINGDOM STATES
+AMERICA URUGUAY VENEZUELA VIETNAM VIET NAM YEMEN ZAMBIA
+NORTH SOUTH EAST WEST REPUBLIC OF THE PR UAE UK USA US KSA
+""".split())
 
 
 def is_bare_locode(token: str) -> bool:
@@ -101,12 +116,22 @@ def is_bare_locode(token: str) -> bool:
 
 
 def extract_meaningful_tokens(val: str | None) -> set[str]:
-    """Strips planted LOCODE decoys and returns uppercase alphanumeric tokens."""
+    """Strips planted LOCODE decoys and returns uppercase alphanumeric tokens.
+
+    A bare code goes only when a place other than a country is left without it: in
+    "TOKYO, JAPAN" TOKYO is the city, not a code, even though TO is Tonga's code."""
     if not val:
         return set()
-    cleaned = LOCODE_DECOY.sub("", val.upper())
-    cleaned = BARE_LOCODE.sub(lambda m: "" if is_bare_locode(m.group(0)) else m.group(0), cleaned)
-    return set(re.findall(r"\b[A-Z0-9]{2,}\b", cleaned))
+    words = set(re.findall(r"\b[A-Z0-9]{2,}\b", LOCODE_DECOY.sub("", val.upper())))
+    rest = {w for w in words if not (BARE_LOCODE.fullmatch(w) and is_bare_locode(w))}
+    return rest if rest - COUNTRY_WORDS else words
+
+
+def same_place(a: set[str], b: set[str]) -> bool:
+    """One side may add or drop only a country: BUSAN is BUSAN, SOUTH KOREA, but VIETNAM
+    is not HO CHI MINH, VIETNAM, and JAPAN is not NAGOYA, JAPAN."""
+    short, long = sorted((a, b), key=len)
+    return short <= long and (long - short) <= COUNTRY_WORDS | COUNTRY_CODES   # "SHANGHAI, CN"
 
 
 def compare_single_field(
@@ -143,15 +168,11 @@ def compare_single_field(
         c_bl = match_bl.group(0) if match_bl else b_norm
         return "match" if c_si == c_bl else "mismatch"
 
-    # 3. Ports: token-set subset match (handles country additions/inversions)
+    # 3. Ports: the same words in any order, or one side adding only the country
     if field in {"port_of_loading", "port_of_discharge"}:
         si_tokens = extract_meaningful_tokens(s_norm)
         bl_tokens = extract_meaningful_tokens(b_norm)
-        if si_tokens and bl_tokens and (
-            si_tokens == bl_tokens
-            or si_tokens.issubset(bl_tokens)
-            or bl_tokens.issubset(si_tokens)
-        ):
+        if si_tokens and bl_tokens and same_place(si_tokens, bl_tokens):
             return "match"
 
     return "mismatch"
