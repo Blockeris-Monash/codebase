@@ -633,6 +633,14 @@ async def check_message(token: str, address: str, gmail_id: str) -> None:
     except Exception as error:  # a model, Gmail or a file: any of them, and the next poll retries
         FAILURES[key] = FAILURES.get(key, 0) + 1
         log.warning("Mailbox message %s not checked (try %d): %s", gmail_id, FAILURES[key], error)
+        if FAILURES[key] == GIVE_UP_AFTER:
+            # The error type only: its message can quote the email.
+            reports.file({"kind": reports.KIND, "email_ref": gmail.mailbox_id(gmail_id),
+                          "title": "Mailbox email not checked",
+                          "detail": f"Failed {GIVE_UP_AFTER} times ({type(error).__name__}), so it is shown "
+                                    "under Other mail as could not be checked. Details are in the log.",
+                          "context": {"step": "Mailbox", "tries": FAILURES[key],
+                                      "error": type(error).__name__}})
         if FAILURES[key] >= GIVE_UP_AFTER:
             # Shown under Other mail rather than retried forever, one model bill per poll.
             MAILBOXES.setdefault(address, {})[gmail_id] = {

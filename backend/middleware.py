@@ -24,6 +24,7 @@ from collections import defaultdict, deque
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from backend import reports
 from backend.logging_setup import REQUEST_ID
 
 log = logging.getLogger(__name__)
@@ -58,6 +59,16 @@ def caller(request: Request) -> str:
     return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
 
 
+def caller_shape(address: str) -> str:
+    """Enough of an address to tell one network from another, never the whole of it."""
+    if ":" in address:
+        return ":".join(address.split(":")[:3]) + ":x"
+    if address.count(".") == 3:
+        return address.rsplit(".", 1)[0] + ".x"
+
+    return "unknown"
+
+
 def is_over_limit(who: str, now: float) -> bool:
     """A sliding window. Old entries are dropped on every call, so the memory
     held is bounded by the callers seen inside one window."""
@@ -80,6 +91,13 @@ async def tag_and_limit(request: Request, call_next):
 
     if request.url.path in LIMITED_PATHS and is_over_limit(caller(request), time.monotonic()):
         log.warning("rate limited %s on %s [%s]", caller(request), request.url.path, request_id)
+        # A technical report for the admin queue; reports holds back the repeats (#114).
+        reports.file({"kind": reports.KIND, "email_ref": None, "title": "Rate limited",
+                      "detail": f"A caller from {caller_shape(caller(request))} went past "
+                                f"{MAX_REQUESTS_PER_WINDOW} requests in {WINDOW_SECONDS:g}s on "
+                                f"{request.url.path} and was refused. Request {request_id} is in the log.",
+                      "context": {"step": "Rate limit", "path": request.url.path,
+                                  "caller": caller_shape(caller(request)), "request_id": request_id}})
         return JSONResponse(
             status_code=TOO_MANY_REQUESTS,
             content={"detail": f"More than {MAX_REQUESTS_PER_WINDOW} requests in "

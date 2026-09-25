@@ -29,7 +29,7 @@ def no_real_models(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def filed(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     rows: list[dict] = []
-    monkeypatch.setattr(reports, "file", rows.append)
+    monkeypatch.setattr(reports, "file", lambda row, **how: rows.append(row))
     return rows
 
 
