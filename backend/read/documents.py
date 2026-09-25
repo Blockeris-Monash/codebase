@@ -110,12 +110,26 @@ def _docx_paragraphs(path: Path) -> list[str]:
     return [html.unescape(t).strip() for t in texts if t.strip()]
 
 
+def row_pairs(cells: list[str]) -> LabelledPairs:
+    """The pairs in one table row, from its filled cells. "Shipper | X | Consignee | Y" is
+    two; the whole row after the first cell used to be the shipper (#147 B3). A row that
+    does not start with a known label keeps the first-cell-is-the-label reading."""
+    if len(cells) < 2:
+        return []
+    starts = [0]
+    if _is_label(cells[0]):
+        starts += [i for i in range(1, len(cells) - 1) if _is_label(cells[i])]
+    ends = starts[1:] + [len(cells)]
+
+    return [(cells[start], CELL_SEPARATOR.join(cells[start + 1:end])) for start, end in zip(starts, ends)]
+
+
 def read_docx(path: Path) -> LabelledPairs:
     """Word stores the document as a table; fall back to `label: value`
     paragraphs when it does not."""
     rows = _docx_rows(path)
     if rows:
-        return [(r[0], CELL_SEPARATOR.join(r[1:])) for r in rows if len(r) > 1]
+        return [pair for row in rows for pair in row_pairs(row)]
 
     pairs: LabelledPairs = []
     for text in _docx_paragraphs(path):
@@ -161,9 +175,7 @@ def read_xlsx(path: Path) -> LabelledPairs:
     for row in re.findall(r"<row[ >].*?</row>", xml, re.S):
         cells = [_cell_text(c, shared)
                  for c in re.findall(r"<c[ >][^>]*?(?:/>|>.*?</c>)", row, re.S)]
-        filled = [c for c in cells if c]
-        if len(filled) > 1:
-            pairs.append((filled[0], CELL_SEPARATOR.join(filled[1:])))
+        pairs.extend(row_pairs([c for c in cells if c]))
 
     return pairs
 

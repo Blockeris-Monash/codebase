@@ -6,6 +6,7 @@ upload would meet.
 """
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ from backend.compare.comparator import compare
 from backend.compare.normalise import compare_row, normalise
 from backend.contracts import FIELD_NAMES
 from backend.extract.rules import comparison_result
-from backend.read.documents import _pdf_pairs, read_txt
+from backend.read.documents import _pdf_pairs, read_docx, read_txt, read_xlsx
 from backend.read.labels import detect_doc_type
 
 
@@ -253,3 +254,34 @@ def test_a_name_wrapped_onto_a_legal_form_line_is_one_name(written: str, name: s
 ])
 def test_a_wrapped_name_compares_as_one(si: str, bl: str, verdict: str) -> None:
     assert every_path("consignee", {"consignee": si}, {"consignee": bl}) == {verdict}
+
+
+# --- B3.3 ------------------------------------------------------------------
+
+def docx_with_rows(tmp_path: Path, rows: list[list[str]]) -> Path:
+    cell = "<w:tc><w:p><w:r><w:t>{}</w:t></w:r></w:p></w:tc>"
+    table = "".join("<w:tr>" + "".join(cell.format(c) for c in row) + "</w:tr>" for row in rows)
+    path = tmp_path / "doc.docx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("word/document.xml", f"<w:document><w:body><w:tbl>{table}</w:tbl></w:body></w:document>")
+    return path
+
+
+def xlsx_with_rows(tmp_path: Path, rows: list[list[str]]) -> Path:
+    cell = '<c t="inlineStr"><is><t>{}</t></is></c>'
+    sheet = "".join("<row>" + "".join(cell.format(c) for c in row) + "</row>" for row in rows)
+    path = tmp_path / "doc.xlsx"
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.writestr("xl/worksheets/sheet1.xml", f"<worksheet><sheetData>{sheet}</sheetData></worksheet>")
+    return path
+
+
+@pytest.mark.parametrize("build, read", [(docx_with_rows, read_docx), (xlsx_with_rows, read_xlsx)], ids=["word", "excel"])
+def test_a_row_holding_two_fields_gives_two_pairs(tmp_path: Path, build, read) -> None:
+    """The first cell was the label and every other cell its value, so the consignee was lost."""
+    pairs = read(build(tmp_path, [["Shipper", "APRIL FAR EAST", "Consignee", "MOORIM SP CO., LTD"],
+                                  ["Port of Loading", "PORT KLANG"],
+                                  ["Remarks", "Consignee to pay freight", "urgent"]]))
+
+    assert pairs == [("Shipper", "APRIL FAR EAST"), ("Consignee", "MOORIM SP CO., LTD"),
+                     ("Port of Loading", "PORT KLANG"), ("Remarks", "Consignee to pay freight | urgent")]
