@@ -81,7 +81,7 @@ def qwen_generate(prompt: str, system_instruction: str) -> str:
     }
 
     request = urllib.request.Request(f"{base_url}/v1/messages", data=json.dumps(body).encode(), headers=headers)
-    with urllib.request.urlopen(request, timeout=float(os.environ.get('QWEN_TIMEOUT_SECONDS', 120))) as response:
+    with urllib.request.urlopen(request, timeout=float(os.environ.get('QWEN_TIMEOUT_SECONDS', 15))) as response:
         reply = json.load(response)
         
     reply_text = "".join(block.get("text", "") for block in reply["content"])

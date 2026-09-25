@@ -184,7 +184,8 @@ def test_fetching_again_does_not_duplicate_or_recheck(google) -> None:
     again = google.client.get("/mailbox", headers={"Authorization": "Bearer token-a"})
 
     assert again.json() == first and len(first) == 2
-    assert sorted(google.classified) == ["gmail_18c2f4e9a1b3d5f7", "gmail_18c2f4e9a1b3d5f8"]
+    # the SI and BL email is sorted by rule (backend/app.py sort_email), so only the other asks the AI
+    assert google.classified == ["gmail_18c2f4e9a1b3d5f8"]
     assert again.headers["X-Mailbox-Pending"] == "0"
 
 
@@ -297,3 +298,36 @@ def test_a_live_email_no_rule_knows_has_no_intent(google) -> None:
     emails = {e["id"]: e for e in poll(google.client, "token-a", 2)}
 
     assert "intent" not in emails["gmail_18c2f4e9a1b3d5f8"] and "about" not in emails["gmail_18c2f4e9a1b3d5f8"]
+
+
+def test_an_si_and_bl_email_is_checked_while_the_ai_is_down(google, monkeypatch) -> None:
+    """25 Sep: Qwen timed out and Gemini was out of quota, so this email became
+    "(could not be checked)". With both documents attached it needs no AI at all."""
+    async def ai_down(email):
+        raise app_module.HTTPException(status_code=502, detail="The read operation timed out")
+    monkeypatch.setattr(app_module, "classify", ai_down)
+
+    emails = {e["id"]: e for e in poll(google.client, "token-a", 2)}
+
+    checked = emails["gmail_18c2f4e9a1b3d5f7"]
+    assert checked["status"] == "MISMATCH" and checked["defect_fields"] == ["gross_weight_kg"]
+    assert checked["decided_by"] == "rule"
+    assert emails["gmail_18c2f4e9a1b3d5f8"]["category"] == "GENERAL"  # filed by the keyword rule, not lost
+
+
+def test_a_mailbox_email_is_read_by_rule_before_the_model(google, monkeypatch) -> None:
+    """The mailbox asked process_email for live=True, which forces the model and skips the
+    rules-first reader (#122) that uploads and the demo already use. A Gmail id is never in
+    the saved results, so the normal path loses nothing and needs no AI for labelled files."""
+    class ModelDown:
+        def extract_fields(self, email_id, pairs):
+            raise RuntimeError("QWEN_API_KEY is not set")
+    async def ai_down(email):
+        raise app_module.HTTPException(status_code=502, detail="The read operation timed out")
+    monkeypatch.setattr(app_module, "extractor", ModelDown())
+    monkeypatch.setattr(app_module, "classify", ai_down)
+
+    emails = {e["id"]: e for e in poll(google.client, "token-a", 2)}
+
+    checked = emails["gmail_18c2f4e9a1b3d5f7"]
+    assert checked["status"] == "MISMATCH" and checked["defect_fields"] == ["gross_weight_kg"]
