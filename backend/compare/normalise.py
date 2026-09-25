@@ -7,6 +7,7 @@ see the comparison-rules decision log.
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from backend.contracts import ComparisonRow, VerdictType
 
@@ -77,6 +78,35 @@ def parse_number(written: str) -> float:
     return float(compact.replace(",", ""))
 
 
+# "1 x 20GP", "2×40'HC", "5X40HC": a count, then a container size.
+CONTAINER_GROUP = re.compile(r"(\d+)\s*[x×*]\s*(\d{2})(?=\s*['’]?\s*[a-z]|\b)", re.I)
+
+
+def container_sizes(value: str) -> Counter[str]:
+    """How many containers of each size: "1 x 20GP + 2 x 40HC" is {"20": 1, "40": 2}."""
+    sizes: Counter[str] = Counter()
+    for count, size in CONTAINER_GROUP.findall(value):
+        sizes[size] += int(count)
+    return sizes
+
+
+def container_total(value: str, sizes: Counter[str]) -> str:
+    if sizes:
+        return str(sum(sizes.values()))
+    match = re.search(r"\d+", value)
+    return match.group(0) if match else value.strip().upper()
+
+
+def same_container_count(si: str, bl: str) -> bool:
+    """Per size when both state sizes and either states two or more, since "2 x 40HC"
+    is not "1 x 20GP + 1 x 40HC"; otherwise the total, as a single number was always read.
+    Sizes, not type letters: 40HC and 40HQ are the same box (#147 B3)."""
+    si_sizes, bl_sizes = container_sizes(si), container_sizes(bl)
+    if si_sizes and bl_sizes and max(len(si_sizes), len(bl_sizes)) > 1:
+        return si_sizes == bl_sizes
+    return container_total(si, si_sizes) == container_total(bl, bl_sizes)
+
+
 def normalise_weight(value: str) -> str | None:
     match = re.search(WEIGHT_NUMBER, value)
 
@@ -113,9 +143,12 @@ def verdict_for(si_norm: str | None, bl_norm: str | None) -> str:
 
 def compare_row(field: str, si_raw: str | None, bl_raw: str | None) -> ComparisonRow:
     si_norm, bl_norm = normalise(field, si_raw), normalise(field, bl_raw)
+    verdict = verdict_for(si_norm, bl_norm)
+    # The norm shows the total; the verdict needs the per-size breakdown the raw values hold.
+    if field == "container_count" and verdict != VerdictType.Missing:
+        verdict = VerdictType.Match if same_container_count(si_raw, bl_raw) else VerdictType.Mismatch
 
     return {"field": field, "si_raw": si_raw, "bl_raw": bl_raw,
-            "si_norm": si_norm, "bl_norm": bl_norm,
-            "verdict": verdict_for(si_norm, bl_norm)}
+            "si_norm": si_norm, "bl_norm": bl_norm, "verdict": verdict}
 
 

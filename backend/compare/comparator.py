@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.compare.evidence import describe_blanks, describe_unreadable, describe_wrong_doc
-from backend.compare.normalise import normalise
+from backend.compare.normalise import normalise, same_container_count
 
 # Distinguishes "no norm key at all" from "norm supplied as None".
 _MISSING = object()
@@ -145,13 +145,9 @@ def compare_single_field(
         except (ValueError, TypeError):
             return "mismatch"
 
-    # 2. Container Count: leading integer extraction
+    # 2. Container Count: per size when broken down by size, else the total
     if field == "container_count":
-        match_si = re.search(r"\d+", s_norm)
-        match_bl = re.search(r"\d+", b_norm)
-        c_si = match_si.group(0) if match_si else s_norm
-        c_bl = match_bl.group(0) if match_bl else b_norm
-        return "match" if c_si == c_bl else "mismatch"
+        return "match" if same_container_count(s_norm, b_norm) else "mismatch"
 
     # 3. Ports: token-set subset match (handles country additions/inversions)
     if field in {"port_of_loading", "port_of_discharge"}:
@@ -245,6 +241,9 @@ def compare(
             bl_norm = normalise(field_name, bl_raw)
 
         verdict = compare_single_field(field_name, si_norm, bl_norm)
+        # A norm can be the total alone; the per-size breakdown is in what was written.
+        if field_name == "container_count" and verdict != "missing" and si_raw and bl_raw:
+            verdict = "match" if same_container_count(str(si_raw), str(bl_raw)) else "mismatch"
 
         if verdict == "mismatch":
             defect_fields.append(field_name)  # type: ignore

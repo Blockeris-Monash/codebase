@@ -10,7 +10,7 @@ import pytest
 
 from backend import app as app_module
 from backend.compare.comparator import compare
-from backend.compare.normalise import normalise
+from backend.compare.normalise import compare_row, normalise
 from backend.contracts import FIELD_NAMES
 from backend.read.labels import detect_doc_type
 
@@ -117,3 +117,22 @@ def test_a_weight_is_read_the_way_its_separators_say(written: str, kilograms: fl
     assert float(app_module.clean_weight(written)) == pytest.approx(kilograms)
     assert float(normalise("gross_weight_kg", written.removesuffix(" MT"))) == pytest.approx(
         kilograms / (1000 if written.endswith("MT") else 1))
+
+
+# --- B3.4 ------------------------------------------------------------------
+
+@pytest.mark.parametrize("si, bl, verdict", [
+    ("1×20GP + 1×40HC", "1×20GP + 2×40HC", "mismatch"),   # only the first number was compared
+    ("1 x 20GP + 1 x 40HC", "1 x 40HC + 1 x 20GP", "match"),
+    ("2 x 40HC", "1 x 20GP + 1 x 40HC", "mismatch"),
+    ("2 x 40'HC", "2 X 40HC", "match"),
+    ("2", "2 x 40HC", "match"),                            # no breakdown on one side: the total decides
+    ("1 x 20GP + 1 x 40HC", "2", "match"),
+    ("3 x 40HC", "2 x 40HC", "mismatch"),
+])
+def test_containers_are_counted_per_size(si: str, bl: str, verdict: str) -> None:
+    production = compare("email_900", document("SI", container_count=si), document("BL", container_count=bl))
+    reference = compare_row("container_count", si, bl)
+
+    assert production.rows[5].verdict == verdict
+    assert reference["verdict"] == verdict
