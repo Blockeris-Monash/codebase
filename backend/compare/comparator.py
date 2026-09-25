@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.compare.evidence import describe_blanks, describe_unreadable, describe_wrong_doc
-from backend.compare.normalise import normalise, same_container_count
+from backend.compare.normalise import SAME_AS_CONSIGNEE, normalise, same_container_count
 
 # Distinguishes "no norm key at all" from "norm supplied as None".
 _MISSING = object()
@@ -167,6 +167,17 @@ def compare_single_field(
 # Main Comparison Runner
 # =====================================================================
 
+def with_notify_resolved(fields: Dict[str, Any]) -> Dict[str, Any]:
+    """`fields` with a SAME AS CONSIGNEE notify party compared as that document's consignee.
+    Its raw value is kept, so the screen still shows what the document says."""
+    notify, consignee = fields.get("notify_party") or {}, fields.get("consignee") or {}
+    if not SAME_AS_CONSIGNEE.match(str(notify.get("raw") or "")):
+        return fields
+    norm = consignee["norm"] if "norm" in consignee else normalise("consignee", consignee.get("raw"))
+
+    return {**fields, "notify_party": {**notify, "norm": norm}}
+
+
 def compare(
     email_id: str,
     si_doc: Optional[Dict[str, Any]],
@@ -220,8 +231,8 @@ def compare(
     blanks: List[tuple] = []
 
     # `or {}`, not a default: a key present as null is None, and treated as absent.
-    si_fields = si_doc.get("fields") or {}
-    bl_fields = bl_doc.get("fields") or {}
+    si_fields = with_notify_resolved(si_doc.get("fields") or {})
+    bl_fields = with_notify_resolved(bl_doc.get("fields") or {})
 
     for field_name in CANONICAL_FIELDS:
         si_item = si_fields.get(field_name) or {}

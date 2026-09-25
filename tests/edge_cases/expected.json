@@ -360,13 +360,11 @@
     "title": "Notify party SAME AS CONSIGNEE against the name",
     "category": "BL_COMPARISON",
     "expected": {
-      "status": "MISMATCH",
+      "status": "OK",
       "review_reason": null,
-      "defect_fields": [
-        "notify_party"
-      ]
+      "defect_fields": []
     },
-    "why": "Same party in meaning, different instruction on the BL; a person confirms.",
+    "why": "SAME AS CONSIGNEE on the SI and the consignee's name on the BL are the same notify party (#147 B3, decided 25 Sep).",
     "known_gap": null,
     "category_gap": null
   },

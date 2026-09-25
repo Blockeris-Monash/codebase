@@ -32,7 +32,8 @@ from backend.intent import about, email_intent
 # Import JJ's Deterministic Comparator
 from backend.compare.comparator import ComparisonResult, FieldType, Row, compare, compare_single_field
 from backend import gmail, reports
-from backend.compare.normalise import NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, parse_number  # one rule each, shared with the reference
+from backend.compare.normalise import (NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, order_form,  # one rule each,
+                                       parse_number)  # shared with the reference
 from backend.contracts import CategoryType, DocumentRoleType, ParseStatusType, StatusType
 from backend.read.labels import detect_doc_type
 from backend.translate import TooMuchText, TranslationFailed, translate_texts
@@ -358,7 +359,7 @@ async def extract_document(
 def clean_entity(text: str) -> str:
     """Takes only the entity name before any address pipe ' | '."""
     first_segment = re.split(NAME_SPLIT, text)[0]
-    return re.sub(r"\s+", " ", first_segment).upper().strip(" ,.;:")
+    return order_form(re.sub(r"\s+", " ", first_segment).upper().strip(" ,.;:"))
 
 def clean_port(text: str) -> str:
     first_segment = re.split(NAME_SPLIT, text)[0]

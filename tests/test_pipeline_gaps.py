@@ -12,6 +12,7 @@ from backend import app as app_module
 from backend.compare.comparator import compare
 from backend.compare.normalise import compare_row, normalise
 from backend.contracts import FIELD_NAMES
+from backend.extract.rules import comparison_result
 from backend.read.labels import detect_doc_type
 
 
@@ -136,3 +137,51 @@ def test_containers_are_counted_per_size(si: str, bl: str, verdict: str) -> None
 
     assert production.rows[5].verdict == verdict
     assert reference["verdict"] == verdict
+
+
+# --- B3.8 ------------------------------------------------------------------
+
+def cleaned(doc: dict) -> dict:
+    return {**doc, "fields": app_module.apply_cleaner(doc["fields"])}
+
+
+def every_path(field: str, si: dict, bl: dict) -> set[str]:
+    """The verdicts for `field` from the service (cleaned, as /process-email runs it), the
+    comparator on raw values alone, and the reference path: one value when they agree."""
+    si_doc, bl_doc = document("SI", **si), document("BL", **bl)
+    service = compare("email_900", cleaned(si_doc), cleaned(bl_doc))
+    raw_only = compare("email_900", document("SI", **si), document("BL", **bl))
+    reference = comparison_result("email_900", document("SI", **si), document("BL", **bl))
+    return {next(r.verdict for r in service.rows if r.field == field),
+            next(r.verdict for r in raw_only.rows if r.field == field),
+            next(r["verdict"] for r in reference["rows"] if r["field"] == field)}
+
+
+@pytest.mark.parametrize("si, bl, verdict", [
+    ({"notify_party": "SAME AS CONSIGNEE", "consignee": "MOORIM SP CO., LTD"},
+     {"notify_party": "MOORIM SP CO., LTD", "consignee": "MOORIM SP CO., LTD"}, "match"),
+    ({"notify_party": "Same as Cnee.", "consignee": "MOORIM SP CO., LTD"},
+     {"notify_party": "MOORIM SP CO., LTD", "consignee": "MOORIM SP CO., LTD"}, "match"),
+    ({"notify_party": "SAME AS CONSIGNEE", "consignee": "MOORIM SP CO., LTD"},
+     {"notify_party": "UAB NOVAKOPA", "consignee": "MOORIM SP CO., LTD"}, "mismatch"),
+])
+def test_same_as_consignee_means_that_documents_consignee(si: dict, bl: dict, verdict: str) -> None:
+    assert every_path("notify_party", si, bl) == {verdict}
+
+
+def test_same_as_consignee_is_still_shown_as_written() -> None:
+    production = compare("email_900", document("SI", notify_party="SAME AS CONSIGNEE", consignee="ACME"),
+                         document("BL", notify_party="ACME", consignee="ACME"))
+
+    assert production.rows[2].si_raw == "SAME AS CONSIGNEE"
+
+
+@pytest.mark.parametrize("si, bl, verdict", [
+    ("TO THE ORDER OF MAYBANK BERHAD", "TO ORDER OF MAYBANK BERHAD", "match"),
+    ("ORDER OF MAYBANK BERHAD", "To the order of Maybank Berhad", "match"),
+    ("TO ORDER", "TO THE ORDER", "match"),
+    ("TO ORDER", "TO ORDER OF MAYBANK BERHAD", "mismatch"),   # a negotiable BL to a bank is another instruction
+    ("TO ORDER OF MAYBANK BERHAD", "TO ORDER OF CIMB BANK", "mismatch"),
+])
+def test_order_wording_is_one_form(si: str, bl: str, verdict: str) -> None:
+    assert every_path("consignee", {"consignee": si}, {"consignee": bl}) == {verdict}

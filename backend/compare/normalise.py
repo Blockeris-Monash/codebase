@@ -38,9 +38,26 @@ WEIGHT_NUMBER = (r"(?<![\d.,])(?:\d{1,3}(?:\.\d{3})+,\d+|\d{1,3}(?:\.\d{3}){2,}|
 THOUSANDS_GROUP_DIGITS = 3
 
 
+# "TO THE ORDER OF X", "TO ORDER OF X" and "ORDER OF X" are one instruction, and "TO THE ORDER"
+# is "TO ORDER"; "TO ORDER" and "TO ORDER OF <bank>" stay different instructions (#147 B3).
+ORDER_WORDING = re.compile(r"^(?:TO\s+)?(?:THE\s+)?ORDER\b(\s+OF\b)?", re.I)
+# A notify party that points at the consignee rather than naming one.
+SAME_AS_CONSIGNEE = re.compile(r"^\s*SAME\s+AS\s+(?:THE\s+)?(?:CONSIGNEE|CNEE)\s*\.?\s*$", re.I)
+
+
+def order_form(name: str) -> str:
+    """`name` (upper case) with its order wording in the one form."""
+    return ORDER_WORDING.sub(lambda m: "TO ORDER OF" if m.group(1) else "TO ORDER", name, count=1)
+
+
+def notify_as_meant(notify_raw: str | None, consignee_raw: str | None) -> str | None:
+    """The notify party a document means: its own consignee when it says SAME AS CONSIGNEE."""
+    return consignee_raw if notify_raw and SAME_AS_CONSIGNEE.match(notify_raw) else notify_raw
+
+
 def normalise_name(value: str) -> str:
     """Name only — Excel stores name and address in one cell."""
-    return re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,")
+    return order_form(re.sub(r"\s+", " ", re.split(NAME_SPLIT, value)[0]).upper().strip(" ,"))
 
 
 def normalise_port(value: str) -> str:
