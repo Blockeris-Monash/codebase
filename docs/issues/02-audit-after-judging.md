@@ -571,3 +571,240 @@ startup line prints `vision=on`.
   readings come from.
 
 **Tests.** With the variable set, no `vision=on` is logged and the warning is.
+
+---
+
+# B2 — Frontend
+
+The page is one `index.html` with no build step. It re-renders by assigning the
+whole app's `innerHTML`, and it keeps its state in `S`. #159 has merged since
+the CSP decision was taken, so moving the inline scripts into `.js` files is now
+unblocked. The decision still stands (hashes) until the team asks for the move.
+
+There is no JavaScript test runner in the repository, and the B4 spec takes up
+adding one. Until then B2 is tested three ways:
+- `node --check` on every script, which B4 adds to CI;
+- Python tests on the behaviour the source guarantees;
+- manual checks in a browser, listed per item.
+
+## B2.1 A re-render keeps focus and the cursor where they were
+
+**Problem.**
+- Every render replaces the DOM, so the focused element is destroyed. Only the
+  search box was put back.
+- The 10 s poll renders while someone types a reply. Their textarea is rebuilt:
+  focus goes to `<body>` and the cursor is lost.
+- Any click that re-renders does the same, so keyboard users lose their place
+  after every action.
+
+**Approach.** Two changes, each of which helps on its own:
+1. **`keepFocus(render)` generalises the search-box code.**
+   - Before the write it records the focused element's key: its `id`, else its
+     `data-a` + `data-id` + `data-k`, else `data-f`.
+   - It also records the selection or cursor range and the scroll position of
+     that element.
+   - After the write it finds the element with the same key, focuses it with
+     `preventScroll`, and restores the range.
+   - An element that no longer exists is not chased. Focus stays on `<body>`,
+     as it does today.
+2. **The poll renders only when the mailbox data actually changed.** It
+   compares a signature of the entries and the pending count. A quiet mailbox
+   no longer rebuilds the page every 10 s.
+
+**Rejected alternative.** Pausing the poll while a textarea is focused. New mail
+would stop appearing for as long as someone keeps a draft open.
+
+**Manual check.** Type in the reply box through three polls: the cursor stays
+put. Tab to a list item and press Enter: focus lands on the same item.
+
+## B2.2 A content security policy and security headers
+
+**Problem.**
+- Neither the Vercel page nor the API sends CSP, `frame-ancestors` or `nosniff`.
+- supabase-js loads from a CDN with no integrity check, on a page that holds a
+  Gmail send token.
+
+**Approach.**
+- **supabase-js becomes the pinned UMD build with SRI:**
+  `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-..." crossorigin="anonymous">`.
+  - The current `+esm` import cannot carry SRI at all. jsDelivr generates it
+    on demand, says so in its header, and it imports further files at runtime.
+  - The UMD build is one static file that sets `window.supabase.createClient`,
+    which is exactly what `store.js` expects. It was checked in node.
+  - Two inline module scripts go away, one each in `index.html` and
+    `admin.html`.
+- **A stdlib tool writes the policy:** `python -m cli.csp`, with `--check` for
+  CI and tests.
+  - It reads the backend and Supabase origins from `config.js`, so no URL is
+    written twice.
+  - It hashes every inline `<script>` in `index.html` and `admin.html` with
+    sha256.
+  - It writes the headers into `vercel.json` for every path.
+- **The policy:**
+
+  ```
+  default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-…';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com; img-src 'self' data:;
+  connect-src 'self' <backend> <supabase>; worker-src 'self'; manifest-src 'self';
+  frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'none'
+  ```
+
+  `style-src 'unsafe-inline'` stays: the page has hundreds of `style=`
+  attributes. Style injection cannot run code, and the CSP's job here is
+  scripts.
+- **Other headers on the page:**
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`. The Gmail link carries
+    the reviewer's address in its query.
+  - `Permissions-Policy` switching off the camera, microphone and geolocation
+  - `Cross-Origin-Opener-Policy: same-origin`. Sign-in is a redirect, not a
+    popup, so nothing relies on an opener.
+- **The API** gets `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy:
+  no-referrer`, and a `default-src 'none'; frame-ancestors 'none'` CSP on
+  every response except `/docs`, `/redoc` and `/openapi.json`. Swagger's page
+  needs its CDN.
+
+**Rejected alternative.** `'unsafe-inline'` for scripts. It would make the CSP
+decorative for the one thing it is for.
+
+**Tests.**
+- `cli.csp --check` passes, and an edited inline script makes it fail.
+- Every page's supabase script carries `integrity` and `crossorigin`.
+- The API test client sees the headers on `/health`, and not the CSP on `/docs`.
+
+**Manual check.** Open the deployed page: no CSP violations in the console,
+sign-in works, the mailbox loads, and the fonts render.
+
+## B2.3 Signing out leaves nothing of the person behind
+
+**Problem.** `blockeris.marks`, `blockeris.sent`, `blockeris.feedback` and
+(since #159) `blockeris.corrections` survive sign-out. The next person to sign
+in on the same browser has them merged into their own account by `pull()`.
+
+**Approach.** Tag the data with its owner rather than wiping it on every
+sign-out, because a demo visitor who never signs in must keep their marks.
+- `blockeris.owner` holds the user id the stored data belongs to, or `""` for
+  a signed-out demo visitor.
+- **Sign-in as the owner, or with owner `""`:** keep the data and adopt it.
+  The second case is today's behaviour, where a visitor's demo marks join
+  their account.
+- **Sign-in as anyone else:** clear the four keys and the in-memory copies
+  first, then pull.
+- **Sign-out:** clear the four keys and the in-memory copies, and set the
+  owner to `""`. What was saved to the account comes back on the next sign-in.
+- Language, palette and list width are device preferences, not a person's
+  data, and are kept.
+
+**Manual check.** Sign in as A and mark an email. Sign out: the mark is gone.
+Sign in as B: no mark from A.
+
+## B2.4 Mirroring checks what supabase-js returns
+
+**Problem.** supabase-js resolves with `{error}` rather than throwing. Here is
+what each caller currently does:
+
+| Caller | What it does today |
+|---|---|
+| `pushMark` | ignores the error |
+| `pushReply` | ignores the upsert's error |
+| `pull` | treats a refused read as no marks |
+| `isAdmin` | treats a refused read as not an admin, which is the safe answer, but logs nothing |
+
+A refused write looks exactly like success.
+
+**Approach.**
+- One helper, `checked(result)`, throws the returned error so the existing
+  `catch` logs it. It is used on every `from()` call.
+- `pushMark` and `pushReply` return `true` or `false`, like `pushReport` does,
+  so a caller can say "not saved to your account".
+- The page doesn't change its wording in this item. It already treats local
+  storage as the source of truth.
+
+**Tests.** A fake client that returns `{error}` makes each function warn and
+return false. Run with node against `store.js`.
+
+## B2.5 The service worker caches only good responses and gives up on a slow network
+
+**Problem** (`sw.js`):
+- A 404 or 500 is cached and then served offline.
+- There is no timeout, so a hung network hangs the page.
+- A failed `.js` falls back to `index.html`, which the browser then tries to run
+  as a script.
+
+**Approach.**
+- **Network first**, with a 5 s timeout.
+- **Only cache** `response.ok && response.type === "basic"`.
+- **On failure:** the cached copy of the same request; for a navigation only,
+  the cached `index.html`; otherwise `Response.error()`.
+- Bump `CACHE_VERSION`.
+
+**Tests.** `sw.js` runs in node with stubbed `caches` and `fetch`:
+- a 500 is never put in the cache;
+- a failed script request never answers with HTML;
+- a navigation falls back to the shell;
+- a hung fetch gives up at the timeout.
+
+## B2.6 Polling only where it is seen, never overlapping, never after sign-out
+
+**Problem.**
+- `setInterval` polls every 10 s from sign-in onwards: on the landing page, on
+  What's next, and in a hidden tab.
+- A slow answer overlaps the next request.
+- A request in flight at sign-out lands afterwards and fills the list again.
+
+**Approach.** `setTimeout` chaining replaces `setInterval`:
+- The next poll is scheduled only after the current one settles, so polls
+  cannot overlap.
+- A poll runs only while the mailbox is showing (`S.mailbox === "live"`, the
+  inbox route, `document.visibilityState === "visible"`).
+- Returning to the tab or the inbox polls at once.
+- **Stale answers are dropped.** Each poll carries a generation number and an
+  `AbortController`. Sign-out and switching away abort the request in flight
+  and bump the generation, and an answer from an older generation is dropped.
+
+**Manual check.** With the network tab open: no `/mailbox` calls on the landing
+page or in a hidden tab, and none after sign-out.
+
+## B2.7 Accessibility
+
+**Problem.**
+- Dialogs have no `aria-modal` and no focus trap.
+- Focus falls to `<body>` after every render (B2.1 fixes this).
+- White on the orange accent is 3.4:1.
+
+**Approach.**
+- **Every `role="dialog"` gets `aria-modal="true"`.**
+- **The dialog manages focus.**
+  - Opening a dialog focuses its first focusable element.
+  - Tab and Shift+Tab cycle inside the dialog.
+  - Closing it returns focus to the element that opened it.
+  - This is one keydown handler and one "opener" variable, not one per dialog.
+- **Contrast.**
+  - A new token, `--accent-fill`, is the accent darkened until white text on it
+    reaches 4.5:1. Every place that puts `--accent-ink` on the accent uses it:
+    buttons, step numbers, the avatar, the selected segment, and the rest.
+  - `--accent` itself is unchanged for text and borders, so #154/#155/#157's
+    palettes keep their look.
+  - The dark theme already puts dark ink on a light orange. It is measured,
+    and changed only if it fails.
+
+**Tests.**
+- Each dialog template carries `aria-modal="true"`.
+- The contrast of `--accent-ink` on `--accent-fill` is computed from the CSS
+  and must be at least 4.5, in light, dark, colour-blind and monotone.
+
+## B2.8 "Copied" only when the copy happened
+
+**Problem.** `navigator.clipboard.writeText` returns a promise. Both call sites
+wrap it in a synchronous `try`, so a refused copy (permission denied, an
+insecure context) still says "Copied".
+
+**Approach.**
+- Await the promise at both sites. "Copied" shows on resolve.
+- On reject the button says "Copy failed: select the text and copy it", and
+  the text is selected for the person.
+- The new string is translated.
+
+**Test.** Both sites await `writeText` and set their "copied" state only in the
+resolved branch. Run with node and a stub clipboard that rejects.
