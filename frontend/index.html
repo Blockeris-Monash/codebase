@@ -876,6 +876,14 @@ function langHTML(){
       <div class="actions" style="justify-content:center"><button class="btn" data-a="langnext">${t("See what's next")}</button></div></div></div></div></div>`;
 }
 
+// Signed out, a report only reaches this browser: the reports queue takes rows from signed-in accounts.
+function reportSignInHTML(){
+  return `<div class="ov" data-a="reportclose"><div class="dlg wide" role="dialog" aria-label="${t("Sign in to report a problem")}" data-a="stay">
+    <div class="dlgh"><h2>${t("Sign in to report a problem")}</h2><button class="ghost" data-a="reportclose" aria-label="${t("Close")}">${t("Close")}</button></div>
+    <div class="dlgb"><div class="thanks">${ICON.FLAG}<span>${t("These are demo emails, so a report sent from here is not saved or seen by the team. Reporting is only available when you sign in with Google.")}</span>
+      <div class="actions" style="justify-content:center"><button class="btn" data-a="reportsignin" ${S.authReady?"":"disabled"}>${t("Sign in with Google")}</button><button class="btn alt" data-a="reportclose">${t("Close")}</button></div></div></div></div></div>`;
+}
+
 function helpHTML(){
   const tabs = [["guide",T("Guide")],["support",T("Contact support")]]
     .map(([k,n])=>`<button class="tab ${S.tab===k?"on":""}" data-a="tab" data-k="${k}" role="tab" aria-selected="${S.tab===k}">${t(n)}</button>`).join("");
@@ -893,7 +901,7 @@ const ONE_PANE = matchMedia("(max-width:659px), (max-height:599px)");
    Noticed here, before that, so the page draws My mailbox loading, not the demo inbox and then the landing page. */
 const FROM_SIGN_IN = /[#&]access_token=/.test(location.hash);
 let signInReturn = FROM_SIGN_IN;
-const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
+const S = {q:"", f:"MISMATCH", sort:"worst", page:0, sel:null, docs:true, body:false, how:false, tab:"guide", fb:{kind:"question", rating:0, msg:"", from:"", sent:null, err:false, copied:false}, hl:null, help:false, langDlg:false, reportDlg:false, langMenu:false, user:null, userMenu:false, authReady:false, authErr:null,  marks:loadMarks(), sent:loadSent(), draft:null, copied:null, mailbox:FROM_SIGN_IN?"live":"demo", liveEmails:[], polling:false, mailboxErr:null, pending:0, liveLoaded:false, sending:false, sendErr:null, step:0, pipeManual:false, seen:{}};
 const byId = Object.fromEntries(RESULTS.map(e=>[e.id,e]));
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const folder = k=>FOLDERS.find(x=>x.k===k);
@@ -1213,7 +1221,7 @@ function render(){
      <div class="kpis">${kp("MISMATCH","Action required")}${kp("NEEDS_REVIEW","Needs review")}${kp("OK","Verified")}${kp("CHECKED","Done")}${kp("OTHER","Other mail")}</div>
      <div class="bar">${S.user||signInReturn?"":`<div class="seg mbox"><button class="segb ${S.mailbox==='demo'?'on':''}" data-a="switchbox" data-k="demo">${t("Demo data")}</button><button class="segb ${S.mailbox==='live'?'on':''}" data-a="switchbox" data-k="live" ${!S.user?'disabled title="'+t("Sign in to see your mailbox")+'"':''}>${t("My mailbox")}</button></div>`}<span class="sbox">${ICO('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="q" type="search" placeholder="${t("Search mail or shipment reference")}" aria-label="${t("Search mail or shipment reference")}" value="${esc(S.q)}" autocomplete="off"></span>${S.q.trim()?`<span class="mute small">${t("Searching all mail")}</span>`:RANKED.includes(S.f)?sortHTML():S.f==="OTHER"||OTHER_KINDS.includes(S.f)?kindsHTML():""}<span class="grow"></span>${loadingBox()?"":tallyHTML()}
        </div>
-     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${toastHTML()}`;
+     <div class="split ${S.sel?"hasSel":""}"><div class="list" ${loadingBox()?'aria-busy="true"':""}>${loadingBox()?`<div class="empty">${ICON.MAIL}<b>${t("Loading your mailbox...")}</b></div>`:""}${rows||(loadingBox()?"":(RANKED.includes(S.f)&&!S.q.trim()?(ONE_PANE.matches?allDoneHTML():" "):"")||`<div class="empty">${ICON.MAIL}<b>${t("Nothing here")}</b><span>${S.q.trim()?t("No emails match \u201c{q}\u201d.",{q:esc(S.q.trim())}):t("No emails match in this folder.")}</span>${S.q.trim()?`<button class="btn alt" data-a="clearq">${t("Clear search")}</button>`:""}</div>`)}${total?pagerHTML:""}</div><div class="resizer" role="separator" aria-orientation="vertical" aria-label="${t("Drag to resize")}"></div><div class="pane">${pane}</div></div>`}${help}${S.langDlg?langHTML():""}${S.reportDlg?reportSignInHTML():""}${toastHTML()}`;
   if(S.help && dlgTop && !S.tabChanged && q(".dlg")) q(".dlg").scrollTop = dlgTop;
   S.tabChanged = false;
   if(focusQ&&q("#q")){ const box=q("#q"); box.focus(); try{ box.setSelectionRange(focusQ[0],focusQ[1]); }catch(_){} }
@@ -1275,6 +1283,8 @@ document.addEventListener("click", ev=>{
   else if(a==="langpick"){ S.langMenu=false; setLang(k); }
   else if(a==="langmore"){ S.langMenu=false; S.langDlg=true; }
   else if(a==="langclose"){ S.langDlg=false; }
+  else if(a==="reportclose"){ S.reportDlg=false; }
+  else if(a==="reportsignin"){ S.reportDlg=false; window.Store?.signIn(); return; }
   else if(a==="langnext"){ S.langDlg=false; location.hash="#/next"; window.scrollTo(0,0); }
   else if(a==="idea"){ S.help=true; S.tab="support"; S.fb.kind="idea"; S.fb.sent=null; S.tabChanged=true; }
   else if(a==="kind") S.fb.kind=k;
@@ -1292,7 +1302,7 @@ document.addEventListener("click", ev=>{
   }
   else if(a==="step"){ S.pipeManual=true; document.querySelector(".lp-pipe")?.classList.remove("auto"); setStep(+k); return; }
   else if(a==="howto"){ document.getElementById("how")?.scrollIntoView({behavior:"smooth", block:"start"}); return; }
-  else if(a==="report"){ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; }
+  else if(a==="report"){ if(!S.user){ S.reportDlg=true; } else{ S.help=true; S.tab="support"; S.fb={kind:"problem", rating:0, msg:"", from:"", sent:null, err:false, copied:false}; S.tabChanged=true; } }
   else if(a==="switchbox"){
     if (k==="live" && !S.user) return;
     if (S.mailbox !== k) {
@@ -1389,10 +1399,10 @@ function stepKey(key){
 }
 document.addEventListener("keydown", ev=>{
   if(ev.key==="Escape"&&ev.target.id==="q"&&S.q){ S.q=""; S.page=0; S.resetList=true; render(); return; }
-  if(ev.key==="Escape"&&(S.help||S.langDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.langMenu=false; render(); return; }
+  if(ev.key==="Escape"&&(S.help||S.langDlg||S.reportDlg||S.langMenu)){ S.help=false; S.langDlg=false; S.reportDlg=false; S.langMenu=false; render(); return; }
   if((ev.key==="Enter"||ev.key===" ") && ev.target.classList && (ev.target.classList.contains("src")||ev.target.classList.contains("brand"))){ ev.preventDefault(); ev.target.click(); return; }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName);
-  if(typing||S.help||S.langDlg||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
+  if(typing||S.help||S.langDlg||S.reportDlg||location.hash==="#/next"||!location.hash||location.hash==="#/"||ev.ctrlKey||ev.metaKey||ev.altKey) return;
   if(S.sel && (ev.key==="ArrowLeft"||ev.key==="ArrowRight")){ ev.preventDefault(); stepKey(ev.key); }
 });
 window.addEventListener("hashchange", render);
