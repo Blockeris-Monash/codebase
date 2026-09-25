@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.intent import INTENTS, about, email_intent
+from backend.intent import INTENTS, SHORT, about, email_intent
 from cli.make_results import build_email
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,17 +122,28 @@ INDEX = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
 I18N = (ROOT / "frontend" / "i18n.js").read_text(encoding="utf-8")
 
 
-def test_the_list_row_shows_the_title() -> None:
-    assert '<span class="sub">${hl(title(e))}</span>' in INDEX
+def test_the_list_row_shows_the_short_title() -> None:
+    """A row is about 45 characters wide, so the list uses a short label and the customer
+    and port still show: "SI vs BL: ROXCEL TRADING GMBH · Ashdod, Israel"."""
+    assert '<span class="sub">${hl(title(e,true))}</span>' in INDEX
+
+
+@pytest.mark.parametrize("intent", sorted(INTENTS))
+def test_every_intent_has_a_short_label_that_is_translated(intent: str) -> None:
+    short = SHORT[intent]
+    assert len(short) <= 17, f"{short!r} is too long for a row"
+    assert f'{intent}:T("{short}")' in INDEX
+    assert I18N.count(f'"{short}":') == 2, f"{short!r} needs a Malay and a Chinese line"
 
 
 def test_the_email_heading_is_the_title_with_the_subject_under_it() -> None:
     assert "<h2>${esc(title(e))}</h2>" in INDEX
-    assert '${e.intent?`<div class="mute small subj">${esc(e.subject)}</div>`:""}' in INDEX
+    # not when the heading already ends with the subject, as a live email's often does
+    assert '${e.intent&&!(e.about||[]).includes(e.subject)?`<div class="mute small subj">${esc(e.subject)}</div>`:""}' in INDEX
 
 
 def test_search_still_finds_the_subject_and_the_title() -> None:
-    assert '(e.subject+" "+title(e)+" "+e.from' in INDEX
+    assert '(e.subject+" "+title(e)+" "+title(e,true)+" "+e.from' in INDEX
 
 
 @pytest.mark.parametrize("intent", sorted(set(LABELS.values()) - {None}))

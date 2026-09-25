@@ -31,6 +31,15 @@ INTENTS: dict[str, tuple[str, str]] = {
     "office_notice": ("GENERAL", "Office notice"),
 }
 
+# The list row is about 45 characters wide, so it uses these; the heading uses the full label.
+SHORT: dict[str, str] = {
+    "check_draft_bl": "SI vs BL", "chase_draft_bl": "BL requested", "resend_documents": "Files missing",
+    "submit_si": "New SI", "cancel_invoice": "Cancel invoice", "missing_gr": "GR missing",
+    "dd_charges": "D&D charges", "charge_query": "Charges query", "system_notice": "System notice",
+    "schedule_update": "Vessel update", "outstanding_reminder": "Outstanding items",
+    "office_notice": "Office notice",
+}
+
 # Tried in order within a category; the first match wins. The order matters where two could
 # match: an automated notice says "no action required" whatever else it mentions.
 RULES: dict[str, list[tuple[str, re.Pattern[str]]]] = {

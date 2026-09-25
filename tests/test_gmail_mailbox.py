@@ -280,3 +280,20 @@ def test_a_reply_needs_a_google_token(google) -> None:
                                              "subject": "x", "body": "y"})
 
     assert got.status_code == 401 and google.sent == []
+
+
+def test_a_live_email_gets_an_intent_and_keeps_its_subject_as_the_title_words(google) -> None:
+    """Real subjects do not follow the dataset's shapes, so when the rules find no customer
+    or port, the title is the label and the subject: "SI vs BL: RE: 5ALT-01226 draft BL"."""
+    emails = {e["id"]: e for e in poll(google.client, "token-a", 2)}
+
+    checked = emails["gmail_18c2f4e9a1b3d5f7"]
+    assert checked["intent"] == "check_draft_bl"
+    assert checked["about"] == ["RE: 5ALT-01226 draft BL"]
+
+
+def test_a_live_email_no_rule_knows_has_no_intent(google) -> None:
+    """The page then shows the subject, exactly as before."""
+    emails = {e["id"]: e for e in poll(google.client, "token-a", 2)}
+
+    assert "intent" not in emails["gmail_18c2f4e9a1b3d5f8"] and "about" not in emails["gmail_18c2f4e9a1b3d5f8"]
