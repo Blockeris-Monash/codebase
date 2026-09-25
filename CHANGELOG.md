@@ -7,7 +7,14 @@ the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **Replies are drafted by Gemini first, with Qwen as the backup.** Qwen takes
+  19 to 38 s to draft a reply, so under the 15 s limit the other stages use it
+  never finished, and every draft waited 15 s before Gemini wrote it anyway.
+  Gemini now gets 20 s, then Qwen gets 60 s behind its circuit breaker. Without a
+  Gemini key, Qwen drafts alone, as before. Classification and extraction still
+  ask Qwen first.
 
 ## [1.1.0] — 2026-09-25
 

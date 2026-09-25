@@ -28,6 +28,13 @@ client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 qwen_reply_breaker = CircuitBreaker()
 
+# Replies only: Gemini first, Qwen as the backup. Timed on 25 Sep, Qwen took 19 to 38 s to
+# draft a reply (about twice the tokens of a classification), so with the 15 s the other
+# stages use it never finished, and every draft waited 15 s for it to fail. Gemini answers
+# in about 4 s; #137 logged up to 14.4 s, hence 20. Qwen gets the time a reply needs.
+GEMINI_REPLY_SECONDS = 20
+QWEN_REPLY_SECONDS = 60
+
 def strip_dangerous_tags(text: str) -> str:
     """Basic programmatic sanitization to mitigate LLM05 (Improper Output Handling)"""
     if not text:
@@ -81,7 +88,7 @@ def qwen_generate(prompt: str, system_instruction: str) -> str:
     }
 
     request = urllib.request.Request(f"{base_url}/v1/messages", data=json.dumps(body).encode(), headers=headers)
-    with urllib.request.urlopen(request, timeout=float(os.environ.get('QWEN_TIMEOUT_SECONDS', 15))) as response:
+    with urllib.request.urlopen(request, timeout=QWEN_REPLY_SECONDS) as response:
         reply = json.load(response)
         
     reply_text = "".join(block.get("text", "") for block in reply["content"])
@@ -98,7 +105,7 @@ def gemini_generate(prompt: str, system_instruction: str) -> str:
     return response.text
 
 def generate_rag_reply(email: EmailInput, category: str) -> Optional[str]:
-    """Generate a reply using retrieved policy context. Tries Qwen first, then Gemini."""
+    """Generate a reply using retrieved policy context. Tries Gemini first, then Qwen."""
     
     # 1. Retrieve Context
     query = email.body
@@ -141,12 +148,11 @@ GLOBETRANS POLICY CONTEXT:
     def try_gemini(text: str) -> str:
         return gemini_generate(text, system_instruction)
         
-    generate_fn = with_fallback(
-        qwen_reply_breaker.wrap(try_qwen, skip_allowed=lambda: bool(GEMINI_API_KEY)), 
-        try_gemini, 
-        first_timeout=15,
-        enabled=lambda: bool(GEMINI_API_KEY)
-    )
+    if GEMINI_API_KEY:
+        generate_fn = with_fallback(try_gemini, qwen_reply_breaker.wrap(try_qwen),
+                                    first_timeout=GEMINI_REPLY_SECONDS, names=("Gemini", "Qwen"))
+    else:  # no Gemini key: Qwen drafts alone, as before
+        generate_fn = with_fallback(try_qwen, try_gemini, enabled=lambda: False)
 
     try:
         with reports.watching("Reply draft", email.email_id, "No reply was drafted."):
