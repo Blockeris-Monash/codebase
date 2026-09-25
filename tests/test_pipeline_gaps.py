@@ -11,6 +11,7 @@ import pytest
 from backend import app as app_module
 from backend.compare.comparator import compare
 from backend.contracts import FIELD_NAMES
+from backend.read.labels import detect_doc_type
 
 
 def document(role: str, **raws: str | None) -> dict:
@@ -74,3 +75,27 @@ def test_the_startup_line_stays_quiet_about_vision_when_it_is_not_asked_for(monk
         app_module.say_what_is_switched_on()
 
     assert not any("SHIP_HAPPENS_VISION" in record.getMessage() for record in caplog.records)
+
+
+# --- B3.6 ------------------------------------------------------------------
+
+@pytest.mark.parametrize("title, role", [
+    ("SHIPPING INSTRUCTIONS", "SI"),
+    ("Shipping Instruction - Booking 5RSG-00133", "SI"),
+    ("BL INSTRUCTIONS", "SI"),
+    ("BILL OF LADING INSTRUCTION", "SI"),
+    ("DRAFT BILL OF LADING", "BL"),
+    ("SEA WAYBILL", "BL"),
+    ("SEAWAYBILL (DRAFT)", "BL"),
+    ("NON-NEGOTIABLE BILL OF LADING", "BL"),
+    ("Bill of Lading (Draft)", "BL"),
+    ("B/L DRAFT", "BL"),
+])
+def test_a_title_is_recognised_by_its_wording_not_one_exact_line(title: str, role: str) -> None:
+    """Only the dataset's exact first lines were known, so real titles read as the wrong document."""
+    assert detect_doc_type(title) == role
+
+
+@pytest.mark.parametrize("title", ["COMMERCIAL INVOICE", "PACKING LIST", "CERTIFICATE OF ORIGIN", "BILL OF EXCHANGE"])
+def test_another_document_still_names_itself(title: str) -> None:
+    assert detect_doc_type(title) == title

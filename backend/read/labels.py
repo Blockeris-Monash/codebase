@@ -28,13 +28,14 @@ LABEL_PATTERNS: dict[str, list[str]] = {
 # INSTRUCTION", Excel says "BL INSTRUCTION", the PDFs use the industry's own
 # name, "BILL OF LADING INSTRUCTION". All three are the shipper instructing
 # the carrier.
-DOC_HEADERS: dict[str, str] = {
-    "SHIPPING INSTRUCTION": DocumentRoleType.Si,
-    "BILL OF LADING INSTRUCTION": DocumentRoleType.Si,
-    "BL INSTRUCTION": DocumentRoleType.Si,
-    "BILL OF LADING (DRAFT)": DocumentRoleType.Bl,
-    "BILL OF LADING": DocumentRoleType.Bl,
-}
+# By wording, not exact lines (#147 B3); SI first, as "BILL OF LADING INSTRUCTION" is an SI.
+SI_TITLE = re.compile(r"^(?:SHIPPING|BILL OF LADING|B/?L)\s+INSTRUCTIONS?\b")
+BL_TITLE = re.compile(r"^(?:(?:DRAFT|OCEAN|HOUSE|MASTER|NON-?NEGOTIABLE)\s+)*"
+                      r"(?:BILL OF LADING|B/L|SEA\s*WAYBILL)\b(?!\s+INSTRUCTION)")
+DOC_TITLES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (SI_TITLE, DocumentRoleType.Si),
+    (BL_TITLE, DocumentRoleType.Bl),
+)
 
 CJK_PATTERN = r"[一-鿿]"
 # pypdf substitutes U+25A0 for a glyph it cannot map. In this corpus that is
@@ -64,5 +65,6 @@ def detect_doc_type(title: str) -> str | None:
     when it is neither, which is what makes wrong_doc_type detectable. Never
     looks at the filename - that lies on emails 501-505."""
     header = title.split("\n", 1)[0].strip().upper()
+    words = re.sub(r"\s+", " ", header)
 
-    return DOC_HEADERS.get(header, header or None)
+    return next((role for pattern, role in DOC_TITLES if pattern.match(words)), header or None)
