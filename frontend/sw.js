@@ -10,7 +10,7 @@
 // the cache is only a fallback for offline.
 //
 // Bump CACHE_VERSION on any deploy that changes the shell.
-const CACHE_VERSION = 'ship-happens-v6';
+const CACHE_VERSION = 'ship-happens-v7';
 const SHELL = ['./', './index.html', './config.js', './results.js', './manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -32,6 +32,31 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// A hung network must not hang the page: after this long the cache answers instead.
+const NETWORK_TIMEOUT_MS = 5000;
+
+// A timeout, not an AbortSignal: fetch(request, {signal}) throws for a navigation request.
+function withinTimeout(promise) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('sw: no answer in time')), NETWORK_TIMEOUT_MS);
+    promise.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
+
+// Only a whole, same-origin success is worth keeping: a cached 404 or 500 would be
+// served offline as if it were the page (#147 B2).
+function isCacheable(response) {
+  return response.ok && response.type === 'basic';
+}
+
+// The same request from the cache; the shell only for a page navigation, never for a
+// script or a stylesheet, which the browser would try to run as HTML.
+function fromCache(request) {
+  return caches.match(request)
+    .then((hit) => hit || (request.mode === 'navigate' ? caches.match('./index.html') : undefined))
+    .then((hit) => hit || Response.error());
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   // Never touch anything but our own GETs: the mailbox and reply calls are
@@ -39,12 +64,14 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(request)
+    withinTimeout(fetch(request))
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
+        if (isCacheable(response)) {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
+        }
         return response;
       })
-      .catch(() => caches.match(request).then((hit) => hit || caches.match('./index.html')))
+      .catch(() => fromCache(request))
   );
 });
