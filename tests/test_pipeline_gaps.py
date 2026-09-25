@@ -6,17 +6,22 @@ upload would meet.
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import zipfile
 from pathlib import Path
 
 import pytest
 
 from backend import app as app_module
+from backend.classify import EmailInput
 from backend.compare.comparator import compare
 from backend.compare.normalise import compare_row, normalise
 from backend.contracts import FIELD_NAMES
 from backend.extract.rules import comparison_result
 from backend.read.documents import _pdf_pairs, read_docx, read_txt, read_xlsx
+
+EDGE = Path(__file__).resolve().parent / "edge_cases"
 from backend.read.labels import detect_doc_type
 
 
@@ -285,3 +290,32 @@ def test_a_row_holding_two_fields_gives_two_pairs(tmp_path: Path, build, read) -
 
     assert pairs == [("Shipper", "APRIL FAR EAST"), ("Consignee", "MOORIM SP CO., LTD"),
                      ("Port of Loading", "PORT KLANG"), ("Remarks", "Consignee to pay freight | urgent")]
+
+
+# --- B3.7 ------------------------------------------------------------------
+
+@pytest.mark.parametrize("names, chosen", [
+    (["e_BL.txt", "e_BL_REVISED.txt"], "e_BL_REVISED.txt"),
+    (["e_BL_REVISED.txt", "e_BL.txt"], "e_BL_REVISED.txt"),          # the marker outranks the order
+    (["e_BL_V2.txt", "e_BL_V3.txt", "e_BL.txt"], "e_BL_V3.txt"),        # the highest revision wins
+    (["e_BL (1).txt", "e_BL (2).txt"], "e_BL (2).txt"),
+    (["e_BL.txt", "e_BL_copy.txt"], "e_BL_copy.txt"),                  # no marker: the later file
+    (["e_SI.txt", "e_SI_AMENDED.txt"], "e_SI_AMENDED.txt"),
+    (["e_BL.txt"], "e_BL.txt"),
+])
+def test_the_revision_is_the_file_compared(names: list[str], chosen: str) -> None:
+    used, set_aside = app_module.pick_revision(names)
+
+    assert used == chosen
+    assert sorted(set_aside) == sorted(n for n in names if n != chosen)
+
+
+def test_the_evidence_names_the_file_used_and_the_one_set_aside(monkeypatch) -> None:
+    monkeypatch.setattr(app_module, "DATA_DIR", EDGE)
+    monkeypatch.setattr(app_module, "extractor", None)   # every document here is read by rule
+    email = EmailInput(**json.loads((EDGE / "inbox" / "email_908.json").read_text(encoding="utf-8")))
+
+    result = asyncio.run(app_module.compare_email(email))
+
+    assert result.status == "OK"
+    assert result.evidence.startswith("Revised BL email_908_BL_REVISED.txt used; email_908_BL.txt set aside.")

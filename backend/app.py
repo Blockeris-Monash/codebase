@@ -11,7 +11,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, NamedTuple, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
@@ -574,18 +574,51 @@ def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
     return None
 
 
-def read_paired_attachments(email: EmailInput) -> PairedInput:
-    """Locates SI and BL attachments, reads label/value pairs, and records parse status."""
-    si_path_str = next(
-        (a for a in email.attachments if f"_{DocumentRoleType.Si}." in a or a.upper().endswith("SI")),
-        None,
-    )
-    bl_path_str = next(
-        (a for a in email.attachments if f"_{DocumentRoleType.Bl}." in a or a.upper().endswith("BL")),
-        None,
-    )
+class ChosenDocuments(NamedTuple):
+    """The SI and the BL to compare (either may be absent), and a note naming any file set aside."""
+    si: Optional[str]
+    bl: Optional[str]
+    note: str
 
-    return read_pair(email.email_id, si_path_str, bl_path_str)
+
+# A revision's mark, as one word of a file name or title: REVISED, AMENDED, REV 2, V3, "(2)".
+REVISION_WORD = re.compile(r"REVISED|AMENDED|AMENDMENT|REV|(?:REV|V)(\d+)|\((\d+)\)")
+
+
+def revision_rank(path_str: str) -> tuple[bool, int]:
+    """(marked as a revision, its number), from the file name and the document's own title:
+    e_BL_V3.txt is (True, 3), e_BL_REVISED.txt (True, 0), e_BL.txt (False, 0)."""
+    resolved = resolve_attachment_path(path_str)
+    title_line = ((document_title(resolved) or "") if resolved else "").split("\n", 1)[0]
+    words = re.split(r"[_\s.,:-]+", f"{Path(path_str).stem} {title_line}".upper())
+    marks = [found for found in map(REVISION_WORD.fullmatch, words) if found]
+
+    return bool(marks), max((int(m.group(1) or m.group(2) or 0) for m in marks), default=0)
+
+
+def pick_revision(paths: List[str]) -> tuple[str, List[str]]:
+    """The file to compare among several for one role, and the rest: the one marked as the
+    latest revision, else the last attached (#147 B3). The first draft used to win."""
+    latest = max(range(len(paths)), key=lambda i: (*revision_rank(paths[i]), i))
+    return paths[latest], [path for i, path in enumerate(paths) if i != latest]
+
+
+def files_for(role: str, attachments: List[str]) -> List[str]:
+    return [a for a in attachments
+            if any(found.group(1) == role for found in ROLE_IN_NAME.finditer(Path(a).name)) or a.upper().endswith(role)]
+
+
+def chosen_documents(attachments: List[str]) -> ChosenDocuments:
+    """One SI and one BL from an email's attachments, the latest revision of each."""
+    chosen, notes = {}, []
+    for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
+        candidates = files_for(role, attachments)
+        chosen[role], aside = pick_revision(candidates) if candidates else (None, [])
+        if aside:
+            notes.append(f"Revised {role} {Path(chosen[role]).name} used; "
+                         f"{', '.join(Path(a).name for a in aside)} set aside.")
+
+    return ChosenDocuments(chosen[DocumentRoleType.Si], chosen[DocumentRoleType.Bl], " ".join(notes))
 
 
 def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[str]) -> PairedInput:
@@ -621,7 +654,7 @@ def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[s
 # One email can carry more than one shipment: email_SI.txt with email_BL.txt, and
 # email_SI_2.txt with email_BL_2.txt. Reading only the first pair let a defect in the
 # second pass as OK (tests/edge_cases, a8).
-ROLE_IN_NAME = re.compile(rf"_({DocumentRoleType.Si}|{DocumentRoleType.Bl})(?=[._])")
+ROLE_IN_NAME = re.compile(rf"_({DocumentRoleType.Si}|{DocumentRoleType.Bl})(?=[._\s(-])")
 # A gap outranks a mismatch, so the person sees it first; OK only when every shipment is.
 SEVERITY = {StatusType.Ok: 0, StatusType.Mismatch: 1, StatusType.NeedsReview: 2}
 
@@ -642,10 +675,12 @@ def shipments(attachments: List[str]) -> List[tuple[str, str]]:
 async def compare_email(email: EmailInput, live: bool = False):
     """The comparison for one email. With two or more complete SI and BL pairs, each is
     compared and the most severe result is returned, its evidence naming every shipment.
-    Anything else goes through read_paired_attachments exactly as before."""
+    Anything else is one SI against one BL, each the latest revision attached."""
     pairs = shipments(email.attachments)
     if len(pairs) < 2:
-        return await run_pipeline(read_paired_attachments(email), live=live)
+        chosen = chosen_documents(email.attachments)
+        result = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.bl), live=live)
+        return result.model_copy(update={"evidence": f"{chosen.note} {result.evidence}"}) if chosen.note else result
 
     results = [await run_pipeline(read_pair(email.email_id, si, bl), live=live) for si, bl in pairs]
     worst = max(range(len(results)), key=lambda i: SEVERITY[results[i].status])

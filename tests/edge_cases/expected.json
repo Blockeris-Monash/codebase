@@ -116,7 +116,7 @@
       "defect_fields": []
     },
     "why": "The revised BL fixes the consignee; the check is against the latest draft.",
-    "known_gap": "The service takes the first file with _BL. in its name, so the first draft is compared and the revised one is ignored: a false mismatch.",
+    "known_gap": null,
     "category_gap": null
   },
   {
