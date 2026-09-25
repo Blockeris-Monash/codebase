@@ -1,8 +1,7 @@
 """Signed in, the inbox still opened on the demo data, so it was unclear whose mail was on
-screen. Signing in now lands on My mailbox. The Demo data / My mailbox switch shows only
-when signed in (#120): the demo is where the evidence lives, so it stays one click away,
-and each tab says whose mail it is. Signed out there is no switch, so no greyed-out
-My mailbox button that does nothing.
+screen. Signing in now lands on My mailbox. The demo is where the evidence lives, so it
+stays one click away (#120), as a Demo account in the account menu rather than a switch
+beside the search box, which was confusing.
 
 "Check again with AI" is gone too: My mailbox already runs every new email through the
 live pipeline, so re-running a saved demo result added nothing."""
@@ -28,20 +27,40 @@ def test_signing_in_opens_my_mailbox_and_starts_fetching_it() -> None:
     assert "startPolling()" in wiring
 
 
-def switch() -> str:
-    bar = INDEX[INDEX.index('<div class="bar">'):]
-    return bar[:bar.index('<span class="sbox">')]
+def account_menu() -> str:
+    menu = INDEX[INDEX.index("function accountHTML(){"):]
+    return menu[:menu.index("\n}")]
 
 
-def test_the_switch_shows_only_when_signed_in() -> None:
-    assert switch().startswith('<div class="bar">${S.user?`<div class="seg mbox">')
-    assert "disabled" not in switch()
-    assert "Sign in to see your mailbox" not in INDEX
+def test_there_is_no_demo_switch_in_the_toolbar() -> None:
+    """The Demo data / My mailbox pills beside the search box were confusing (#120 follow-up):
+    the demo is now an account, picked from the account menu."""
+    assert '<div class="seg mbox">' not in INDEX
+    assert '<div class="bar"><span class="sbox">' in INDEX
 
 
-def test_each_tab_says_whose_mail_it_is() -> None:
-    assert "RESULTS.length" in switch()
-    assert "esc(S.user.email" in switch()
+def test_signed_in_the_account_menu_switches_between_your_mail_and_the_demo_account() -> None:
+    menu = account_menu()
+    assert '"mymailbox", t("My mailbox")' in menu and '"demoacct", t("Demo account")' in menu
+    assert 'data-a="signout"' in menu
+
+
+def test_signed_out_the_inbox_shows_the_demo_account_with_a_way_to_sign_in() -> None:
+    menu = account_menu()
+    assert 'if(!S.user && onHome())' in menu  # the landing page keeps its plain Sign in button
+    assert 'data-a="signin"' in menu
+
+
+def test_the_landing_page_says_sign_in_with_demo_account() -> None:
+    page = home()
+    assert page.count('data-a="demoacct">${t("Sign in with demo account")}') == 3
+    assert "Open the demo inbox" not in INDEX
+
+
+def test_the_demo_account_action_opens_the_demo_data() -> None:
+    click = INDEX[INDEX.index('else if(a==="demoacct")'):]
+    click = click[:click.index("\n")]
+    assert 'S.mailbox="demo"' in click and 'location.hash="#/inbox"' in click
 
 
 def test_a_token_refresh_does_not_pull_you_off_the_demo() -> None:
@@ -84,7 +103,7 @@ def test_the_screen_while_a_sign_in_arrives_shows_no_nan_and_no_demo_switch() ->
     count_up = INDEX[INDEX.index("function countUp(){"):]
     count_up = count_up[:count_up.index("\n}")]
     assert '.filter(t=>/^\\d+$/.test(t.textContent))' in count_up
-    assert '${S.user?`<div class="seg mbox">' in INDEX  # S.user is still null while it arrives
+    assert '<div class="seg mbox">' not in INDEX  # no switch at all
     wiring = INDEX[INDEX.index("S.authReady = !!window.Store?.onUser?.("):]
     assert "if (!user) signInReturn = false;" in wiring[:wiring.index("\n  });")]
     assert 'if(!S.authReady || (!S.user && signInReturn)) return "";' in INDEX  # no Sign in button either
