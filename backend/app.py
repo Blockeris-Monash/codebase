@@ -672,6 +672,11 @@ def shipments(attachments: List[str]) -> List[tuple[str, str]]:
             for g in groups.values() if len(g) == 2]
 
 
+# The SI and BL files the last comparison in this task compared, so the review screen shows
+# those, the latest revision or the worst shipment, and never another file's text.
+COMPARED_FILES: ContextVar[tuple[Optional[str], Optional[str]]] = ContextVar("compared_files", default=(None, None))
+
+
 async def compare_email(email: EmailInput, live: bool = False):
     """The comparison for one email. With two or more complete SI and BL pairs, each is
     compared and the most severe result is returned, its evidence naming every shipment.
@@ -679,11 +684,13 @@ async def compare_email(email: EmailInput, live: bool = False):
     pairs = shipments(email.attachments)
     if len(pairs) < 2:
         chosen = chosen_documents(email.attachments)
+        COMPARED_FILES.set((chosen.si, chosen.bl))
         result = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.bl), live=live)
         return result.model_copy(update={"evidence": f"{chosen.note} {result.evidence}"}) if chosen.note else result
 
     results = [await run_pipeline(read_pair(email.email_id, si, bl), live=live) for si, bl in pairs]
     worst = max(range(len(results)), key=lambda i: SEVERITY[results[i].status])
+    COMPARED_FILES.set(pairs[worst])
     summary = ", ".join(f"shipment {i + 1} {r.status}" for i, r in enumerate(results))
     evidence = f"{len(results)} shipments in this email ({summary}); showing shipment {worst + 1}."
     detail = results[worst].evidence
@@ -926,11 +933,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
 
     result = checked["ComparisonResult"]
     if result:
-        docs = {}
-        for path in map(Path, paths):
-            for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
-                if path.stem == f"{email_id}_{role}":
-                    docs[role] = document(path, email_id, role)
+        compared = zip((DocumentRoleType.Si, DocumentRoleType.Bl), COMPARED_FILES.get())
+        docs = {role: document(Path(path), email_id, role) for role, path in compared if path}
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
     return entry
