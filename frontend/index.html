@@ -234,6 +234,7 @@ td.diff .ico{color:var(--bad)}td.gap .ico{color:var(--rev)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{display:inline-flex;align-items:center;gap:4px;font-size:0.8125rem;border-radius:99px;padding:3px 10px 3px 6px}
 .chip .ico{width:1em;height:1em}.c-OK{background:var(--ok-soft);color:var(--ok)}.c-MISMATCH{background:var(--bad-soft);color:var(--bad)}.c-NEEDS_REVIEW{background:var(--rev-soft);color:var(--rev)}
 .linkbtn{display:block;background:none;border:0;color:var(--accent);padding:6px 0;margin-top:8px;font-weight:600;text-align:left}
+.revision{margin-top:12px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.revision ul{margin:6px 0 0;padding-left:18px}.revision .rv-new_mistake b,.revision .rv-still_wrong b{color:var(--bad)}.revision .rv-fixed b{color:var(--ok)}
 .scanbox{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--card)}
 .scanbox h3{margin:0 0 4px;font-size:0.9375rem}
 .scanbox .cap{margin:0 0 10px}
@@ -1444,6 +1445,17 @@ function failedHTML(e){
     `<div class="actions"><a class="btn alt" href="${gmailLink(e)}" target="_blank" rel="noopener">${t("Open in Gmail")}</a></div></div>`;
 }
 
+/* A revised draft BL, against the draft before it (#147 D1): what the revision fixed, what is
+   still wrong, and what it broke. Unchanged fields are left out; the table above has them. */
+const REVISION_SHOWN = [["fixed",T("Fixed")], ["still_wrong",T("Still wrong")], ["new_mistake",T("New mistake")]];
+function revisionHTML(e){
+  const r = e.revision; if(!r) return "";
+  const head = `<div class="doch">${t("Since the last draft")}</div><div class="small mute">${esc(t("{current} against {previous}",{current:r.current, previous:r.previous}))}</div>`;
+  if(!r.previous_readable) return `<div class="revision">${head}<div class="small">${t("The previous draft could not be read, so only this draft was checked.")}</div></div>`;
+  const groups = REVISION_SHOWN.map(([k,n])=>{ const fields = r.rows.filter(x=>x.label===k).map(x=>fld(x.field));
+    return fields.length ? `<li class="rv-${k}"><b>${t(n)}:</b> ${esc(fields.join(", "))}</li>` : ""; }).join("");
+  return `<div class="revision">${head}${groups ? `<ul>${groups}</ul>` : `<div class="small">${t("Nothing changed in the seven fields.")}</div>`}</div>`;
+}
 function detail(e){
   if(e.check_failed) return failedHTML(e);
   const view = withCorrections(e);
@@ -1464,7 +1476,7 @@ function detail(e){
   } else {
     banner = `<div class="banner plain">${t("Not an SI vs BL check")}<span>${t(e.decided_by!=="llm"?T("Filed under {cat} by a simple keyword rule, not the AI."):T("Filed under {cat}."),{cat:esc((OTHER[e.category]?t(OTHER[e.category]):e.category).toLowerCase())})}</span></div>`;
   }
-  h += banner + actionsHTML(view) + tbl + reviewHTML(e, view);
+  h += banner + actionsHTML(view) + tbl + revisionHTML(e) + reviewHTML(e, view);
   h += scanHTML(e);
   if(e.docs) h += docsHTML(e, view.rows||[]);
   if(!e.uploaded) h += `<button class="linkbtn" data-a="body">${S.body?"▾":"▸"} ${t("Cover email")}</button>` + (S.body?`<div class="text">${esc(e.body)}</div>`:"");

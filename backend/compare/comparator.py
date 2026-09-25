@@ -60,6 +60,27 @@ class Row(BaseModel):
     verdict: VerdictType
 
 
+RevisionLabelType = Literal["fixed", "still_wrong", "new_mistake", "unchanged"]
+
+
+class RevisionRow(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field: FieldType
+    label: RevisionLabelType
+
+
+class Revision(BaseModel):
+    """A revised draft BL against the draft before it (#147 D1): each field's label comes from
+    the SI checked against each draft. Evidence beside the verdict, never the verdict."""
+    model_config = ConfigDict(extra="forbid")
+
+    previous: str
+    current: str
+    previous_readable: bool
+    rows: List[RevisionRow]
+
+
 class ComparisonResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -70,6 +91,8 @@ class ComparisonResult(BaseModel):
     rows: List[Row]
     defect_fields: List[FieldType]
     evidence: str
+    # Only when the email carries a revised draft BL; absent otherwise, so contract 04 is unchanged for the rest.
+    revision: Optional[Revision] = None
 
     @model_validator(mode="after")
     def keeps_the_contract_rules(self) -> "ComparisonResult":
@@ -166,6 +189,24 @@ def compare_single_field(
 # =====================================================================
 # Main Comparison Runner
 # =====================================================================
+
+# (wrong in the previous draft, wrong in this one) -> label, where right means the verdict is match.
+REVISION_LABELS: Dict[tuple[bool, bool], RevisionLabelType] = {
+    (True, False): "fixed", (True, True): "still_wrong", (False, True): "new_mistake", (False, False): "unchanged"}
+
+
+def revision_between(previous: ComparisonResult, current: ComparisonResult,
+                     previous_name: str, current_name: str) -> Revision:
+    """Each field's label, from the SI against the previous draft and against this one. A
+    previous draft that could not be compared field by field gets no labels."""
+    before = {row.field: row.verdict != "match" for row in previous.rows}
+    after = {row.field: row.verdict != "match" for row in current.rows}
+    readable = len(before) == len(CANONICAL_FIELDS)
+    rows = [RevisionRow(field=field, label=REVISION_LABELS[(before[field], after[field])])
+            for field in CANONICAL_FIELDS if readable and field in after]
+
+    return Revision(previous=previous_name, current=current_name, previous_readable=readable, rows=rows)
+
 
 def with_notify_resolved(fields: Dict[str, Any]) -> Dict[str, Any]:
     """`fields` with a SAME AS CONSIGNEE notify party compared as that document's consignee.

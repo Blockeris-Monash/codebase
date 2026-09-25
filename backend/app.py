@@ -31,7 +31,8 @@ from backend.extract.circuit_breaker import CircuitBreaker
 from backend.intent import about, email_intent
 
 # Import JJ's Deterministic Comparator
-from backend.compare.comparator import ComparisonResult, FieldType, Row, compare, compare_single_field
+from backend.compare.comparator import (ComparisonResult, FieldType, Row, compare, compare_single_field,
+                                         revision_between)
 from backend import gmail, reports
 from backend.compare.normalise import (NAME_SPLIT, SENTINEL, WEIGHT_NUMBER, order_form,  # one rule each,
                                        parse_number, party_name)  # shared with the reference
@@ -582,10 +583,12 @@ def resolve_attachment_path(att_path_str: str) -> Optional[Path]:
 
 
 class ChosenDocuments(NamedTuple):
-    """The SI and the BL to compare (either may be absent), and a note naming any file set aside."""
+    """The SI and the BL to compare (either may be absent), the BL draft before that one when
+    there is one (#147 D1), and a note naming any file set aside."""
     si: Optional[str]
     bl: Optional[str]
     note: str
+    previous_bl: Optional[str] = None
 
 
 # A revision's mark, as one word of a file name or title: REVISED, AMENDED, REV 2, V3, "(2)".
@@ -617,15 +620,17 @@ def files_for(role: str, attachments: List[str]) -> List[str]:
 
 def chosen_documents(attachments: List[str]) -> ChosenDocuments:
     """One SI and one BL from an email's attachments, the latest revision of each."""
-    chosen, notes = {}, []
+    chosen, notes, previous = {}, [], {}
     for role in (DocumentRoleType.Si, DocumentRoleType.Bl):
         candidates = files_for(role, attachments)
         chosen[role], aside = pick_revision(candidates) if candidates else (None, [])
         if aside:
             notes.append(f"Revised {role} {Path(chosen[role]).name} used; "
                          f"{', '.join(Path(a).name for a in aside)} set aside.")
+            previous[role] = pick_revision(aside)[0]   # v3 is compared with v2, not v1
 
-    return ChosenDocuments(chosen[DocumentRoleType.Si], chosen[DocumentRoleType.Bl], " ".join(notes))
+    return ChosenDocuments(chosen[DocumentRoleType.Si], chosen[DocumentRoleType.Bl], " ".join(notes),
+                           previous.get(DocumentRoleType.Bl))
 
 
 def read_pair(email_id: str, si_path_str: Optional[str], bl_path_str: Optional[str]) -> PairedInput:
@@ -693,7 +698,11 @@ async def compare_email(email: EmailInput, live: bool = False):
         chosen = chosen_documents(email.attachments)
         COMPARED_FILES.set((chosen.si, chosen.bl))
         result = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.bl), live=live)
-        return result.model_copy(update={"evidence": f"{chosen.note} {result.evidence}"}) if chosen.note else result
+        update = {"evidence": f"{chosen.note} {result.evidence}"} if chosen.note else {}
+        if chosen.previous_bl:
+            previous = await run_pipeline(read_pair(email.email_id, chosen.si, chosen.previous_bl), live=live)
+            update["revision"] = revision_between(previous, result, Path(chosen.previous_bl).name, Path(chosen.bl).name)
+        return result.model_copy(update=update) if update else result
 
     results = [await run_pipeline(read_pair(email.email_id, si, bl), live=live) for si, bl in pairs]
     worst = max(range(len(results)), key=lambda i: SEVERITY[results[i].status])
@@ -955,6 +964,8 @@ async def mailbox_entry(message: gmail.Message, paths: List[str]) -> Dict[str, A
         docs = {role: document(Path(path)) for role, path in compared if path}
         entry.update(status=result["status"], review_reason=result["review_reason"], rows=result["rows"],
                      defect_fields=result["defect_fields"], evidence=result["evidence"], docs=docs)
+        if result.get("revision"):
+            entry["revision"] = result["revision"]
     return entry
 
 

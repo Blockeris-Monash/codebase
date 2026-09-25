@@ -349,6 +349,7 @@ def test_the_bl_shown_is_the_revision_that_was_compared(google) -> None:
     assert checked["status"] == "OK"
     assert checked["docs"]["BL"]["name"] == "gmail_18c2f4e9a1b3d5f7_BL_2.txt"
     assert "21,577" in checked["docs"]["BL"]["text"]
+    assert {r["field"]: r["label"] for r in checked["revision"]["rows"]}["gross_weight_kg"] == "fixed"
 
 
 def test_with_two_shipments_the_documents_shown_are_the_shipment_shown(google) -> None:

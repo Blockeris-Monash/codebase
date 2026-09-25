@@ -115,6 +115,63 @@
     "evidence": {
       "type": "string",
       "description": "One line naming what happened. Goes on screen next to the confirm/correct action."
+    },
+    "revision": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Only when the email carries a revised draft BL (#147 D1): each field labelled against the previous draft. Evidence beside the verdict, never the verdict.",
+      "required": [
+        "previous",
+        "current",
+        "previous_readable",
+        "rows"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "previous": {
+          "type": "string"
+        },
+        "current": {
+          "type": "string"
+        },
+        "previous_readable": {
+          "type": "boolean"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field",
+              "label"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "shipper",
+                  "consignee",
+                  "notify_party",
+                  "port_of_loading",
+                  "port_of_discharge",
+                  "container_count",
+                  "gross_weight_kg"
+                ]
+              },
+              "label": {
+                "enum": [
+                  "fixed",
+                  "still_wrong",
+                  "new_mistake",
+                  "unchanged"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "allOf": [
