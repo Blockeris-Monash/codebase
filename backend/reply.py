@@ -10,7 +10,14 @@ from backend.extract.fallback import with_fallback
 
 # Initialize Supabase and Gemini
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+# One credential, two names. backend/reports.py reads SUPABASE_SERVICE_ROLE_KEY
+# and .env.example documents only that one, so a deployment that set the
+# documented name left this module without a client and the retrieval silently
+# off - no error, just replies drafted with nothing retrieved. Both names are
+# accepted, the documented one first. It has to be the service role key either
+# way: `policies` has RLS on with no policy, so nothing else can read it.
+SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+                or os.environ.get("SUPABASE_KEY"))
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if SUPABASE_URL and SUPABASE_KEY:

@@ -40,6 +40,28 @@ load_dotenv()
 configure_logging()
 log = logging.getLogger(__name__)
 
+def say_what_is_switched_on() -> None:
+    """One line at startup naming every optional feature and whether it is on.
+
+    Each of these is off when a variable is unset, and each fails quietly: no
+    Supabase key means the guidelines are never retrieved and replies are
+    drafted from nothing; no Gemini key means there is no second provider when
+    Qwen stalls. Nothing on screen says so. A deployment that is missing a
+    variable should say it once, at the top of the log, rather than be
+    discovered during judging.
+    """
+    on = lambda flag: "on" if flag else "OFF"
+    log.info(
+        "features: reports=%s retrieval=%s gemini-backup=%s critic=%s vision=%s",
+        on(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
+        on(os.environ.get("SUPABASE_URL")
+           and (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY"))),
+        on(gemini_key()),
+        on(os.environ.get("GEMINI_CRITIC_API_KEY") or gemini_key()),
+        on(os.environ.get("SHIP_HAPPENS_VISION") == "1"),
+    )
+
+
 app = FastAPI(title="Document Discrepancy Orchestrator")
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -713,3 +735,8 @@ async def reply(request: ReplyRequest, authorization: Optional[str] = Header(Non
     except gmail.GmailError as error:
         raise gmail_failure(error) from error
     return {"sent": True, "gmail_id": sent.get("id"), "thread_id": sent.get("threadId")}
+
+
+# Last, so every name it reads is defined. One line naming what is switched on,
+# because each of these fails quietly when its variable is unset.
+say_what_is_switched_on()
